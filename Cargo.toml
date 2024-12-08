@@ -6,5 +6,6 @@ license = "MIT"
 repository = "https://github.com/xxshady/relib"
 readme = "README.md"
 rust-version = "1.83.0"
+description = "framework for reloading dynamic libraries"
 
 [dependencies]
