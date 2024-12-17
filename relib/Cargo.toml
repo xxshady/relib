@@ -7,4 +7,4 @@ repository.workspace = true
 readme.workspace = true
 rust-version.workspace = true
 description = "relib is a framework for reloadable dynamic libraries"
-include = ["../README.md"]
+include = ["src", "docs.md", "../README.md"]
