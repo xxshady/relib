@@ -6,5 +6,5 @@ fn main() {
     "relib_internal_shared::imports::___Internal___Imports___",
   );
 
-  crate_compilation_info::provide();
+  relib_internal_crate_compilation_info::provide();
 }

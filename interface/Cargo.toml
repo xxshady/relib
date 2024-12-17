@@ -6,6 +6,7 @@ license.workspace = true
 repository.workspace = true
 readme.workspace = true
 rust-version.workspace = true
+description = "relib is a framework for reloadable dynamic libraries"
 
 [features]
 default = ["public"]
@@ -25,7 +26,7 @@ public = []
 
 [dependencies.relib_internal_shared]
 optional = true
-version = "0.1.0"
+version = "=0.1.0"
 path = "../shared"
 
 [dependencies.prettyplease]

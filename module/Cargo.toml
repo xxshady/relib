@@ -6,6 +6,7 @@ license.workspace = true
 repository.workspace = true
 readme.workspace = true
 rust-version.workspace = true
+description = "relib is a framework for reloadable dynamic libraries"
 
 [features]
 default = ["global_alloc_tracker"]
@@ -16,8 +17,11 @@ unwrap_used = "forbid"
 
 [dependencies]
 backtrace = "0.3.74"
-relib_export = { version = "0.1.0", path = "../export" }
 thread-id.workspace = true
+
+[dependencies.relib_export]
+version = "0.1.0"
+path = "../export"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 libc.workspace = true
@@ -27,11 +31,11 @@ version = "=0.1.0"
 path = "../shared"
 
 [dependencies.relib_interface]
-version = "0.1.0"
+version = "=0.1.0"
 path = "../interface"
 features = ["include"]
 
-[dependencies.crate_compilation_info]
+[dependencies.relib_internal_crate_compilation_info]
 version = "=0.1.0"
 path = "../crate_compilation_info"
 features = ["normal"]
@@ -39,7 +43,7 @@ features = ["normal"]
 [build-dependencies]
 
 [build-dependencies.relib_interface]
-version = "0.1.0"
+version = "=0.1.0"
 path = "../interface"
 features = ["internal", "build"]
 
@@ -47,7 +51,7 @@ features = ["internal", "build"]
 version = "=0.1.0"
 path = "../shared"
 
-[build-dependencies.crate_compilation_info]
+[build-dependencies.relib_internal_crate_compilation_info]
 version = "=0.1.0"
 path = "../crate_compilation_info"
 features = ["build"]

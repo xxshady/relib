@@ -132,10 +132,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "69f3b219d28b6e3b4ac87bc1fc522e0803ab22e055da177bff0068c4150c61a6"
 
 [[package]]
-name = "crate_compilation_info"
-version = "0.1.0"
-
-[[package]]
 name = "crossbeam-channel"
 version = "0.5.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -339,10 +335,10 @@ dependencies = [
 name = "relib_host"
 version = "0.1.0"
 dependencies = [
- "crate_compilation_info",
  "libc",
  "libloading 0.8.6",
  "relib_interface",
+ "relib_internal_crate_compilation_info",
  "relib_internal_shared",
  "thiserror",
  "thread-id",
@@ -360,6 +356,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "relib_internal_crate_compilation_info"
+version = "0.1.0"
+
+[[package]]
 name = "relib_internal_shared"
 version = "0.1.0"
 
@@ -368,10 +368,10 @@ name = "relib_module"
 version = "0.1.0"
 dependencies = [
  "backtrace",
- "crate_compilation_info",
  "libc",
  "relib_export",
  "relib_interface",
+ "relib_internal_crate_compilation_info",
  "relib_internal_shared",
  "thread-id",
 ]

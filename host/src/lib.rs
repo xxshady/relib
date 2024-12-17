@@ -64,7 +64,7 @@ pub fn load_module<E: ModuleExportsForHost>(
     compiled_with.to_string()
   };
 
-  let expected = crate_compilation_info::get!();
+  let expected = relib_internal_crate_compilation_info::get!();
   if compiled_with != expected {
     return Err(Error::ModuleCompilationMismatch(
       compiled_with,

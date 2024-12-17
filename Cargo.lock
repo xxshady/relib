@@ -46,10 +46,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
-name = "crate_compilation_info"
-version = "0.1.0"
-
-[[package]]
 name = "custom_global_alloc"
 version = "0.1.0"
 dependencies = [
@@ -165,10 +161,10 @@ dependencies = [
 name = "relib_host"
 version = "0.1.0"
 dependencies = [
- "crate_compilation_info",
  "libc",
  "libloading",
  "relib_interface",
+ "relib_internal_crate_compilation_info",
  "relib_internal_shared",
  "thiserror",
  "thread-id",
@@ -186,6 +182,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "relib_internal_crate_compilation_info"
+version = "0.1.0"
+
+[[package]]
 name = "relib_internal_shared"
 version = "0.1.0"
 
@@ -194,10 +194,10 @@ name = "relib_module"
 version = "0.1.0"
 dependencies = [
  "backtrace",
- "crate_compilation_info",
  "libc",
  "relib_export",
  "relib_interface",
+ "relib_internal_crate_compilation_info",
  "relib_internal_shared",
  "thread-id",
 ]
