@@ -9,4 +9,4 @@ rust-version.workspace = true
 publish = false
 
 [dependencies]
-relib_host = { version = "0.1.0", path = "../../host" }
+relib_host = { version = "0.1.1", path = "../../host" }

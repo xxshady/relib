@@ -16,7 +16,7 @@ custom_global_alloc = ["dep:relib_module"]
 
 [dependencies.relib_module]
 optional = true
-version = "0.1.0"
+version = "0.1.1"
 path = "../../module"
 default-features = false
 

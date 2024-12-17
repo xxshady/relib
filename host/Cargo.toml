@@ -20,31 +20,31 @@ thread-id.workspace = true
 libc.workspace = true
 
 [dependencies.relib_internal_shared]
-version = "=0.1.0"
+version = "=0.1.1"
 path = "../shared"
 
 [dependencies.relib_interface]
-version = "=0.1.0"
+version = "=0.1.1"
 path = "../interface"
 features = ["include"]
 
 [dependencies.relib_internal_crate_compilation_info]
-version = "=0.1.0"
+version = "=0.1.1"
 path = "../crate_compilation_info"
 features = ["normal"]
 
 [build-dependencies]
 
 [build-dependencies.relib_interface]
-version = "=0.1.0"
+version = "=0.1.1"
 path = "../interface"
 features = ["internal", "build"]
 
 [build-dependencies.relib_internal_shared]
-version = "=0.1.0"
+version = "=0.1.1"
 path = "../shared"
 
 [build-dependencies.relib_internal_crate_compilation_info]
-version = "=0.1.0"
+version = "=0.1.1"
 path = "../crate_compilation_info"
 features = ["build"]
