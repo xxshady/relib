@@ -1,0 +1,12 @@
+[package]
+name = "basic_host"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+relib_host = { version = "0.1.0", path = "../../host" }

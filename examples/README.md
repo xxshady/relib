@@ -1,0 +1,21 @@
+# `relib` examples
+
+## [Basic template](TODO: link to submodule or template repo)
+
+How to run:<br>
+`cargo build --workspace`<br>
+`cargo run`
+
+## [Usage with `abi_stable` crate](./abi_stable_usage)
+
+How to run:<br>
+`cargo build --workspace`<br>
+`cargo run`
+
+## [Custom global allocator](./custom_global_alloc)
+
+How to run:<br>
+`cargo build -p custom_global_alloc --features custom_global_alloc`<br>
+`cargo run --bin basic_host <path>`
+
+> replace `<path>` with `target/debug/libcustom_global_alloc.so` on linux and `target/debug/custom_global_alloc.dll` on windows

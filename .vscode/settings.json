@@ -1,0 +1,5 @@
+{
+  "editor.tabSize": 2,
+  "rust-analyzer.check.command": "clippy",
+  "rust-analyzer.cargo.features": "all"
+}

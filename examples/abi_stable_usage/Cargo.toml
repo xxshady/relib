@@ -1,0 +1,10 @@
+[workspace]
+resolver = "2" # edition "2021" implies resolver "2"
+members = ["host", "module", "shared"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021" # or set a later one
+
+[workspace.dependencies]
+abi_stable = "0.11.3"

@@ -1,0 +1,14 @@
+[package]
+name = "relib_exportify"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+relib_internal_shared = { version = "0.1.0", path = "../shared" }
+proc-macro2.workspace = true
+quote.workspace = true
+syn.workspace = true

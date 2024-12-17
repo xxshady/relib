@@ -1,0 +1,33 @@
+[package]
+name = "test_module"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+relib_module = { version = "0.1.0", path = "../../module" }
+
+[dependencies.testing_shared]
+version = "=0.1.0"
+path = "../shared"
+
+[dependencies.relib_interface]
+version = "0.1.0"
+path = "../../interface"
+features = ["include"]
+
+[build-dependencies.relib_interface]
+version = "0.1.0"
+path = "../../interface"
+features = ["build"]
+
+[build-dependencies.testing_shared]
+version = "=0.1.0"
+path = "../shared"

@@ -1,0 +1,32 @@
+[package]
+name = "test_host"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+relib_host = { version = "0.1.0", path = "../../host" }
+libloading.workspace = true
+memory-stats = "1.2.0"
+
+[dependencies.testing_shared]
+version = "=0.1.0"
+path = "../shared"
+
+[dependencies.relib_interface]
+version = "0.1.0"
+path = "../../interface"
+features = ["include"]
+
+[build-dependencies.relib_interface]
+version = "0.1.0"
+path = "../../interface"
+features = ["build"]
+
+[build-dependencies.testing_shared]
+version = "=0.1.0"
+path = "../shared"

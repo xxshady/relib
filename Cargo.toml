@@ -1,11 +1,36 @@
-[package]
-name = "relib"
+[workspace]
+resolver = "2"
+members = [
+  "interface",
+  "host",
+  "module",
+  "shared",
+  "crate_compilation_info",
+  "testing/shared",
+  "testing/host",
+  "testing/module",
+  "exportify",
+  "export",
+  "relib",
+  "examples/basic_host",
+  "examples/custom_global_alloc",
+]
+
+[workspace.package]
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/xxshady/relib"
+repository = "https://github.com/xxshady/dylib-reload"
 readme = "README.md"
 rust-version = "1.83.0"
-description = "framework for reloading dynamic libraries"
 
-[dependencies]
+[workspace.dependencies]
+libc = "0.2.164"
+libloading = "0.8.6"
+thread-id = "5.0.0"
+quote = "1.0.37"
+proc-macro2 = "1.0.92"
+
+[workspace.dependencies.syn]
+version = "2.0.89"
+features = ["full"]

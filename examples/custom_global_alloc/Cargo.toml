@@ -1,0 +1,22 @@
+[package]
+name = "custom_global_alloc"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+custom_global_alloc = ["dep:relib_module"]
+
+[dependencies.relib_module]
+optional = true
+version = "0.1.0"
+path = "../../module"
+default-features = false
+

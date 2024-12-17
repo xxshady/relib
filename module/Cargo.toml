@@ -1,0 +1,53 @@
+[package]
+name = "relib_module"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+rust-version.workspace = true
+
+[features]
+default = ["global_alloc_tracker"]
+global_alloc_tracker = []
+
+[lints.clippy]
+unwrap_used = "forbid"
+
+[dependencies]
+backtrace = "0.3.74"
+relib_export = { version = "0.1.0", path = "../export" }
+thread-id.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc.workspace = true
+
+[dependencies.relib_internal_shared]
+version = "=0.1.0"
+path = "../shared"
+
+[dependencies.relib_interface]
+version = "0.1.0"
+path = "../interface"
+features = ["include"]
+
+[dependencies.crate_compilation_info]
+version = "=0.1.0"
+path = "../crate_compilation_info"
+features = ["normal"]
+
+[build-dependencies]
+
+[build-dependencies.relib_interface]
+version = "0.1.0"
+path = "../interface"
+features = ["internal", "build"]
+
+[build-dependencies.relib_internal_shared]
+version = "=0.1.0"
+path = "../shared"
+
+[build-dependencies.crate_compilation_info]
+version = "=0.1.0"
+path = "../crate_compilation_info"
+features = ["build"]
