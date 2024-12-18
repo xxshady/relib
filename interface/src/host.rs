@@ -19,13 +19,13 @@ use crate::shared::{
 /// ```
 #[cfg(feature = "internal")]
 pub fn generate_internal(
-  exports_file_path: impl AsRef<Path> + Debug,
+  exports_file_content: &'static str,
   exports_trait_path: &str,
-  imports_file_path: impl AsRef<Path> + Debug,
+  imports_file_content: &'static str,
   imports_trait_path: &str,
 ) {
-  generate_exports(exports_file_path, exports_trait_path, false);
-  generate_imports(imports_file_path, imports_trait_path);
+  generate_exports(exports_file_content, exports_trait_path, false);
+  generate_imports(imports_file_content, imports_trait_path);
 }
 
 /// Will generate `generated_module_exports.rs` and `generated_module_imports.rs` in the OUT_DIR which you can include
@@ -37,23 +37,23 @@ pub fn generate_internal(
 /// ```
 #[cfg(feature = "public")]
 pub fn generate(
-  exports_file_path: impl AsRef<Path> + Debug,
+  exports_file_content: &'static str,
   exports_trait_path: &str,
-  imports_file_path: impl AsRef<Path> + Debug,
+  imports_file_content: &'static str,
   imports_trait_path: &str,
 ) {
-  generate_exports(exports_file_path, exports_trait_path, true);
-  generate_imports(imports_file_path, imports_trait_path);
+  generate_exports(exports_file_content, exports_trait_path, true);
+  generate_imports(imports_file_content, imports_trait_path);
 }
 
 fn generate_exports(
-  exports_file_path: impl AsRef<Path> + Debug,
+  exports_file_content: &'static str,
   exports_trait_path: &str,
   pub_exports: bool,
 ) {
   let trait_name = extract_trait_name_from_path(exports_trait_path);
   let (exports_trait, module_use_items) =
-    parse_trait_file(trait_name, exports_file_path, exports_trait_path);
+    parse_trait_file(trait_name, exports_file_content, exports_trait_path);
 
   let mut export_decls = Vec::<TokenStream>::new();
   let mut export_inits = Vec::<TokenStream>::new();
@@ -180,10 +180,10 @@ fn generate_exports(
   );
 }
 
-fn generate_imports(imports_file_path: impl AsRef<Path> + Debug, imports_trait_path: &str) {
+fn generate_imports(imports_file_content: &'static str, imports_trait_path: &str) {
   let trait_name = extract_trait_name_from_path(imports_trait_path);
   let (imports_trait, module_use_items) =
-    parse_trait_file(trait_name, imports_file_path, imports_trait_path);
+    parse_trait_file(trait_name, imports_file_content, imports_trait_path);
 
   let imports_trait_path: syn::Path =
     syn::parse_str(imports_trait_path).expect("Failed to parse imports_trait_path as syn::Path");

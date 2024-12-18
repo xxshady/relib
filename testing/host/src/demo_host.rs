@@ -59,6 +59,9 @@ fn module_load_loop() {
     let a: Option<ModuleValue<i32>> = unsafe { module.exports().a() };
     dbg!(a.as_ref().map(|v| **v) == Some(i32::MAX), a);
 
+    let b: Option<ModuleValue<u8>> = unsafe { module.exports().b() };
+    dbg!(b);
+
     print_memory_use();
 
     if unload_immediately {

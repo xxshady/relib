@@ -18,25 +18,16 @@ pub fn format_code(code: &str) -> String {
 
 pub fn parse_trait_file(
   trait_name: &str,
-  file_path: impl AsRef<Path> + Debug,
+  file_content: &'static str,
   trait_path: &str,
 ) -> (ItemTrait, TokenStream2) {
-  let file_path = file_path.as_ref();
-
   let Some((crate_name, _)) = trait_path.split_once("::") else {
     panic!("Failed to extract crate name from trait path: {trait_path}");
   };
   let crate_name = Ident::new(crate_name, Span::call_site());
 
-  let module = fs::read_to_string(file_path).unwrap_or_else(|e| {
-    panic!(
-      "Failed to read module from: {file_path:?}, reason: {e:#?}, cwd: {:?}",
-      current_dir().unwrap()
-    );
-  });
-
-  let ast = syn::parse_file(&module).unwrap_or_else(|e| {
-    panic!("Failed to parse Rust code from: {file_path:?}, reason: {e:#?}");
+  let ast = syn::parse_file(file_content).unwrap_or_else(|e| {
+    panic!("Failed to parse Rust code of trait file: {trait_name}: {e:#?}");
   });
 
   let items = ast.items;
@@ -56,10 +47,7 @@ pub fn parse_trait_file(
     .iter()
     .any(|item| !matches!(item, Item::Use(..) | Item::Trait(..)));
   if are_there_any_other_items {
-    panic!(
-      "Only `use` and `trait` items allowed in the {}",
-      file_path.display()
-    );
+    panic!("Only `use` and `trait` items allowed in the {trait_name} trait file");
   }
 
   let trait_ = items.into_iter().find_map(|item| {

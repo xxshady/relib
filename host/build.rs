@@ -1,8 +1,8 @@
 fn main() {
   relib_interface::host::generate_internal(
-    "../shared/src/exports.rs",
+    relib_internal_shared::EXPORTS,
     "relib_internal_shared::exports::___Internal___Exports___",
-    "../shared/src/imports.rs",
+    relib_internal_shared::IMPORTS,
     "relib_internal_shared::imports::___Internal___Imports___",
   );
 

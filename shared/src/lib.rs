@@ -3,6 +3,9 @@ use std::fmt::{Debug, Formatter, Result as FmtResult};
 pub mod exports;
 pub mod imports;
 
+pub const EXPORTS: &str = include_str!("exports.rs");
+pub const IMPORTS: &str = include_str!("imports.rs");
+
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct AllocatorPtr(pub *mut u8);

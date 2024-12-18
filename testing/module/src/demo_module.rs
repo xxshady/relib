@@ -10,7 +10,11 @@ use testing_shared::exports::Exports;
 
 impl Exports for ModuleExportsImpl {
   fn a() -> i32 {
-    i32::MAX
+    10
+  }
+
+  fn b() -> u8 {
+    22
   }
 }
 
