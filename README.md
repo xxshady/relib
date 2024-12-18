@@ -26,7 +26,7 @@ See [`docs`](TODO: link to docs.rs) of `relib` crate
 
 ### Dead locks
 
-If you program dead-locks `relib` won't do anything with it and you have to kill host process.
+If your program deadlocks unloading won't work and you will have to kill the whole process.
 
 ## Why dynamic libraries when we already have WASM?
 
