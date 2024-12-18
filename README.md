@@ -4,7 +4,7 @@
 
 [![demo](https://github.com/user-attachments/assets/44c87053-8aa1-462f-929f-2a355328387c)](https://github.com/user-attachments/assets/e2da4817-237a-4e90-9c5e-b6f24e4ad57c)
 
-> **note:** currently Linux has the best support, Windows is supported partially, see [support matrix](https://docs.rs/relib/latest/relib/docs/index.html#communication-between-host-and-module).
+> **note:** currently Linux has the best support, Windows is supported partially, see [support matrix](https://docs.rs/relib/latest/relib/docs/index.html#feature-support-matrix).
 
 ## Overview
 
