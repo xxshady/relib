@@ -9,7 +9,7 @@ rust-version.workspace = true
 description = "relib is a framework for reloadable dynamic libraries"
 
 [dependencies]
-relib_internal_shared = { version = "=0.1.2", path = "../shared" }
+relib_internal_shared = { version = "=0.1.3", path = "../shared" }
 proc-macro2.workspace = true
 quote.workspace = true
 syn.workspace = true
