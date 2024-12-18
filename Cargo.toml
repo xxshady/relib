@@ -26,6 +26,7 @@ rust-version = "1.83.0"
 
 [workspace.metadata.release]
 pre-release-commit-message = "v{{version}}"
+tag = false
 
 [workspace.dependencies]
 libc = "0.2.164"
