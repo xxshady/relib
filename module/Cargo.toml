@@ -20,7 +20,7 @@ backtrace = "0.3.74"
 thread-id.workspace = true
 
 [dependencies.relib_export]
-version = "0.1.1"
+version = "=0.1.1"
 path = "../export"
 
 [target.'cfg(target_os = "linux")'.dependencies]
