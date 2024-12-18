@@ -7,7 +7,7 @@
 
 ## Getting started
 
-> If you don't want to repeat all these steps, you can use ready-made [template](https://github.com/xxshady/relib-template) (TODO: update template dependencies after publication).
+> If you don't want to repeat all these steps, you can use ready-made [template](https://github.com/xxshady/relib-template)
 
 - Create Rust workspace: create empty directory with the following `Cargo.toml` (at the time of writing there is no cargo command to create workspace):<br>
 ```toml
@@ -114,6 +114,9 @@ To communicate between host and module `relib` provides convenient API for decla
 pub mod exports;
 pub mod imports;
 
+pub const EXPORTS: &str = include_str!("exports.rs");
+pub const IMPORTS: &str = include_str!("imports.rs");
+
 // shared/src/exports.rs:
 pub trait Exports {}
 
@@ -127,9 +130,9 @@ pub trait Imports {}
 fn main() {
   // this code assumes that directory and package name of the shared crate are the same
   relib_interface::host::generate(
-    "../shared/src/exports.rs",
-    "shared::exports::Exports",
-    "../shared/src/imports.rs",
+    shared::EXPORTS,
+    "shared::exports::Exports", 
+    shared::IMPORTS,
     "shared::imports::Imports",
   );
 }
@@ -141,9 +144,9 @@ fn main() {
 fn main() {
   // this code assumes that directory and package name of the shared crate are the same
   relib_interface::module::generate(
-    "../shared/src/exports.rs",
+    shared::EXPORTS,
     "shared::exports::Exports",
-    "../shared/src/imports.rs",
+    shared::IMPORTS,
     "shared::imports::Imports",
   );
 }
@@ -306,9 +309,9 @@ unsafe {
 
 ### Background threads check
 
-Dynamic library cannot be unloaded safely if background threads spawned by it are still running at the time of unloading, so host checks them and returns an error (TODO: add link to source code or docs with error) if so.
+Dynamic library cannot be unloaded safely if background threads spawned by it are still running at the time of unloading, so host checks them and returns [`ThreadsStillRunning`](https://docs.rs/relib_host/latest/relib_host/enum.UnloadError.html#variant.ThreadsStillRunning) error if so.
 
-**note:** module can register "before_unload" export using `relib_module::export` proc-macro (TODO: add link)
+**note:** module can register "before_unload" export using [`relib_module::export`](https://docs.rs/relib_module/latest/relib_module/attr.export.html) proc-macro
 
 ### Thread-locals on Windows
 

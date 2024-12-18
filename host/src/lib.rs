@@ -10,7 +10,7 @@ use gen_exports::ModuleExports as InternalModuleExports;
 use gen_imports::init_imports as init_internal_imports;
 
 mod errors;
-pub use errors::Error;
+pub use errors::{LoadError, UnloadError};
 mod module;
 pub use module::Module;
 mod module_allocs;
@@ -44,7 +44,7 @@ pub use exports_types::{ModuleExportsForHost, InitImports, ModuleValue};
 pub fn load_module<E: ModuleExportsForHost>(
   path: impl AsRef<OsStr>,
   init_imports: impl InitImports,
-) -> Result<Module<E>, crate::Error> {
+) -> Result<Module<E>, crate::LoadError> {
   let path = Path::new(path.as_ref());
 
   #[cfg(target_os = "linux")]
@@ -52,7 +52,7 @@ pub fn load_module<E: ModuleExportsForHost>(
     use helpers::linux::is_library_loaded;
 
     if is_library_loaded(path) {
-      return Err(Error::ModuleAlreadyLoaded);
+      return Err(LoadError::ModuleAlreadyLoaded);
     }
   }
 
@@ -66,7 +66,7 @@ pub fn load_module<E: ModuleExportsForHost>(
 
   let expected = relib_internal_crate_compilation_info::get!();
   if compiled_with != expected {
-    return Err(Error::ModuleCompilationMismatch(
+    return Err(LoadError::ModuleCompilationMismatch(
       compiled_with,
       expected.to_owned(),
     ));

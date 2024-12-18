@@ -2,7 +2,7 @@ use proc_macro::TokenStream;
 
 /// Use it for exporting `main` or `before_unload` functions from the module.
 ///
-/// **note:** see documentation of `relib_exportify::exportify` for implementation details.
+/// **note:** see documentation of [`relib_exportify::exportify`](https://docs.rs/relib_exportify/latest/relib_exportify/fn.exportify.html) for implementation details.
 ///
 /// # Examples
 /// ```

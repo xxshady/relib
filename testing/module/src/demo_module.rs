@@ -49,7 +49,7 @@ fn main() -> i32 {
   //   thread::sleep(Duration::from_secs(1000000));
   // });
 
-  let value = unsafe { gen_imports::b() };
+  let _value = unsafe { gen_imports::b() };
 
   123
 }

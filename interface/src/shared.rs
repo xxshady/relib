@@ -1,4 +1,4 @@
-use std::{env::current_dir, fmt::Debug, fs, path::Path};
+use std::{fs, path::Path};
 
 use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::{quote, ToTokens};

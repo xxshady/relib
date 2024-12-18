@@ -4,11 +4,11 @@
 
 [![demo](https://github.com/user-attachments/assets/44c87053-8aa1-462f-929f-2a355328387c)](https://github.com/user-attachments/assets/e2da4817-237a-4e90-9c5e-b6f24e4ad57c)
 
-> **note:** currently Linux has the best support, Windows is supported partially, see [support matrix](TODO: link to docs.rs).
+> **note:** currently Linux has the best support, Windows is supported partially, see [support matrix](https://docs.rs/relib/latest/relib/docs/index.html#communication-between-host-and-module).
 
 ## Overview
 
-`relib` is an attempt to make *native* Rust more usable to reload code on the fly, without closing down application, mainly for development (live/hot reload), although `relib` also provides [imports/exports](TODO: add link to docs.rs) mechanism, which can be used in production.
+`relib` is an attempt to make *native* Rust more usable to reload code on the fly, without closing down application, mainly for development (live/hot reload), although `relib` also provides [imports/exports](https://docs.rs/relib/latest/relib/docs/index.html#communication-between-host-and-module) mechanism, which can be used in production.
 
 ## Examples
 
@@ -16,7 +16,7 @@ See [examples](https://github.com/xxshady/relib/tree/main/examples/README.md).
 
 ## Docs
 
-See [`docs`](TODO: link to docs.rs) of `relib` crate
+See [`docs`](https://docs.rs/relib/latest/relib/docs/index.html) of `relib` crate
 
 ## Limitations
 
@@ -26,7 +26,7 @@ See [`docs`](TODO: link to docs.rs) of `relib` crate
 
 ### Dead locks
 
-If you program dead-locks `relib` won't do anything with it and you have to kill host process.
+If your program deadlocks unloading won't work and you will have to kill the whole process.
 
 ## Why dynamic libraries when we already have WASM?
 

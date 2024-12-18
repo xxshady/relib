@@ -36,7 +36,7 @@ pub fn next_module_id() -> ModuleId {
   id
 }
 
-pub fn open_library(path: &Path) -> Result<libloading::Library, crate::Error> {
+pub fn open_library(path: &Path) -> Result<libloading::Library, crate::LoadError> {
   #[cfg(target_os = "linux")]
   let library = {
     use libloading::os::unix::Library;

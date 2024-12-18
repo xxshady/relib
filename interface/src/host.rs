@@ -1,5 +1,3 @@
-use std::{fmt::Debug, path::Path};
-
 use proc_macro2::TokenStream;
 use quote::quote;
 

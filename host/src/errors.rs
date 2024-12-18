@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum Error {
+pub enum LoadError {
   #[error("libloading error")]
   Libloading(#[from] libloading::Error),
 
@@ -29,7 +29,7 @@ pub enum UnloadError {
     "module still has running threads\n\
     module path: {0}\n\
     note: module can export \"before_unload\" function to join spawned threads: \
-    TODO: docs link"
+    https://docs.rs/relib/latest/relib/docs/index.html#before_unload"
   )]
   ThreadsStillRunning(String),
 

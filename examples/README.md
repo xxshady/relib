@@ -1,6 +1,6 @@
 # `relib` examples
 
-## [Basic template](TODO: link to submodule or template repo)
+## [Basic template](https://github.com/xxshady/relib-template)
 
 How to run:<br>
 `cargo build --workspace`<br>
