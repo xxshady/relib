@@ -15,18 +15,30 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
+      - name: auth
+        run: |
+          git config --global user.name "release"
+          git config --global user.email "release@release.release"
+          
       - name: rust version
         run: rustc -V
+
+      - name: extract branch from tag
+        id: extract_branch
+        run: |
+          BRANCH=$( git log -1 --format='%D' ${{ github.ref_name }} | grep -oP 'origin/\K.*' )
+          echo "BRANCH=$BRANCH" >> $GITHUB_OUTPUT
+
+      - name: print branch
+        run: echo ${{ steps.extract_branch.outputs.BRANCH }}
+      
+      - name: switch to branch
+        run: git switch ${{ steps.extract_branch.outputs.BRANCH }}
 
       - name: prepare relib crate
         run: 
           chmod +x ./scripts/build_relib_crate.sh
           ./scripts/build_relib_crate.sh
-
-      - name: auth
-        run: |
-          git config --global user.name "release"
-          git config --global user.email "release@release.release"
 
       - name: cargo login
         run: cargo login ${{ secrets.CRATES_IO_TOKEN }}
