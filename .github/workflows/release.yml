@@ -36,7 +36,7 @@ jobs:
         run: git switch ${{ steps.extract_branch.outputs.BRANCH }}
 
       - name: prepare relib crate
-        run: 
+        run: |
           chmod +x ./scripts/build_relib_crate.sh
           ./scripts/build_relib_crate.sh
           git add .
