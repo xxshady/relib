@@ -24,6 +24,9 @@ repository = "https://github.com/xxshady/dylib-reload"
 readme = "README.md"
 rust-version = "1.83.0"
 
+[workspace.metadata.release]
+pre-release-commit-message = "v{{version}}"
+
 [workspace.dependencies]
 libc = "0.2.164"
 libloading = "0.8.6"
