@@ -311,7 +311,7 @@ unsafe {
 
 Dynamic library cannot be unloaded safely if background threads spawned by it are still running at the time of unloading, so host checks them and returns [`ThreadsStillRunning`](https://docs.rs/relib_host/latest/relib_host/enum.UnloadError.html#variant.ThreadsStillRunning) error if so.
 
-**note:** module can register "before_unload" export using [`relib_module::export`](https://docs.rs/relib_module/latest/relib_module/attr.export.html) proc-macro
+**note:** module can register "before_unload" export using [`relib_module::export`](https://docs.rs/relib_module/latest/relib_module/attr.export.html) proc-macro to join threads when host triggers module [`unload`](https://docs.rs/relib_host/latest/relib_host/struct.Module.html#method.unload)
 
 ### Thread-locals on Windows
 
