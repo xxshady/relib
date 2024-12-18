@@ -1,5 +1,5 @@
-#![doc = include_str!("README.md")]
+#![doc = include_str!("__copied_readme.md")]
 
 #[cfg(doc)]
-#[doc = include_str!("docs.md")]
+#[doc = include_str!("__copied_docs.md")]
 pub mod docs {}
