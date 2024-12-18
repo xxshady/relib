@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: rust version
+        run: rustc -V
+
+      - name: prepare relib crate
+        run: 
+          chmod +x ./scripts/build_relib_crate.sh
+          ./scripts/build_relib_crate.sh
+
+      - name: auth
+        run: |
+          git config --global user.name "release"
+          git config --global user.email "release@release.release"
+
+      - name: cargo login
+        run: cargo login ${{ secrets.CRATES_IO_TOKEN }}
+
+      - name: extract version from tag
+        id: extract_version
+        run: |
+          VERSION=$( echo ${{ github.ref_name }} | grep -oP 'v\K.*' )
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+      - name: print version
+        run: echo ${{ steps.extract_version.outputs.VERSION }}
+
+      - name: install cargo-binstall
+        uses: cargo-bins/cargo-binstall@v1.10.12
+
+      - name: install cargo-release
+        run: |
+          cargo binstall cargo-release@=0.25.13 --no-confirm
+
+      - name: cargo release
+        run: |
+          cargo release ${{ steps.extract_version.outputs.VERSION }} --no-confirm --execute
