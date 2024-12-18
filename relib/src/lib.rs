@@ -1,5 +1,5 @@
-#![doc = include_str!(concat!(env!("OUT_DIR"), "/README.md"))]
+#![doc = include_str!("README.md")]
 
 #[cfg(doc)]
-#[doc = include_str!(concat!(env!("OUT_DIR"), "/docs.md"))]
+#[doc = include_str!("docs.md")]
 pub mod docs {}
