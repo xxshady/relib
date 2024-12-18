@@ -48,7 +48,7 @@ fn main() {
   // 1. returned value must be actually `R` at runtime, for example you called this function with type bool but module returns i32.
   // 2. type of return value must be FFI-safe.
   // (see "Module exports" section for more info about ModuleValue)
-  let returned_value: Option<relib_host::ModuleValue<()>> = unsafe {
+  let returned_value: Option<relib_host::ModuleValue<'_, ()>> = unsafe {
     module.call_main::<()>()
   };
 
@@ -234,7 +234,7 @@ Except one thing, return value:
 
 ```rust
 // returns None if module export panics
-let value: Option<ModuleValue<u8>> = unsafe { module.exports().bar() };
+let value: Option<ModuleValue<'_, u8>> = unsafe { module.exports().bar() };
 ```
 
 What is `ModuleValue`?
@@ -249,7 +249,7 @@ struct SomeMemory {
   len: usize,
 }
 
-let slice: ModuleValue<SomeMemory> = module.call_main().unwrap();
+let slice: ModuleValue<'_, SomeMemory> = module.call_main().unwrap();
 
 // .unload() frees memory of the module
 module.unload().unwrap();
