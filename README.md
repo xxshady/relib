@@ -16,13 +16,15 @@ See [examples](https://github.com/xxshady/relib/tree/main/examples/README.md).
 
 ## Docs
 
-See [`docs`](https://docs.rs/relib/latest/relib/docs/index.html) of `relib` crate
+See [`docs`](https://docs.rs/relib/latest/relib/docs/index.html) of `relib` crate.
 
 ## Limitations
 
-### File handles and network sockets
+### File descriptors and network sockets
 
-*Currently*, `relib` knows nothing about file handles or network sockets (unlike background threads) so, for example, if your program stores them in static items and does not properly close them they will leak after unloading.
+*Currently*, `relib` knows nothing about file descriptors or network sockets (unlike [background threads](https://docs.rs/relib/latest/relib/docs/index.html#background-threads-check)) so, for example, if your program stores them in static items and does not properly close them they will leak after unloading.
+
+**note:** relib provides [`before_unload`](https://docs.rs/relib/latest/relib/docs/index.html#before_unload) callback API when you need to cleanup something manually (similar to Rust Drop).
 
 ### Dead locks
 
