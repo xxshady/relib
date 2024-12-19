@@ -57,9 +57,11 @@ pub fn exportify(input: TokenStream2) -> TokenStream2 {
       #inputs
     ) -> bool // returns false if function panicked
     {
-      fn #mangled_name_ident( #inputs_without_types ) #output #block
+      fn #mangled_name_ident( #inputs ) #output #block
 
-      let result = std::panic::catch_unwind(#mangled_name_ident);
+      let result = std::panic::catch_unwind(|| {
+        #mangled_name_ident( #inputs_without_types )
+      });
       match result {
         Ok(value) => {
           unsafe {
