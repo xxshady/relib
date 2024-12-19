@@ -10,11 +10,11 @@ pub enum LoadError {
 
   #[error(
     "module is compiled with different rustc version:\n\
-    {0}\n\
+    {module}\n\
     expected:\n\
-    {1}"
+    {host}"
   )]
-  ModuleCompilationMismatch(String, String),
+  ModuleCompilationMismatch { module: String, host: String },
 }
 
 #[derive(Error, Debug)]

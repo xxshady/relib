@@ -58,18 +58,18 @@ pub fn load_module<E: ModuleExportsForHost>(
 
   let library = open_library(path)?;
 
-  let compiled_with = unsafe {
+  let module_comp_info = unsafe {
     let compiled_with: Symbol<*const Str> = library.get(b"__RELIB__CRATE_COMPILATION_INFO__\0")?;
     let compiled_with: &Str = &**compiled_with;
     compiled_with.to_string()
   };
 
-  let expected = relib_internal_crate_compilation_info::get!();
-  if compiled_with != expected {
-    return Err(LoadError::ModuleCompilationMismatch(
-      compiled_with,
-      expected.to_owned(),
-    ));
+  let host_comp_info = relib_internal_crate_compilation_info::get!();
+  if module_comp_info != host_comp_info {
+    return Err(LoadError::ModuleCompilationMismatch {
+      module: module_comp_info,
+      host: host_comp_info.to_owned(),
+    });
   }
 
   init_internal_imports(&library);
