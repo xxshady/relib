@@ -72,6 +72,8 @@ jobs:
           cargo check
           cd ../live_reload
           cargo check
+          cd ../export_main_macro
+          cargo check
 
       # reset two commits: by cargo-release and "relib files" one and after that merge them in new one
       - name: patch release commit

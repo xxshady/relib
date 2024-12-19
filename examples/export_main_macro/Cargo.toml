@@ -1,0 +1,7 @@
+[workspace]
+resolver = "2" # edition "2021" implies resolver "2"
+members = ["main_export", "module"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021" # or set a later one

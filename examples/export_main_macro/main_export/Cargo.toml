@@ -1,0 +1,12 @@
+[package]
+name = "main_export"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "1.0.37"
+relib_exportify = { version = "0.1.7", path = "../../../exportify" }
+syn = "2.0.90"
