@@ -15,7 +15,7 @@ How to run:<br>
 ## [Custom global allocator](./custom_global_alloc)
 
 How to run:<br>
-`cargo build -p custom_global_alloc --features custom_global_alloc`<br>
-`cargo run --bin basic_host <path>`
+`cargo build` (in examples/custom_global_alloc directory)<br>
+`cargo run --bin basic_host <path>` (in repo root)
 
-> replace `<path>` with `target/debug/libcustom_global_alloc.so` on linux and `target/debug/custom_global_alloc.dll` on windows
+> replace `<path>` with `examples/custom_global_alloc/target/debug/libcustom_global_alloc.so` on linux and `examples/custom_global_alloc/target/debug/custom_global_alloc.dll` on windows

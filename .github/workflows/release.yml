@@ -68,6 +68,8 @@ jobs:
         run: |
           cd examples/abi_stable_usage
           cargo check
+          cd ../custom_global_alloc
+          cargo check
 
       # reset two commits: by cargo-release and "relib files" one and after that merge them in new one
       - name: patch release commit
