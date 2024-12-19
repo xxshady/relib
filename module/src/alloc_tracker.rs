@@ -64,7 +64,10 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for AllocTracker<A> {
     #[cfg(target_os = "windows")]
     {
       use crate::helpers::disable_allocator_for_thread_local_destructors;
-      if disable_allocator_for_thread_local_destructors() {
+
+      if !UNLOAD_DEALLOCATION.load(Ordering::SeqCst)
+        && disable_allocator_for_thread_local_destructors()
+      {
         return;
       }
     }

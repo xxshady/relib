@@ -24,7 +24,7 @@ pub fn is_it_host_owner_thread() -> bool {
 
 /// on windows thread-local destructors are called automatically in `library.close()`,
 /// but at that time it's already too late, because we deallocate everything before
-/// `library.close()` (in "exit" module export) so we need to turn allocator methods into no-ops
+/// `library.close()` (in "exit" module export) so we need to turn allocator dealloc method into no-op
 /// (unlike linux where we call thread-local destructors ourselves, see `thread_locals` module)
 #[cfg(target_os = "windows")]
 pub fn disable_allocator_for_thread_local_destructors() -> bool {
