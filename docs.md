@@ -104,7 +104,7 @@ To communicate between host and module `relib` provides convenient API for decla
 `cargo add --path ./shared --package host`<br>
 `cargo add --path ./shared --package module`
 
-- Add it as build-dependency as well (it's needed for incremental compilation)<br>
+- Add it as build-dependency as well (it's needed for bindings generation in `relib_interface` crate)<br>
 `cargo add --path ./shared --package host --build`<br>
 `cargo add --path ./shared --package module --build`
 
