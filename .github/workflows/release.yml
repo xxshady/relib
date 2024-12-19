@@ -40,7 +40,7 @@ jobs:
           chmod +x ./scripts/build_relib_crate.sh
           ./scripts/build_relib_crate.sh
           git add .
-          ! git commit -m "relib files"
+          git commit --allow-empty -m "relib files"
  
       - name: cargo login
         run: cargo login ${{ secrets.CRATES_IO_TOKEN }}
