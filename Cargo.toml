@@ -22,7 +22,7 @@ members = [
 version = "0.1.7"
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/xxshady/dylib-reload"
+repository = "https://github.com/xxshady/relib"
 readme = "README.md"
 rust-version = "1.83.0"
 
