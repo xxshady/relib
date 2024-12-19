@@ -305,13 +305,13 @@ unsafe {
 }
 ```
 
-**note:** keep mind that only Rust allocations are deallocated, so if you call some C library which has memory leak it won't be freed on module unload (you can use `valgrind` or `heaptrack` to debug such cases).
+**note:** keep in mind that only Rust allocations are deallocated, so if you call some C library which has memory leak it won't be freed on module unload (you can use `valgrind` or `heaptrack` to debug such cases).
 
 ### Background threads check
 
 Dynamic library cannot be unloaded safely if background threads spawned by it are still running at the time of unloading, so host checks them and returns [`ThreadsStillRunning`](https://docs.rs/relib_host/latest/relib_host/enum.UnloadError.html#variant.ThreadsStillRunning) error if so.
 
-**note:** module can register [`before_unload`](#before_unload) function join threads when host triggers module [`unload`](https://docs.rs/relib_host/latest/relib_host/struct.Module.html#method.unload)
+**note:** module can register [`before_unload`](#before_unload) function to join threads when host triggers module [`unload`](https://docs.rs/relib_host/latest/relib_host/struct.Module.html#method.unload)
 
 ### Thread-locals on Windows
 
@@ -336,7 +336,7 @@ DropWithAlloc.with(|_| {}); // initialize it
 
 ### Panic handling
 
-When any export (`main`, `before_unload` and `ModuleExportsImpl`) of module panics it will be handled and returned as `None` to host:
+When any export (`main`, `before_unload` and `ModuleExportsImpl`) of module panics it will return `None` to host and panic message will be printed by the module:
 
 ```rust
 let module = relib::load_module::<ModuleExports>("...")?;
