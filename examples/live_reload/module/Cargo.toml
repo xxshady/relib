@@ -1,0 +1,10 @@
+[package]
+name = "module"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+relib_module = { version = "0.1.0", path = "../../../module" }

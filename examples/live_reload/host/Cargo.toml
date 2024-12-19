@@ -1,0 +1,8 @@
+[package]
+name = "host"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+libloading = "0.8.6"
+relib_host = { version = "0.1.0", path = "../../../host" }

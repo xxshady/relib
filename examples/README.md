@@ -2,15 +2,17 @@
 
 ## [Basic template](https://github.com/xxshady/relib-template)
 
-How to run:<br>
-`cargo build --workspace`<br>
-`cargo run`
+Use `cargo run` to compile host and module and run host binary.
+
+## [Live reload](./live_reload)
+
+Automatically reload module on code changes.
+
+Use `cargo run` in live_reload directory and then change something in live_reload/module/src.
 
 ## [Usage with `abi_stable` crate](./abi_stable_usage)
 
-How to run:<br>
-`cargo build --workspace`<br>
-`cargo run`
+Use `cargo run` to compile host and module and run host binary.
 
 ## [Custom global allocator](./custom_global_alloc)
 

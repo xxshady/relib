@@ -70,6 +70,8 @@ jobs:
           cargo check
           cd ../custom_global_alloc
           cargo check
+          cd ../live_reload
+          cargo check
 
       # reset two commits: by cargo-release and "relib files" one and after that merge them in new one
       - name: patch release commit
