@@ -12,22 +12,22 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-relib_module = { version = "0.1.7", path = "../../module" }
+relib_module = { version = "0.1.8", path = "../../module" }
 
 [dependencies.testing_shared]
-version = "=0.1.7"
+version = "=0.1.8"
 path = "../shared"
 
 [dependencies.relib_interface]
-version = "0.1.7"
+version = "0.1.8"
 path = "../../interface"
 features = ["include"]
 
 [build-dependencies.relib_interface]
-version = "0.1.7"
+version = "0.1.8"
 path = "../../interface"
 features = ["build"]
 
 [build-dependencies.testing_shared]
-version = "=0.1.7"
+version = "=0.1.8"
 path = "../shared"
