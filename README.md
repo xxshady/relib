@@ -6,7 +6,7 @@
 
 ## Platforms supported
 
-currently Linux has the best support, Windows is supported partially, macOS is not supported (not tested), see [support matrix](https://docs.rs/relib/latest/relib/docs/index.html#feature-support-matrix).
+Currently Linux has the best support, Windows is supported partially, macOS is not supported (not tested), see [support matrix](https://docs.rs/relib/latest/relib/docs/index.html#feature-support-matrix).
 
 ## Overview
 

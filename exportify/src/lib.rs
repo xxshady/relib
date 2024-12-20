@@ -7,6 +7,7 @@ use relib_internal_shared::{fn_inputs_without_types, output_to_return_type};
 /// Takes function code and transforms it into exported `extern "C"` function with panic handling.
 /// See `relib_export` for proc-macro.
 ///
+/// # Example
 /// ```
 /// // input:
 /// fn foo() -> i32 {
