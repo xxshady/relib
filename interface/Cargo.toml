@@ -22,6 +22,9 @@ include = []
 internal = []
 public = []
 
+[package.metadata.docs.rs]
+rustdoc-args = ["--generate-link-to-definition"]
+
 [dependencies]
 
 [dependencies.relib_internal_shared]

@@ -15,6 +15,10 @@ global_alloc_tracker = []
 [lints.clippy]
 unwrap_used = "forbid"
 
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--generate-link-to-definition"]
+
 [dependencies]
 backtrace = "0.3.74"
 thread-id.workspace = true
