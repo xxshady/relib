@@ -1,6 +1,4 @@
 fn main() {
-  // replace "?" with your file name, for example if you named module crate as "module"
-  // on linux the path will be "target/debug/libmodule.so", on windows it will be "target/debug/module.dll"
   let path_to_dylib = std::env::args().nth(1).unwrap();
 
   // `()` means empty imports and exports, here module doesn't import or export anything
