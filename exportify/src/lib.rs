@@ -15,7 +15,7 @@ use relib_internal_shared::{fn_inputs_without_types, output_to_return_type};
 ///
 /// // output:
 /// #[unsafe(export_name = "...")]
-/// fn foo(
+/// extern "C" fn foo(
 ///   ____return_value____: *mut std::mem::MaybeUninit<i32>,
 /// ) -> bool {
 ///   fn ____wrapper____() -> i32 {
