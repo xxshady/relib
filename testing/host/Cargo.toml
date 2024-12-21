@@ -8,10 +8,16 @@ readme.workspace = true
 rust-version.workspace = true
 publish = false
 
+[features]
+unloading = ["relib_host/unloading"]
+
 [dependencies]
-relib_host = { version = "0.1.8", path = "../../host" }
 libloading.workspace = true
 memory-stats = "1.2.0"
+
+[dependencies.relib_host]
+version = "0.1.8"
+path = "../../host"
 
 [dependencies.testing_shared]
 version = "=0.1.8"

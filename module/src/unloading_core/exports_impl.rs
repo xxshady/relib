@@ -1,7 +1,7 @@
 use std::sync::atomic::Ordering;
 
 use relib_internal_shared::{exports::___Internal___Exports___ as Exports, ModuleId};
-use crate::{
+use super::{
   alloc_tracker, gen_exports::ModuleExportsImpl, panic_hook, ALLOCATOR_LOCK, HOST_OWNER_THREAD,
   MODULE_ID,
 };
@@ -36,7 +36,7 @@ impl Exports for ModuleExportsImpl {
   fn run_thread_local_dtors() {
     #[cfg(target_os = "linux")]
     {
-      use crate::thread_locals;
+      use super::thread_locals;
       unsafe {
         thread_locals::dtors::run();
       }
@@ -46,11 +46,11 @@ impl Exports for ModuleExportsImpl {
   fn spawned_threads_count() -> u64 {
     #[cfg(target_os = "linux")]
     {
-      crate::thread_spawn_hook::spawned_threads_count()
+      super::thread_spawn_hook::spawned_threads_count()
     }
     #[cfg(target_os = "windows")]
     {
-      Default::default()
+      super::helpers::unrecoverable("spawned_threads_count called on windows")
     }
   }
 }

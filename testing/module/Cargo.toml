@@ -11,8 +11,14 @@ publish = false
 [lib]
 crate-type = ["cdylib"]
 
+[features]
+unloading = ["relib_module/unloading"]
+
 [dependencies]
-relib_module = { version = "0.1.8", path = "../../module" }
+
+[dependencies.relib_module]
+version = "0.1.8"
+path = "../../module"
 
 [dependencies.testing_shared]
 version = "=0.1.8"

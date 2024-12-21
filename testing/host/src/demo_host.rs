@@ -15,11 +15,19 @@ use testing_shared::imports::Imports;
 
 impl Imports for ModuleImportsImpl {
   fn b() -> i32 {
-    i32::MIN
+    panic!()
   }
 }
 
 pub fn main() {
+  #[cfg(feature = "unloading")]
+  test_unloading();
+  #[cfg(not(feature = "unloading"))]
+  let _ = load::<()>();
+}
+
+#[cfg(feature = "unloading")]
+fn test_unloading() {
   for _ in 1..=12 {
     load::<()>().unload().unwrap();
   }
@@ -31,6 +39,7 @@ pub fn main() {
   module_load_loop();
 }
 
+#[cfg(feature = "unloading")]
 fn module_load_loop() {
   fn print_memory_use() {
     let stats = memory_stats::memory_stats().unwrap();
@@ -128,12 +137,14 @@ fn load<T: ModuleExportsForHost>() -> Module<T> {
     format!("target/{directory}/test_module.dll")
   };
 
-  let module = relib_host::load_module::<T>(path, init_imports).unwrap();
+  let module = relib_host::load_module::<T>(path, init_imports).unwrap_or_else(|e| {
+    panic!("{e:#}");
+  });
 
   // dbg!();
   unsafe {
-    let returned: Option<i32> = module.call_main().map(|v| *v);
-    dbg!(returned);
+    module.call_main::<()>().unwrap();
+    // dbg!(returned);
   }
   // dbg!();
 

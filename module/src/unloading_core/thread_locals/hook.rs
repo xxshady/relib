@@ -1,7 +1,6 @@
 use std::{ffi::c_void, mem::transmute};
 
-use crate::helpers::is_it_host_owner_thread;
-use super::dtors;
+use super::{dtors, super::helpers::is_it_host_owner_thread};
 
 // This function is called when some thread-local registers destructor callback (here it's `dtor`)
 #[unsafe(no_mangle)]

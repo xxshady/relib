@@ -7,22 +7,6 @@ use std::{
 use relib_internal_shared::ModuleId;
 use libloading::{Library, Symbol};
 
-pub fn unrecoverable(message: &str) -> ! {
-  let message = format!("something unrecoverable happened: {message}");
-  unrecoverable_impl(&message);
-}
-
-pub fn unrecoverable_with_prefix(message: &str, prefix: &str) -> ! {
-  let message = format!("[{prefix}] something unrecoverable happened: {message}");
-  unrecoverable_impl(&message);
-}
-
-fn unrecoverable_impl(message: &str) -> ! {
-  eprintln!("{message}");
-  eprintln!("aborting");
-  std::process::abort();
-}
-
 pub fn cstr_bytes(str: &str) -> Vec<u8> {
   [str.as_bytes(), &[0]].concat()
 }
@@ -30,8 +14,8 @@ pub fn cstr_bytes(str: &str) -> Vec<u8> {
 pub fn next_module_id() -> ModuleId {
   // module ids start from 1
   static ID_COUNTER: AtomicU64 = AtomicU64::new(1);
-
   let id = ID_COUNTER.fetch_add(1, Ordering::SeqCst);
+
   assert_ne!(id, 0, "this must never happen (integer overflow)");
   id
 }

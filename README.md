@@ -12,7 +12,7 @@ Currently Linux has the best support, Windows is supported partially, macOS is n
 
 `relib` tries to be a safe (as much as possible) runtime of native, almost normal Rust programs. Programs that can be safely unloaded (without memory leaks and crashes) without closing the whole OS process.
 
-Since it's not possible to make this completely safe: memory leaks, UB can still happen (for example, due to some unsafe call to C library), you should only use unloading for development (see [live reload](https://github.com/xxshady/relib/tree/main/examples/README.md#live-reload) example). `relib` also provides [imports/exports](https://docs.rs/relib/latest/relib/docs/index.html#communication-between-host-and-module) mechanism which can also be used in production.
+Since it's not possible to make this completely safe: memory leaks, UB can still happen (for example, due to some unsafe call to C library), you should only use unloading for development (see [live reload](https://github.com/xxshady/relib/tree/main/examples/README.md#live-reload) example). `relib` can also be used without unloading, see ["Usage without unloading"](https://docs.rs/relib/latest/relib/docs/index.html#usage-without-unloading).
 
 See [feature support matrix](https://docs.rs/relib/latest/relib/docs/index.html#feature-support-matrix) for what `relib` offers to improve unloading of dynamic libraries in Rust. And for what not, check out [limitations](#limitations).
 

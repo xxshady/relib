@@ -14,11 +14,16 @@ impl Imports for ModuleImportsImpl {
 }
 
 fn main() {
-  // replace "?" with your file name, for example if you named module crate as "module"
-  // on linux the path will be "target/debug/libmodule.so", on windows it will be "target/debug/module.dll"
-  let path_to_dylib = "target/debug/?";
+  let path_to_dylib = if cfg!(target_os = "linux") {
+    "target/debug/libmodule.so"
+  } else {
+    "target/debug/module.dll"
+  };
 
-  let module = relib_host::load_module::<ModuleExports>(path_to_dylib, init_imports).unwrap();
+  let module = relib_host::load_module::<ModuleExports>(path_to_dylib, init_imports)
+    .unwrap_or_else(|e| {
+      panic!("module loading failed: {e:#}");
+    });
 
   unsafe { module.call_main::<()>() }.unwrap();
 
@@ -26,7 +31,13 @@ fn main() {
   let string = bar_value.clone();
   dbg!(string);
 
-  module.unload().unwrap_or_else(|e| {
-    panic!("module unloading failed: {e:#}");
-  });
+  // module.unload() is provided when unloading feature of relib_host crate is enabled
+  #[cfg(feature = "unloading")]
+  {
+    println!("unloading feature is enabled, calling module unload");
+
+    module.unload().unwrap_or_else(|e| {
+      panic!("module unloading failed: {e:#}");
+    });
+  }
 }

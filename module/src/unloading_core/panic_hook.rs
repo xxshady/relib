@@ -1,6 +1,6 @@
 use std::panic::set_hook;
 
-use crate::gen_imports;
+use super::gen_imports;
 
 pub fn init() {
   // TODO: make it more similar to default panic hook (for example, output thread name)

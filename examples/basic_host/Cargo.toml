@@ -8,5 +8,9 @@ readme.workspace = true
 rust-version.workspace = true
 publish = false
 
-[dependencies]
-relib_host = { version = "0.1.8", path = "../../host" }
+[features]
+unloading = ["relib_host/unloading"]
+
+[dependencies.relib_host]
+version = "0.1.8"
+path = "../../host"

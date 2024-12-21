@@ -164,22 +164,40 @@ fn generate_imports(
       })
       .collect();
 
-    let return_type = output_to_return_type!(output);
-
-    let call = quote! {
+    let function_call = quote! {
       unsafe {
         #mangled_name( #inputs_without_types )
       }
     };
-    let call_return = match return_type.to_string().as_str() {
-      "!" | "()" => call,
-      _ => {
-        // TODO: non-dev mode
-        quote! {
-          let return_value = #call;
-          #internals_crate::__internal::drop_immediately_and_clone(return_value)
+
+    #[cfg(feature = "unloading")]
+    let function_call = {
+      let return_type = output_to_return_type!(output);
+
+      match return_type.to_string().as_str() {
+        "!" | "()" => function_call,
+        _ => {
+          quote! {
+            let return_value = #function_call;
+
+            #[expect(unused_doc_comments)]
+            /// if you have "not found" compilation error it means that "unloading" feature is *enabled* in relib_interface crate
+            /// but *disabled* in relib_module
+            /// help: enable "unloading" feature in relib_module dependency
+            ///       if you use custom global allocator enable "unloading_core" feature instead of "unloading"
+            #internals_crate::__internal::drop_immediately_and_clone(return_value)
+          }
         }
       }
+    };
+    #[cfg(not(feature = "unloading"))]
+    let function_call = quote! {
+      /// if you have "not found" compilation error it means that "unloading" feature is *disabled* in relib_interface crate
+      /// but *enabled* in relib_module
+      /// help: try to disable "unloading" feature in relib_module dependency
+      const _: () = #internals_crate::__internal::UNLOADING_DISABLED;
+
+      #function_call
     };
 
     imports.push(quote! {
@@ -193,7 +211,7 @@ fn generate_imports(
           unreachable!();
         }
 
-        #call_return
+        #function_call
       }
     });
   }

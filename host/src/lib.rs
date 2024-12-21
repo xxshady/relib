@@ -4,28 +4,27 @@ use libloading::Symbol;
 
 use relib_internal_shared::Str;
 
-relib_interface::include_exports!();
-relib_interface::include_imports!();
-use gen_exports::ModuleExports as InternalModuleExports;
-use gen_imports::init_imports as init_internal_imports;
-
 mod errors;
-pub use errors::{LoadError, UnloadError};
+pub use errors::LoadError;
+
+#[cfg(feature = "unloading")]
+mod unloading;
+
 mod module;
 pub use module::Module;
-mod module_allocs;
 mod helpers;
 use helpers::{next_module_id, open_library};
-mod imports_impl;
 mod leak_library;
 pub mod exports_types;
 pub use exports_types::{ModuleExportsForHost, InitImports, ModuleValue};
 
 /// # Example
 /// ```
-/// // replace "?" with your file name, for example if you named module crate as "module"
-/// // on linux the path will be "target/debug/libmodule.so", on windows it will be "target/debug/module.dll"
-/// let path_to_dylib = "target/debug/?";
+/// let path_to_dylib = if cfg!(target_os = "linux") {
+///   "target/debug/libmodule.so"
+/// } else {
+///   "target/debug/module.dll"
+/// };
 ///
 /// // `()` means empty imports and exports, module doesn't import or export anything
 /// let module = relib_host::load_module::<()>(path_to_dylib, ()).unwrap();
@@ -72,16 +71,19 @@ pub fn load_module<E: ModuleExportsForHost>(
     });
   }
 
-  init_internal_imports(&library);
-
   let module_id = next_module_id();
 
-  module_allocs::add_module(module_id);
+  #[cfg(feature = "unloading")]
+  let internal_exports = {
+    unloading::init_internal_imports(&library);
+    unloading::module_allocs::add_module(module_id);
 
-  let internal_exports = InternalModuleExports::new(&library);
-  unsafe {
-    internal_exports.init(thread_id::get(), module_id);
-  }
+    let internal_exports = unloading::InternalModuleExports::new(&library);
+    unsafe {
+      internal_exports.init(thread_id::get(), module_id);
+    }
+    internal_exports
+  };
 
   let pub_exports = E::new(&library);
   init_imports.init(&library);
@@ -89,16 +91,18 @@ pub fn load_module<E: ModuleExportsForHost>(
   let module = Module::new(
     module_id,
     library,
-    internal_exports,
     pub_exports,
-    path.to_owned(),
+    #[cfg(feature = "unloading")]
+    (internal_exports, path.to_owned()),
   );
   Ok(module)
 }
 
 // TODO: fix it
-#[cfg(target_os = "windows")]
+#[cfg(all(target_os = "windows", feature = "unloading"))]
 #[expect(clippy::missing_safety_doc)]
-pub unsafe fn __suppress_unused_warning_for_linux_only_exports(exports: InternalModuleExports) {
+pub unsafe fn __suppress_unused_warning_for_linux_only_exports(
+  exports: unloading::InternalModuleExports,
+) {
   exports.spawned_threads_count();
 }

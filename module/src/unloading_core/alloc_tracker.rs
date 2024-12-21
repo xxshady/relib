@@ -9,7 +9,7 @@ use std::{
 
 use relib_internal_shared::{Allocation, AllocatorOp, AllocatorPtr, StableLayout};
 
-use crate::{
+use super::{
   gen_imports,
   helpers::{assert_allocator_is_still_accessible, unrecoverable},
   MODULE_ID,
@@ -32,7 +32,7 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for AllocTracker<A> {
   unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
     #[cfg(target_os = "windows")]
     {
-      use crate::helpers::disable_allocator_for_thread_local_destructors;
+      use super::helpers::disable_allocator_for_thread_local_destructors;
       if disable_allocator_for_thread_local_destructors() {
         unrecoverable(
           "module cannot allocate after its memory has been freed\n\
@@ -63,7 +63,7 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for AllocTracker<A> {
   unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
     #[cfg(target_os = "windows")]
     {
-      use crate::helpers::disable_allocator_for_thread_local_destructors;
+      use super::helpers::disable_allocator_for_thread_local_destructors;
 
       if !UNLOAD_DEALLOCATION.load(Ordering::SeqCst)
         && disable_allocator_for_thread_local_destructors()
@@ -143,6 +143,8 @@ fn save_dealloc_in_cache(ptr: *mut u8, layout: StableLayout) {
 
 pub unsafe fn init() {
   ALLOC_INIT.swap(true, Ordering::SeqCst);
+
+  // !!! keep in mind that at least one of these allocations is needed for AllocTracker check in host !!!
 
   let mut cache = lock_allocs_cache();
   cache.reserve(CACHE_SIZE);
