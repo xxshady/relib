@@ -100,6 +100,7 @@ fn generate_exports(
           /// panic!();
           /// ```
           #[doc = #SAFETY_DOC]
+          #[expect(clippy::needless_lifetimes)]
           pub unsafe fn #ident<'module>( &'module self, #inputs ) -> Option<ModuleValue<'module, #return_type>> {
             use std::mem::MaybeUninit;
 
@@ -128,7 +129,9 @@ fn generate_exports(
         },
         quote! {
           #[doc = #SAFETY_DOC]
+          #[expect(clippy::needless_lifetimes)]
           pub unsafe fn #ident<'module>( &'module self, #inputs ) -> ModuleValue<'module, #return_type> {
+            #[allow(clippy::let_unit_value)]
             let return_value = (self.#ident)( #inputs_without_types );
             ModuleValue::new(return_value)
           }
