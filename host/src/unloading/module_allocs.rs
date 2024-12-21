@@ -7,7 +7,8 @@ use relib_internal_shared::{
   Allocation, AllocatorOp, AllocatorPtr, ModuleId, SliceAllocatorOp, StableLayout,
 };
 
-use crate::{exports_types::ModuleExportsForHost, helpers::unrecoverable, Module};
+use crate::{exports_types::ModuleExportsForHost, Module};
+use super::helpers::unrecoverable;
 
 type Allocs = HashMap<ModuleId, HashMap<AllocatorPtr, Allocation>>;
 
@@ -35,6 +36,18 @@ pub fn remove_module<E: ModuleExportsForHost>(module: &Module<E>) {
   let Some(allocs) = allocs.remove(&module.id) else {
     panic!("Failed to take allocs of module with id: {}", module.id);
   };
+
+  // this check relies on two allocations in alloc tracker of the module,
+  // which needed to cache allocation ops
+  if allocs.is_empty() {
+    eprintln!(
+      "[relib] warning: seems like this module doesn't have a registered global alloc tracker\n\
+      module path: {}\n\
+      note: if \"global_alloc_tracker\" feature is disabled, \
+      make sure that you registered relib_module::AllocTracker<A> using #[global_allocator]",
+      module.library_path.display()
+    );
+  }
 
   let allocs: Box<[Allocation]> = allocs.into_values().collect();
   let allocs: &[Allocation] = &allocs;

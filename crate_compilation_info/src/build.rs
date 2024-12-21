@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::{env, process::Command};
 
 pub fn provide() {
   let rust_versions = get_rust_versions();
@@ -14,8 +14,17 @@ pub fn provide() {
 
   let workspace_version = env!("CARGO_PKG_VERSION");
 
+  // relib_host has only "unloading" feature
+  let unloading_feature = env::var("CARGO_FEATURE_UNLOADING");
+  // relib_module has "unloading" and "unloading_core"
+  let unloading_core_feature = env::var("CARGO_FEATURE_UNLOADING_CORE");
+  let unloading_enabled = match (unloading_feature, unloading_core_feature) {
+    (Ok(_), _) | (_, Ok(_)) => "1",
+    (Err(_), Err(_)) => "0",
+  };
+
   const ENV_KEY: &str = "__RELIB__CRATE_COMPILATION_INFO__";
-  println!("cargo:rustc-env={ENV_KEY}={rustc_version}|{host}|{llvm_version}|{workspace_version}");
+  println!("cargo:rustc-env={ENV_KEY}={rustc_version}|{host}|{llvm_version}|{workspace_version}|{unloading_enabled}");
 }
 
 fn get_rust_versions() -> String {

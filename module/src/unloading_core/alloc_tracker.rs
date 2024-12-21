@@ -9,7 +9,7 @@ use std::{
 
 use relib_internal_shared::{Allocation, AllocatorOp, AllocatorPtr, StableLayout};
 
-use crate::{
+use super::{
   gen_imports,
   helpers::{assert_allocator_is_still_accessible, unrecoverable},
   MODULE_ID,
@@ -143,6 +143,8 @@ fn save_dealloc_in_cache(ptr: *mut u8, layout: StableLayout) {
 
 pub unsafe fn init() {
   ALLOC_INIT.swap(true, Ordering::SeqCst);
+
+  // !!! keep in mind that at least one of these allocations is needed for AllocTracker check in host !!!
 
   let mut cache = lock_allocs_cache();
   cache.reserve(CACHE_SIZE);

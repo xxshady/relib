@@ -6,6 +6,9 @@ edition.workspace = true
 [lib]
 crate-type = ["cdylib"]
 
+[features]
+unloading = ["relib_module/unloading"]
+
 [dependencies]
 relib_interface = { version = "0.1.0", path = "../../../interface", features = ["include"] }
 relib_module = { version = "0.1.0", path = "../../../module" }

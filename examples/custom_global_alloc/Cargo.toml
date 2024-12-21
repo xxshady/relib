@@ -8,7 +8,9 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib"]
 
+[features]
+unloading = ["relib_module/unloading_core"]
+
 [dependencies.relib_module]
 version = "0"
 path = "../../module"
-default-features = false

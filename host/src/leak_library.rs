@@ -12,6 +12,7 @@ impl LeakLibrary {
     self.0.as_ref().unwrap_or_else(|| unreachable!())
   }
 
+  #[cfg(feature = "unloading")]
   pub fn take(mut self) -> Library {
     self.0.take().unwrap_or_else(|| unreachable!())
   }

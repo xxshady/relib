@@ -8,6 +8,9 @@ readme.workspace = true
 rust-version.workspace = true
 description = "relib is a framework for reloadable dynamic libraries"
 
+[features]
+unloading = ["relib_interface/unloading", "dep:thread-id"]
+
 [lints.clippy]
 unwrap_used = "forbid"
 
@@ -18,7 +21,10 @@ rustdoc-args = ["--generate-link-to-definition"]
 [dependencies]
 libloading.workspace = true
 thiserror = "2.0.3"
-thread-id.workspace = true
+
+[dependencies.thread-id]
+optional = true
+workspace = true
 
 [target.'cfg(target_os = "linux")'.dependencies]
 libc.workspace = true
