@@ -32,7 +32,7 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for AllocTracker<A> {
   unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
     #[cfg(target_os = "windows")]
     {
-      use crate::helpers::disable_allocator_for_thread_local_destructors;
+      use super::helpers::disable_allocator_for_thread_local_destructors;
       if disable_allocator_for_thread_local_destructors() {
         unrecoverable(
           "module cannot allocate after its memory has been freed\n\
@@ -63,7 +63,7 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for AllocTracker<A> {
   unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
     #[cfg(target_os = "windows")]
     {
-      use crate::helpers::disable_allocator_for_thread_local_destructors;
+      use super::helpers::disable_allocator_for_thread_local_destructors;
 
       if !UNLOAD_DEALLOCATION.load(Ordering::SeqCst)
         && disable_allocator_for_thread_local_destructors()

@@ -39,6 +39,7 @@ fn test_unloading() {
   module_load_loop();
 }
 
+#[cfg(feature = "unloading")]
 fn module_load_loop() {
   fn print_memory_use() {
     let stats = memory_stats::memory_stats().unwrap();

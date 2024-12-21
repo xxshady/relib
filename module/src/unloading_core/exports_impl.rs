@@ -50,8 +50,7 @@ impl Exports for ModuleExportsImpl {
     }
     #[cfg(target_os = "windows")]
     {
-      // TODO: test this
-      unrecoverable()
+      super::helpers::unrecoverable("spawned_threads_count called on windows")
     }
   }
 }
