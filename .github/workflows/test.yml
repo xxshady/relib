@@ -49,23 +49,38 @@ jobs:
       - name: check examples
         run: |
           cd examples/template
+
+          cargo add relib_module --path ../../module --package module
+          cargo add relib_host --path ../../host --package host
+          cargo rm relib_interface --package host
+          cargo rm relib_interface --package host --build
+          cargo add relib_interface --path ../../interface --package host --features include
+          cargo add relib_interface --path ../../interface --package host --features build --build
+          cargo rm relib_interface --package module
+          cargo rm relib_interface --package module --build
+          cargo add relib_interface --path ../../interface --package module --features include
+          cargo add relib_interface --path ../../interface --package module --features build  --build
           cargo build --workspace
           cargo clippy --workspace
           cargo build --workspace --features unloading
           cargo clippy --workspace --features unloading
+
           cd ../abi_stable_usage
           cargo build --workspace
           cargo clippy --workspace
           cargo build --workspace --features unloading
           cargo clippy --workspace --features unloading
+
           cd ../custom_global_alloc
           cargo build --workspace
           cargo clippy --workspace
           cargo build --workspace --features unloading
           cargo clippy --workspace --features unloading
+
           cd ../live_reload
           cargo build --workspace
           cargo clippy --workspace
+
           cd ../export_main_macro
           cargo build --workspace
           cargo clippy --workspace
