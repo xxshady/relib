@@ -53,7 +53,7 @@ fn run_module() -> AnyErrorResult {
   // when unloading fails it is not safe to load it again
   module
     .unload()
-    .or_else(|e| Err(format!("module unloading failed: {e:#}")))?;
+    .map_err(|e| format!("module unloading failed: {e:#}"))?;
 
   Ok(())
 }
