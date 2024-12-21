@@ -1,3 +1,4 @@
 [submodule "examples/template"]
 	path = examples/template
 	url = https://github.com/xxshady/relib-template
+	branch = "temp"
