@@ -9,6 +9,6 @@ crate-type = ["cdylib"]
 [dependencies]
 
 [dependencies.relib_module]
-version = "0.1.0"
+version = "0"
 path = "../../../module"
 features = ["unloading"]

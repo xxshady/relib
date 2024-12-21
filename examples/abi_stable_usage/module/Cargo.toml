@@ -10,11 +10,11 @@ crate-type = ["cdylib"]
 unloading = ["relib_module/unloading"]
 
 [dependencies]
-relib_interface = { version = "0.1.0", path = "../../../interface", features = ["include"] }
-relib_module = { version = "0.1.0", path = "../../../module" }
+relib_interface = { version = "0", path = "../../../interface", features = ["include"] }
+relib_module = { version = "0", path = "../../../module" }
 shared = { version = "0.1.0", path = "../shared" }
 abi_stable.workspace = true
 
 [build-dependencies]
-relib_interface = { version = "0.1.0", path = "../../../interface", features = ["build"] }
+relib_interface = { version = "0", path = "../../../interface", features = ["build"] }
 shared = { version = "0.1.0", path = "../shared" }

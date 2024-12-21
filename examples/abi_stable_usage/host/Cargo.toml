@@ -8,11 +8,11 @@ unloading = ["relib_host/unloading"]
 
 [dependencies]
 libloading = "0.8.6"
-relib_host = { version = "0.1.0", path = "../../../host" }
-relib_interface = { version = "0.1.0", path = "../../../interface", features = ["include"] }
+relib_host = { version = "0", path = "../../../host" }
+relib_interface = { version = "0", path = "../../../interface", features = ["include"] }
 shared = { version = "0.1.0", path = "../shared" }
 abi_stable.workspace = true
 
 [build-dependencies]
-relib_interface = { version = "0.1.0", path = "../../../interface", features = ["build"] }
+relib_interface = { version = "0", path = "../../../interface", features = ["build"] }
 shared = { version = "0.1.0", path = "../shared" }

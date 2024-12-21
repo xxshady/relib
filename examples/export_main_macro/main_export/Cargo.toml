@@ -8,5 +8,5 @@ proc-macro = true
 
 [dependencies]
 quote = "1.0.37"
-relib_exportify = { version = "0.1.7", path = "../../../exportify" }
+relib_exportify = { version = "0", path = "../../../exportify" }
 syn = "2.0.90"

@@ -7,6 +7,6 @@ edition.workspace = true
 libloading = "0.8.6"
 
 [dependencies.relib_host]
-version = "0.1.0"
+version = "0"
 path = "../../../host"
 features = ["unloading"]

@@ -12,5 +12,5 @@ publish = false
 unloading = ["relib_host/unloading"]
 
 [dependencies.relib_host]
-version = "0.1.8"
+version = "0"
 path = "../../host"
