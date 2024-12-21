@@ -34,15 +34,25 @@ crate-type = ["cdylib"]
 - Add relib_host dependency to host crate:<br>
 `cargo add relib_host --package host`
 
+- Configure "unloading" feature in `host/Cargo.toml` (see also ["Usage without unloading"](#usage-without-unloading))
+```toml
+[features]
+unloading = ["relib_host/unloading"]
+```
+
 - Add the following to `main.rs` of host:
 ```rust
 fn main() {
-  // replace "?" with your file name, for example if you named module crate as "module"
-  // on linux the path will be "target/debug/libmodule.so", on windows it will be "target/debug/module.dll"
-  let path_to_dylib = "target/debug/?";
+  let path_to_dylib = if cfg!(target_os = "linux") {
+    "target/debug/libmodule.so"
+  } else {
+    "target/debug/module.dll"
+  };
 
   // `()` means empty imports and exports, here module doesn't import or export anything
-  let module = relib_host::load_module::<()>(path_to_dylib, ()).unwrap();
+  let module = relib_host::load_module::<()>(path_to_dylib, ()).unwrap_or_else(|e| {
+    panic!("module loading failed: {e:#}");
+  });
 
   // main function is unsafe to call (as well as any other module export) because these preconditions are not checked by relib:
   // 1. returned value must be actually `R` at runtime, for example you called this function with type bool but module returns i32.
@@ -58,14 +68,26 @@ fn main() {
     println!("module panicked");
   }
 
-  module.unload().unwrap_or_else(|e| {
-    panic!("module unloading failed: {e:#}");
-  });
+  // module.unload() is provided when unloading feature of relib_host crate is enabled
+  #[cfg(feature = "unloading")]
+  {
+    println!("unloading feature is enabled, calling module unload");
+
+    module.unload().unwrap_or_else(|e| {
+      panic!("module unloading failed: {e:#}");
+    });
+  }
 }
 ```
 
 - Add relib_module dependency to module crate:<br>
 `cargo add relib_module --package module`
+
+- Configure "unloading" feature in `module/Cargo.toml`
+```toml
+[features]
+unloading = ["relib_module/unloading"]
+```
 
 - Add the following to `lib.rs` of module:
 ```rust
@@ -75,9 +97,7 @@ fn main() {
 }
 ```
 
-- Now you can build host and module: `cargo build --workspace`
-
-- And run host `cargo run`, which will load and execute module
+- And run host `cargo run --features unloading` (it should also build module crate automatically), which will load and execute module
 
 ## Communication between host and module
 
@@ -169,7 +189,7 @@ relib_interface::include_imports!();
 // }
 ```
 
-- Now try to build everything: `cargo build --workspace`, it should give you a few warnings
+- Now try to build everything: `cargo build --workspace --features unloading`, it should give you a few warnings
 
 ### Module imports
 
@@ -263,19 +283,35 @@ dbg!(slice);
 
 ## `before_unload` 
 
-Module can define callback which will be called when it's is unloaded by host (something similar to Rust `Drop`).
+Module can define callback which will be called when it's is unloaded by host (similar to Rust `Drop`).
+
+**note:** it's only needed when unloading is enabled (see also ["Usage without unloading"](#usage-without-unloading)).
 
 ```rust
+#[cfg(feature = "unloading")]
 #[relib_module::export]
 fn before_unload() {
-  // ...
+  println!("seems like host called module.unload()!");
 }
 ```
 
+## Usage without unloading
+
+When you need to unload modules `relib` provides memory deallocation, background threads check, etc.
+
+But `relib` can also be used without these features. For example, you probably don't want to reload modules in production since it can be dangerous.
+
+Even without unloading `relib` provides some useful features: imports/exports, panic handling in exports, and some checks in module loading (see [`LoadError`](https://docs.rs/relib_host/latest/relib_host/enum.LoadError.html)).
+
+### How to turn off module unloading
+
+Disable "unloading" feature in relib_host, relib_module and relib_interface crates (no features are enabled by default). If you followed "Getting started" guide or if you use ready-made [template](https://github.com/xxshady/relib-template) you can simply run
+`cargo build --workspace` (without  `--features unloading`) to build host and module without unloading feature.
+
 ## Module alloc tracker
 
-All heap allocations made in the module are tracked and leaked ones are deallocated on module unload by default.
-It's done using `#[global_allocator]` so if you want to set your own global allocator you need to disable "global_alloc_tracker" feature of relib_module crate and define yours using `relib_module::AllocTracker`, see "Custom global allocator" [example](https://github.com/xxshady/relib/tree/main/examples/README.md#custom-global-allocator).
+All heap allocations made in the module are tracked and leaked ones are deallocated on module unload (if unloading feature is enabled).
+It's done using `#[global_allocator]` so if you want to set your own global allocator you need to disable all features of relib_module crate, enable "unloading_core" and define your allocator using `relib_module::AllocTracker`. See "Custom global allocator" [example](https://github.com/xxshady/relib/tree/main/examples/README.md#custom-global-allocator).
 
 ## Feature support matrix
 
