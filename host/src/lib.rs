@@ -9,6 +9,8 @@ pub use errors::LoadError;
 
 #[cfg(feature = "unloading")]
 mod unloading;
+#[cfg(feature = "unloading")]
+pub use unloading::*;
 
 mod module;
 pub use module::Module;

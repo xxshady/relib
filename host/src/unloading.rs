@@ -1,5 +1,6 @@
 mod module;
 mod errors;
+pub use errors::UnloadError;
 pub(crate) mod module_allocs;
 mod helpers;
 mod imports_impl;
