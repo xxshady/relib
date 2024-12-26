@@ -14,7 +14,6 @@ members = [
   "relib",
   "examples/basic_host",
 
-  # TODO: enable it back?
   # excluded from workspace because it doesn't need default-features of relib_module crate
   # "examples/custom_global_alloc",
 ]

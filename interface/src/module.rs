@@ -92,7 +92,8 @@ fn generate_exports(
               (*____return_value____).write(value);
               true
             }
-            // ignoring content since it's handled in our panic hook
+            // ignoring content since it's handled in our panic hook or
+            // in default panic hook of std when unloading is disabled
             Err(_) => { false }
           }
         }
@@ -133,6 +134,7 @@ fn generate_imports(
   let (imports_trait, module_use_items) =
     parse_trait_file(trait_name, imports_file_content, imports_trait_path);
 
+  #[cfg(feature = "unloading")]
   let internals_crate = if pub_imports {
     quote! { relib_module }
   } else {
@@ -164,56 +166,90 @@ fn generate_imports(
       })
       .collect();
 
-    let function_call = quote! {
-      unsafe {
-        #mangled_name( #inputs_without_types )
-      }
+    let return_type = output_to_return_type!(output);
+
+    let function_sig = quote! {
+      #[doc = #SAFETY_DOC]
+      pub unsafe fn #ident( #inputs ) #output
+    };
+
+    let function_static_decl = quote! {
+      #[allow(non_upper_case_globals)]
+      #[unsafe(no_mangle)]
+      static mut #mangled_name
+    };
+
+    let suppress_lints_for_return_value = quote! {
+      #[allow(unused_variables, clippy::let_unit_value, clippy::diverging_sub_expression)]
     };
 
     #[cfg(feature = "unloading")]
-    let function_call = {
-      let return_type = output_to_return_type!(output);
-
-      match return_type.to_string().as_str() {
-        "!" | "()" => function_call,
-        _ => {
-          quote! {
-            let return_value = #function_call;
-
-            #[expect(unused_doc_comments)]
-            /// if you have "not found" compilation error it means that "unloading" feature is *enabled* in relib_interface crate
-            /// but *disabled* in relib_module
-            /// help: enable "unloading" feature in relib_module dependency
-            ///       if you use custom global allocator enable "unloading_core" feature instead of "unloading"
-            #internals_crate::__internal::drop_immediately_and_clone(return_value)
-          }
-        }
-      }
+    let return_handling = quote! {
+      #[allow(unreachable_code)]
+      #internals_crate::__internal::drop_immediately_and_clone(return_value)
     };
     #[cfg(not(feature = "unloading"))]
-    let function_call = quote! {
-      /// if you have "not found" compilation error it means that "unloading" feature is *disabled* in relib_interface crate
-      /// but *enabled* in relib_module
-      /// help: try to disable "unloading" feature in relib_module dependency
-      const _: () = #internals_crate::__internal::UNLOADING_DISABLED;
-
-      #function_call
+    let return_handling = quote! {
+      return_value
     };
 
-    imports.push(quote! {
-      #[doc = #SAFETY_DOC]
-      pub unsafe fn #ident( #inputs ) #output {
-        #[allow(non_upper_case_globals)]
-        #[unsafe(no_mangle)]
-        static mut #mangled_name: unsafe extern "C" fn( #inputs ) #output = placeholder;
+    let function_body = if pub_imports {
+      quote! {
+        #function_static_decl: unsafe extern "C" fn(
+          ____return_value____: *mut std::mem::MaybeUninit<#return_type>, // will be initialized if function won't panic
+          #inputs
+        ) -> bool = placeholder;
+
+        unsafe extern "C" fn placeholder(
+          _: *mut std::mem::MaybeUninit<#return_type>,
+          #inputs
+        ) -> bool {
+          unreachable!();
+        }
+
+        let mut ____return_value____ = std::mem::MaybeUninit::<#return_type>::uninit();
+
+        #suppress_lints_for_return_value
+        let success = unsafe {
+          #mangled_name( &mut ____return_value____, #inputs_without_types )
+        };
+
+        if !success {
+          // TODO: expose unrecoverable helper in relib_module::__internal and use it here?
+          eprintln!("[relib] host panicked while executing an import of module, aborting");
+          std::process::abort();
+        }
+
+        // SAFETY: function returned true so we are allowed to read the pointer
+        #suppress_lints_for_return_value
+        let return_value = unsafe {
+          ____return_value____.assume_init_read()
+        };
+        #return_handling
+      }
+    } else {
+      quote! {
+        #function_static_decl: unsafe extern "C" fn( #inputs ) #output = placeholder;
 
         unsafe extern "C" fn placeholder( #placeholder_inputs ) #output {
           unreachable!();
         }
 
-        #function_call
+        #suppress_lints_for_return_value
+        let return_value = unsafe {
+          #mangled_name( #inputs_without_types )
+        };
+        #return_handling
       }
-    });
+    };
+
+    let full_function = quote! {
+      #function_sig {
+        #function_body
+      }
+    };
+
+    imports.push(full_function);
   }
 
   write_code_to_file(

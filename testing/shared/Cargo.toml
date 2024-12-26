@@ -1,5 +1,5 @@
 [package]
-name = "testing_shared"
+name = "test_shared"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

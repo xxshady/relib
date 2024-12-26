@@ -1,10 +1,8 @@
-#![allow(dead_code)]
-
 relib_interface::include_imports!();
 relib_interface::include_exports!();
 use gen_exports::ModuleExportsImpl;
 
-use testing_shared::exports::Exports;
+use test_shared::unloading::exports::Exports;
 
 impl Exports for ModuleExportsImpl {
   fn a() -> i32 {
@@ -16,8 +14,7 @@ impl Exports for ModuleExportsImpl {
   }
 }
 
-#[relib_module::export]
-fn main() {
+pub fn main() {
   println!("[module] hello world");
 
   // struct TlsWithDrop(Vec<u8>);
@@ -60,9 +57,16 @@ fn main() {
   // std::env::set_var("RUST_BACKTRACE", "1");
   // panic!();
 
-  unsafe {
-    gen_imports::b();
-  }
+  // let res = std::thread::spawn(|| unsafe {
+  //   gen_imports::b();
+  //   // panic!();
+  // })
+  // .join();
+  // let _ = dbg!(res);
+
+  let return_value = unsafe { gen_imports::with_return_value() };
+  dbg!(return_value.len());
+  std::mem::forget(return_value);
 }
 
 #[relib_module::export]

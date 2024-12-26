@@ -19,7 +19,7 @@ memory-stats = "1.2.0"
 version = "0.2.2"
 path = "../../host"
 
-[dependencies.testing_shared]
+[dependencies.test_shared]
 version = "=0.2.2"
 path = "../shared"
 
@@ -33,6 +33,6 @@ version = "0.2.2"
 path = "../../interface"
 features = ["build"]
 
-[build-dependencies.testing_shared]
+[build-dependencies.test_shared]
 version = "=0.2.2"
 path = "../shared"

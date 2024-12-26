@@ -372,9 +372,13 @@ DropWithAlloc.with(|_| {}); // initialize it
 
 ### Panic handling
 
-When any export (`main`, `before_unload` and `ModuleExportsImpl`) of module panics it will return `None` to host and panic message will be printed by the module:
+#### Exports
+
+When any export (`main`, `before_unload` and implemented on `gen_exports::ModuleExportsImpl`) of module panics it will return `None` to host and panic message will be printed by the module:
 
 ```rust
+// host:
+
 let module = relib::load_module::<ModuleExports>("...")?;
 
 let value = module.call_main::<()>();
@@ -389,6 +393,26 @@ if value.is_none() {
 ```
 
 **note:** not all panics are handled, see a ["double panic"](https://doc.rust-lang.org/std/ops/trait.Drop.html#panics)
+
+#### Imports
+
+When any import panics (implemented on `gen_exports::ModuleImportsImpl`) it will abort the whole process
+
+```rust
+// host:
+// gen_imports module is defined by relib_interface::include_imports!()
+impl shared::imports::Imports for gen_imports::ModuleImportsImpl {
+  fn panics() {
+    panic!()
+  }
+}
+
+// module:
+unsafe {
+  // will output panic and abort entire process (host) with error
+  gen_imports::panics();
+}
+```
 
 ### Final unload check
 

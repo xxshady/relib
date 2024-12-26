@@ -20,7 +20,7 @@ unloading = ["relib_module/unloading"]
 version = "0.2.2"
 path = "../../module"
 
-[dependencies.testing_shared]
+[dependencies.test_shared]
 version = "=0.2.2"
 path = "../shared"
 
@@ -34,6 +34,6 @@ version = "0.2.2"
 path = "../../interface"
 features = ["build"]
 
-[build-dependencies.testing_shared]
+[build-dependencies.test_shared]
 version = "=0.2.2"
 path = "../shared"

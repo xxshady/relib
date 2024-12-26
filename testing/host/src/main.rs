@@ -1,6 +1,13 @@
-// mod demo_host;
+// mod shared;
 
-// fn main() {
-//   demo_host::main();
-// }
-fn main() {}
+// #[cfg(feature = "unloading")]
+// mod unloading;
+// #[cfg(not(feature = "unloading"))]
+// mod no_unloading;
+
+fn main() {
+  // #[cfg(feature = "unloading")]
+  // unloading::main();
+  // #[cfg(not(feature = "unloading"))]
+  // no_unloading::main();
+}

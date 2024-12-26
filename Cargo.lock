@@ -220,7 +220,7 @@ dependencies = [
  "memory-stats",
  "relib_host",
  "relib_interface",
- "testing_shared",
+ "test_shared",
 ]
 
 [[package]]
@@ -229,11 +229,11 @@ version = "0.2.2"
 dependencies = [
  "relib_interface",
  "relib_module",
- "testing_shared",
+ "test_shared",
 ]
 
 [[package]]
-name = "testing_shared"
+name = "test_shared"
 version = "0.2.2"
 
 [[package]]

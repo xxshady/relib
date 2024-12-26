@@ -23,7 +23,7 @@ pub fn generate_internal(
   imports_trait_path: &str,
 ) {
   generate_exports(exports_file_content, exports_trait_path, false);
-  generate_imports(imports_file_content, imports_trait_path);
+  generate_imports(imports_file_content, imports_trait_path, false);
 }
 
 /// Will generate `generated_module_exports.rs` and `generated_module_imports.rs` in the OUT_DIR which you can include
@@ -41,7 +41,7 @@ pub fn generate(
   imports_trait_path: &str,
 ) {
   generate_exports(exports_file_content, exports_trait_path, true);
-  generate_imports(imports_file_content, imports_trait_path);
+  generate_imports(imports_file_content, imports_trait_path, true);
 }
 
 fn generate_exports(
@@ -102,9 +102,7 @@ fn generate_exports(
           #[doc = #SAFETY_DOC]
           #[expect(clippy::needless_lifetimes)]
           pub unsafe fn #ident<'module>( &'module self, #inputs ) -> Option<ModuleValue<'module, #return_type>> {
-            use std::mem::MaybeUninit;
-
-            let mut ____return_value____ = MaybeUninit::<#return_type>::uninit();
+            let mut ____return_value____ = std::mem::MaybeUninit::<#return_type>::uninit();
 
             let success = (self.#ident)(
               &mut ____return_value____,
@@ -181,7 +179,11 @@ fn generate_exports(
   );
 }
 
-fn generate_imports(imports_file_content: &'static str, imports_trait_path: &str) {
+fn generate_imports(
+  imports_file_content: &'static str,
+  imports_trait_path: &str,
+  pub_imports: bool,
+) {
   let trait_name = extract_trait_name_from_path(imports_trait_path);
   let (imports_trait, module_use_items) =
     parse_trait_file(trait_name, imports_file_content, imports_trait_path);
@@ -203,18 +205,54 @@ fn generate_imports(imports_file_content: &'static str, imports_trait_path: &str
     let panic_message =
       format!(r#"Failed to get "{mangled_name}" symbol of static function pointer from module"#);
 
-    imports.push(quote! {
-      unsafe {
-        let ptr: *mut unsafe extern "C" fn( #inputs ) #output
-          = *library.get(concat!(#mangled_name, "\0").as_bytes()).expect(#panic_message);
+    let impl_code = if pub_imports {
+      let return_type = output_to_return_type!(output);
 
-        *ptr = impl_;
+      quote! {
+        unsafe {
+          let ptr: *mut unsafe extern "C" fn(
+            ____return_value____: *mut std::mem::MaybeUninit<#return_type>,
+            #inputs
+          ) -> bool
+            = *library.get(concat!(#mangled_name, "\0").as_bytes()).expect(#panic_message);
 
-        unsafe extern "C" fn impl_( #inputs ) #output {
-          <ModuleImportsImpl as Imports>::#ident( #inputs_without_types )
+          *ptr = impl_;
+
+          unsafe extern "C" fn impl_(
+            ____return_value____: *mut std::mem::MaybeUninit<#return_type>, // will be initialized if function won't panic
+            #inputs
+          ) -> bool {
+            let result = std::panic::catch_unwind(move || {
+              <ModuleImportsImpl as Imports>::#ident( #inputs_without_types )
+            });
+
+            match result {
+              Ok(value) => {
+                (*____return_value____).write(value);
+                true
+              }
+              // ignoring content since it's handled in default panic hook of std
+              Err(_) => { false }
+            }
+          }
         }
       }
-    });
+    } else {
+      quote! {
+        unsafe {
+          let ptr: *mut unsafe extern "C" fn( #inputs ) #output
+            = *library.get(concat!(#mangled_name, "\0").as_bytes()).expect(#panic_message);
+
+          *ptr = impl_;
+
+          unsafe extern "C" fn impl_( #inputs ) #output {
+            <ModuleImportsImpl as Imports>::#ident( #inputs_without_types )
+          }
+        }
+      }
+    };
+
+    imports.push(impl_code);
   }
 
   write_code_to_file(

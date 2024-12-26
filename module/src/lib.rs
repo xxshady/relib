@@ -14,9 +14,3 @@ compile_error!(
   enable \"unloading\" feature or \
   disable \"global_alloc_tracker\" and enable \"unloading_core\""
 );
-
-#[cfg(not(feature = "unloading_core"))]
-#[doc(hidden)]
-pub mod __internal {
-  pub const UNLOADING_DISABLED: () = ();
-}
