@@ -305,8 +305,8 @@ Even without unloading `relib` provides some useful features: imports/exports, p
 
 ### How to turn off module unloading
 
-Disable "unloading" feature in relib_host, relib_module and relib_interface crates (no features are enabled by default). If you followed "Getting started" guide or if you use ready-made [template](https://github.com/xxshady/relib-template) you can simply run
-`cargo build --workspace` (without  `--features unloading`) to build host and module without unloading feature.
+Disable "unloading" feature in relib_host and relib_module crates (no features are enabled by default). If you followed "Getting started" guide or if you use ready-made [template](https://github.com/xxshady/relib-template) you can simply run
+`cargo build --workspace` (without `--features unloading`) to build host and module without unloading feature.
 
 ## Module alloc tracker
 
