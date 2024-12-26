@@ -107,6 +107,11 @@ pub fn for_each_trait_item<'trait_>(
     "Functions in {trait_name} trait must not have `self` receiver"
   );
 
+  assert!(
+    fn_.generics.lt_token.is_none(),
+    "Functions in {trait_name} trait must not have generics since they are not FFI-safe"
+  );
+
   let ident = &fn_.ident;
 
   let inputs_without_types = fn_inputs_without_types!(fn_.inputs);
