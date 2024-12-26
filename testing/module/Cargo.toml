@@ -17,23 +17,23 @@ unloading = ["relib_module/unloading"]
 [dependencies]
 
 [dependencies.relib_module]
-version = "0.2.2"
+version = "0.2.3"
 path = "../../module"
 
 [dependencies.test_shared]
-version = "=0.2.2"
+version = "=0.2.3"
 path = "../shared"
 
 [dependencies.relib_interface]
-version = "0.2.2"
+version = "0.2.3"
 path = "../../interface"
 features = ["include"]
 
 [build-dependencies.relib_interface]
-version = "0.2.2"
+version = "0.2.3"
 path = "../../interface"
 features = ["build"]
 
 [build-dependencies.test_shared]
-version = "=0.2.2"
+version = "=0.2.3"
 path = "../shared"
