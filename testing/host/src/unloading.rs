@@ -1,7 +1,6 @@
 use std::thread::sleep;
 use std::{io::stdin, thread, time::Duration};
 
-use relib_host::exports_types::ModuleValue;
 use relib_host::{Module, ModuleExportsForHost};
 
 use crate::shared::load;
@@ -24,11 +23,18 @@ impl Imports for ModuleImportsImpl {
 }
 
 pub fn main() {
-  for _ in 1..=12 {
-    load::<()>(init_imports).unload().unwrap();
-  }
+  // for _ in 1..=12 {
+  //   load::<()>(init_imports).unload().unwrap();
+  // }
 
-  test_unloading_features();
+  // test_unloading_features();
+
+  let module = load::<ModuleExports>(init_imports);
+
+  dbg!(unsafe { module.exports().a() });
+  dbg!(unsafe { module.exports().b(&"awawa".into()) });
+
+  module.unload().unwrap();
 }
 
 #[cfg(not(feature = "unloading"))]

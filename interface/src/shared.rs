@@ -1,7 +1,7 @@
 use std::{fs, path::Path};
 
 use proc_macro2::{Span, TokenStream as TokenStream2};
-use quote::{quote, ToTokens};
+use quote::{format_ident, quote, ToTokens};
 use syn::{
   punctuated::Punctuated, FnArg, Ident, Item, ItemTrait, ReturnType, Token, TraitItem, UseTree,
   ItemUse,
@@ -9,9 +9,9 @@ use syn::{
 
 use relib_internal_shared::fn_inputs_without_types;
 
-pub fn format_code(code: &str) -> String {
+pub fn format_code(code: &str, file_name: &str) -> String {
   let file = syn::parse_file(code).unwrap_or_else(|e| {
-    panic!("Failed to parse code as syn File, reason: {e:#?}");
+    panic!("Failed to parse Rust code of file: {file_name}, reason: {e:#}");
   });
   prettyplease::unparse(&file)
 }
@@ -71,7 +71,7 @@ pub fn parse_trait_file(
 
 pub fn write_code_to_file(file: &str, code: TokenStream2) {
   let code = code.to_string();
-  let code = format_code(&code);
+  let code = format_code(&code, file);
   let out = format!(
     "// This file is generated, DO NOT edit manually\n\
     // ---------------------------------------------\n\n\
@@ -89,9 +89,12 @@ pub fn write_code_to_file(file: &str, code: TokenStream2) {
 pub struct TraitFn<'a> {
   pub ident: &'a Ident,
   pub inputs: &'a Punctuated<FnArg, Token![,]>,
-  pub inputs_without_types: TokenStream2,
+  pub inputs_without_types: Vec<TokenStream2>,
   pub output: &'a ReturnType,
   pub mangled_name: String,
+
+  pub post_ident: Ident,
+  pub post_mangled_name: String,
 }
 
 pub fn for_each_trait_item<'trait_>(
@@ -116,13 +119,18 @@ pub fn for_each_trait_item<'trait_>(
 
   let inputs_without_types = fn_inputs_without_types!(fn_.inputs);
 
+  // !!! keep in sync with main and before_unload calls in relib_host crate !!!
+  let mangled_name = format!("__relib__{trait_name}_{ident}");
+  let post_mangled_name = format!("__post{mangled_name}");
+
   TraitFn {
     ident,
     inputs: &fn_.inputs,
     inputs_without_types,
     output: &fn_.output,
-
-    mangled_name: format!("__relib__{trait_name}_{ident}"),
+    mangled_name,
+    post_ident: format_ident!("post_{ident}"),
+    post_mangled_name,
   }
 }
 
@@ -165,4 +173,5 @@ fn patch_item_use_if_needed(item_use: &ItemUse, crate_name: &Ident) -> TokenStre
 pub const SAFETY_DOC: &str = "# Safety\n\
   Behavior is undefined if any of the following conditions are violated:\n\
   1. Types of arguments and return value must be FFI-safe.\n\
-  2. Host and module crates must be compiled with same shared crate code (which contains exports and imports traits).";
+  2. Host and module crates must be compiled with same shared crate code (which contains exports and imports traits).\n\
+  3. Returned value must not be a reference-counting pointer (see [limitations](https://docs.rs/relib/latest/relib/#moving-non-copy-types-between-host-and-module)).";

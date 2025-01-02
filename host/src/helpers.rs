@@ -1,5 +1,5 @@
 use std::{
-  mem::MaybeUninit,
+  mem::{needs_drop, MaybeUninit},
   path::Path,
   sync::atomic::{AtomicU64, Ordering},
 };
@@ -50,7 +50,7 @@ pub unsafe fn get_library_export<'lib, F>(
   Ok(fn_)
 }
 
-// call module export with panic handling
+// call module export without args with panic handling
 // (in case of panic exported function returns false and return value remains uninitialized)
 pub unsafe fn call_module_pub_export<R>(
   library: &Library,
@@ -59,12 +59,22 @@ pub unsafe fn call_module_pub_export<R>(
   let fn_ = get_library_export(library, name)?;
   let fn_: Symbol<extern "C" fn(*mut MaybeUninit<R>) -> bool> = fn_;
 
+  // !!! keep in sync with relib_interface crate !!!
+
   let mut return_value = MaybeUninit::uninit();
 
   let success = fn_(&mut return_value);
   if !success {
     return Ok(None);
   }
+
+  // TODO:
+  // if needs_drop::<R>() {
+  //   let post_name = format!("__post__relib_{}", name);
+  //   let post_fn = get_library_export(library, &post_return_value_name)?;
+  //   let post_fn: Symbol<extern "C" fn(*mut R)> = post_fn;
+  //   post_fn(return_value.as_mut_ptr());
+  // }
 
   // SAFETY: function returned true so we are allowed to read the pointer
   let return_value = return_value.assume_init_read();

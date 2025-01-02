@@ -139,8 +139,8 @@ macro_rules! fn_inputs_without_types {
         };
 
         let ts = quote::ToTokens::to_token_stream(&arg.pat);
-        quote! { #ts , }
+        quote! { #ts, }
       })
-      .collect::<proc_macro2::TokenStream>()
+      .collect::<Vec<_>>()
   };
 }

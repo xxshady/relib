@@ -1,5 +1,5 @@
 use proc_macro2::{Span, TokenStream as TokenStream2};
-use quote::quote;
+use quote::{format_ident, quote};
 use syn::{FnArg, Ident};
 
 use relib_internal_shared::output_to_return_type;
@@ -69,27 +69,34 @@ fn generate_exports(
       inputs_without_types,
       output,
       mangled_name,
+      post_ident,
+      post_mangled_name,
     } = for_each_trait_item(trait_name, &item);
 
-    let mangled_name = Ident::new(&mangled_name, Span::call_site());
+    let mangled_ident = format_ident!("{mangled_name}");
+    let post_mangled_ident = format_ident!("{post_mangled_name}");
 
+    // !!! keep in sync with main and before_unload calls in relib_host crate !!!
     let code = if pub_exports {
       let return_type = output_to_return_type!(output);
 
       quote! {
         #[unsafe(no_mangle)]
-        pub unsafe extern "C" fn #mangled_name(
-          ____return_value____: *mut std::mem::MaybeUninit<#return_type>, // will be initialized if function won't panic
+        pub unsafe extern "C" fn #mangled_ident(
+          ____return_value____: *mut *mut #return_type, // will be initialized if function won't panic
           #inputs
         ) -> bool // returns false if function panicked
         {
           let result = std::panic::catch_unwind(move || {
-            <ModuleExportsImpl as Exports>::#ident( #inputs_without_types )
+            <ModuleExportsImpl as Exports>::#ident( #( #inputs_without_types )* )
           });
 
           match result {
             Ok(value) => {
-              (*____return_value____).write(value);
+              use std::boxed::Box;
+
+              let ptr = Box::into_raw(Box::new(value));
+              *____return_value____ = ptr;
               true
             }
             // ignoring content since it's handled in our panic hook or
@@ -97,12 +104,20 @@ fn generate_exports(
             Err(_) => { false }
           }
         }
+
+        #[unsafe(no_mangle)]
+        pub unsafe extern "C" fn #post_mangled_ident(
+          return_value_ptr: *mut #return_type
+        ) {
+          dbg!();
+          drop(Box::from_raw(return_value_ptr));
+        }
       }
     } else {
       quote! {
-        #[unsafe(no_mangle)]
-        pub unsafe extern "C" fn #mangled_name( #inputs ) #output {
-          <ModuleExportsImpl as Exports>::#ident( #inputs_without_types )
+        #[unsafe(export_name = #mangled_name)]
+        pub unsafe extern "C" fn #ident( #inputs ) #output {
+          <ModuleExportsImpl as Exports>::#ident( #( #inputs_without_types )* )
         }
       }
     };
@@ -150,6 +165,8 @@ fn generate_imports(
       inputs_without_types,
       output,
       mangled_name,
+      post_ident,
+      post_mangled_name,
     } = for_each_trait_item(trait_name, &item);
 
     let mangled_name = Ident::new(&mangled_name, Span::call_site());
@@ -193,6 +210,7 @@ fn generate_imports(
       return_value
     };
 
+    // !!! keep in sync with main and before_unload calls in relib_host crate !!!
     let function_body = if pub_imports {
       quote! {
         #function_static_decl: unsafe extern "C" fn(
@@ -211,7 +229,7 @@ fn generate_imports(
 
         #suppress_lints_for_return_value
         let success = unsafe {
-          #mangled_name( &mut ____return_value____, #inputs_without_types )
+          #mangled_name( &mut ____return_value____, #( #inputs_without_types )* )
         };
 
         if !success {
@@ -229,17 +247,17 @@ fn generate_imports(
       }
     } else {
       quote! {
-        #function_static_decl: unsafe extern "C" fn( #inputs ) #output = placeholder;
+      #function_static_decl: unsafe extern "C" fn( #inputs ) #output = placeholder;
 
-        unsafe extern "C" fn placeholder( #placeholder_inputs ) #output {
-          unreachable!();
-        }
+      unsafe extern "C" fn placeholder( #placeholder_inputs ) #output {
+        unreachable!();
+      }
 
-        #suppress_lints_for_return_value
-        let return_value = unsafe {
-          #mangled_name( #inputs_without_types )
-        };
-        #return_handling
+      #suppress_lints_for_return_value
+      let return_value = unsafe {
+        #mangled_name( #( #inputs_without_types )* )
+      };
+      #return_handling
       }
     };
 

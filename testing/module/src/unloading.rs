@@ -1,5 +1,6 @@
 relib_interface::include_imports!();
 relib_interface::include_exports!();
+use abi_stable::std_types::RString;
 use gen_exports::ModuleExportsImpl;
 
 use test_shared::unloading::exports::Exports;
@@ -9,8 +10,8 @@ impl Exports for ModuleExportsImpl {
     10
   }
 
-  fn b() -> u8 {
-    22
+  fn b(r: &RString) -> RString {
+    r.to_owned()
   }
 }
 

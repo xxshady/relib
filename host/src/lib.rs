@@ -18,7 +18,7 @@ mod helpers;
 use helpers::{next_module_id, open_library};
 mod leak_library;
 pub mod exports_types;
-pub use exports_types::{ModuleExportsForHost, InitImports, ModuleValue};
+pub use exports_types::{ModuleExportsForHost, InitImports};
 
 /// # Example
 /// ```

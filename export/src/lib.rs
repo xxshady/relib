@@ -19,7 +19,7 @@ use proc_macro::TokenStream;
 ///
 /// // on host side
 /// let returned_value: Option<bool> = unsafe {
-///   module.call_main().map(|v| *v) // call_main returns `Option<ModuleValue<'_, T>>`
+///   module.call_main()
 /// };
 /// dbg!(returned_value);
 /// ```

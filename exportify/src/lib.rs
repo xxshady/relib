@@ -1,5 +1,5 @@
 use proc_macro2::{Span, TokenStream as TokenStream2};
-use quote::quote;
+use quote::{format_ident, quote};
 use syn::{Ident, ItemFn};
 
 use relib_internal_shared::{fn_inputs_without_types, output_to_return_type};
@@ -46,7 +46,7 @@ pub fn exportify(input: TokenStream2) -> TokenStream2 {
   let inputs = sig.inputs;
   let ident = sig.ident;
   let mangled_name = format!("__relib__{ident}");
-  let mangled_name_ident = Ident::new(&mangled_name, Span::call_site());
+  let mangled_name_ident = format_ident!("{mangled_name}");
   let return_type = output_to_return_type!(output);
   let inputs_without_types = fn_inputs_without_types!(inputs);
 
@@ -61,7 +61,7 @@ pub fn exportify(input: TokenStream2) -> TokenStream2 {
       fn #mangled_name_ident( #inputs ) #output #block
 
       let result = std::panic::catch_unwind(|| {
-        #mangled_name_ident( #inputs_without_types )
+        #mangled_name_ident( #( #inputs_without_types )* )
       });
       match result {
         Ok(value) => {

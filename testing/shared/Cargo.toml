@@ -9,3 +9,4 @@ rust-version.workspace = true
 publish = false
 
 [dependencies]
+abi_stable.workspace = true
