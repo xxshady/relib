@@ -136,7 +136,8 @@ fn generate_exports(
               (*return_ptr).clone()
             };
 
-            // TODO: currently this check is incorrect because on other side Box is created anyway and we need to deallocate it
+            // TODO: currently this check is incorrect because on other side Box is created anyway and we need to deallocate it.
+            // in wasmtime components they define a static array with a size calculated from max return value size, here we can't do that i guess
             // if std::mem::needs_drop::<#return_type>() {
               (self.#post_ident)(return_ptr);
             // }
