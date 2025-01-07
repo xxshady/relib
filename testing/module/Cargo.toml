@@ -15,6 +15,7 @@ crate-type = ["cdylib"]
 unloading = ["relib_module/unloading"]
 
 [dependencies]
+abi_stable.workspace = true
 
 [dependencies.relib_module]
 version = "0.2.3"

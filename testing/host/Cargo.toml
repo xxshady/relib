@@ -14,6 +14,7 @@ unloading = ["relib_host/unloading"]
 [dependencies]
 libloading.workspace = true
 memory-stats = "1.2.0"
+abi_stable.workspace = true
 
 [dependencies.relib_host]
 version = "0.2.3"

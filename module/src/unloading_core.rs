@@ -16,9 +16,6 @@ mod alloc_tracker;
 pub use alloc_tracker::AllocTracker;
 mod panic_hook;
 
-#[doc(hidden)]
-pub mod __internal;
-
 /// Middleware for tracking all allocations to deallocate leaks
 /// (for example `std::mem:forget`, static items) on module unload.
 /// It sends all allocations and deallocations to host because to

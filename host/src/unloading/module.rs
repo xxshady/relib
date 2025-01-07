@@ -24,7 +24,7 @@ impl<E: ModuleExportsForHost> Module<E> {
 
     #[cfg(target_os = "linux")]
     {
-      let spawned_threads = unsafe { *self.internal_exports.spawned_threads_count() };
+      let spawned_threads = unsafe { self.internal_exports.spawned_threads_count() };
 
       if spawned_threads > 0 {
         return Err(UnloadError::ThreadsStillRunning(library_path));

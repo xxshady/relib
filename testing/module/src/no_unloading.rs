@@ -1,6 +1,7 @@
 relib_interface::include_imports!();
 relib_interface::include_exports!();
 
+#[relib_module::export]
 pub fn main() {
   unsafe {
     dbg!(

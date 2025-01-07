@@ -1,4 +1,4 @@
-use abi_stable::std_types::RString;
+use abi_stable::std_types::{RString, RVec};
 use shared::exports::Exports;
 
 relib_interface::include_exports!();
@@ -16,6 +16,21 @@ impl Exports for ModuleExportsImpl {
 fn main() {
   println!("hello world");
 
-  let bar_value = unsafe { gen_imports::foo() };
-  dbg!(bar_value);
+  // use gen_imports::{return_ptr, call_drop};
+  // unsafe {
+  //   let ptr = return_ptr();
+  //   let cloned = (*ptr).clone();
+  //   call_drop();
+
+  //   dbg!(cloned);
+  // }
+
+  use gen_imports::{return_ptr2, call_drop2};
+  unsafe {
+    let ptr = return_ptr2();
+    let cloned = (*ptr).clone();
+    call_drop2(ptr);
+
+    dbg!(cloned);
+  }
 }

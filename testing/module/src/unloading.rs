@@ -1,5 +1,6 @@
 relib_interface::include_imports!();
 relib_interface::include_exports!();
+use abi_stable::std_types::{RStr, RString};
 use gen_exports::ModuleExportsImpl;
 
 use test_shared::unloading::exports::Exports;
@@ -9,11 +10,14 @@ impl Exports for ModuleExportsImpl {
     10
   }
 
-  fn b() -> u8 {
-    22
+  fn b(r: RStr) -> RString {
+    r.repeat(100).into()
   }
+
+  fn d() {}
 }
 
+#[relib_module::export]
 pub fn main() {
   println!("[module] hello world");
 
@@ -64,9 +68,24 @@ pub fn main() {
   // .join();
   // let _ = dbg!(res);
 
-  let return_value = unsafe { gen_imports::with_return_value() };
-  dbg!(return_value.len());
-  std::mem::forget(return_value);
+  // let return_value = unsafe { gen_imports::a() };
+  // dbg!(return_value);
+  // assert_eq!(return_value, 10);
+
+  // let return_value = unsafe { gen_imports::b("k".into()) };
+  // dbg!(return_value.len());
+  // assert_eq!(return_value.len(), 100_000);
+
+  // let return_value = unsafe { gen_imports::b2("".into(), "k".into()) };
+  // dbg!(return_value.len());
+  // assert_eq!(return_value.len(), 100_000);
+
+  // unsafe { gen_imports::d() };
+
+  // let return_value = unsafe { gen_imports::ptr() };
+  // dbg!(unsafe { *return_value });
+
+  // "w".repeat(1024 * 1024 * 50).into()
 }
 
 #[relib_module::export]

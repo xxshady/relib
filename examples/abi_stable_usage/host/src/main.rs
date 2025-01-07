@@ -1,4 +1,9 @@
-use abi_stable::std_types::RVec;
+mod alloc_counter;
+
+use std::{cell::Cell, ffi::CString, sync::atomic::Ordering::Relaxed};
+
+use abi_stable::{std_types::RVec, traits::IntoReprC};
+use alloc_counter::{ALLOCS, DEALLOC_TRACES, IGNORE, STORE_TRACES};
 use shared::imports::Imports;
 
 relib_interface::include_exports!();
@@ -7,9 +12,39 @@ use gen_exports::ModuleExports;
 relib_interface::include_imports!();
 use gen_imports::{init_imports, ModuleImportsImpl};
 
+thread_local! {
+  static RETURN_DESTRUCTOR: Cell<Option<Box<dyn FnOnce()>>> = Cell::new(None);
+}
+
 impl Imports for ModuleImportsImpl {
-  fn foo() -> RVec<u8> {
-    vec![1, 2, 3].into()
+  fn return_ptr() -> *const CString {
+    let value = CString::new("some memory").unwrap();
+    let ptr = Box::into_raw(Box::new(value));
+
+    assert!(RETURN_DESTRUCTOR.take().is_none());
+    RETURN_DESTRUCTOR.set(Some(Box::new(move || unsafe {
+      drop(Box::from_raw(ptr));
+    })));
+    ptr
+  }
+
+  fn call_drop() {
+    RETURN_DESTRUCTOR.take().unwrap()();
+  }
+
+  fn return_ptr2() -> *mut CString {
+    let value = CString::new("some memory").unwrap();
+    Box::into_raw(Box::new(value))
+  }
+
+  fn call_drop2(ptr: *mut CString) {
+    unsafe {
+      drop(Box::from_raw(ptr));
+    }
+  }
+
+  fn old_foo() -> RVec<u8> {
+    vec![1_u8; 1024 * 1024 * 100].into()
   }
 }
 
