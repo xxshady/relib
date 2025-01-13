@@ -71,9 +71,6 @@ where
 
   // if library has post function for this export return value is heap allocated
   let return_value = if let Ok(post_fn) = post_fn {
-    // TEST TODO: add test for this
-    println!("[host] calling {mangled_name} with post");
-
     let fn_ = get_library_export(library, &mangled_name)?;
     let fn_: Symbol<extern "C" fn(*mut bool) -> MaybeUninit<*mut R>> = fn_;
 

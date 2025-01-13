@@ -280,8 +280,6 @@ fn generate_imports(
           },
           quote! {
             use std::boxed::Box;
-            // TEST
-            println!("[host] needs drop");
             Box::into_raw(Box::new(return_value))
           },
           quote! {

@@ -8,8 +8,6 @@ impl<E: ModuleExportsForHost> Module<E> {
     let library_path = self.library_path.to_string_lossy().into_owned();
 
     unsafe {
-      // println!("Trying to call \"before_unload\");
-
       let result = call_module_pub_export(library, "before_unload");
       match result {
         Ok(Some(())) => {}

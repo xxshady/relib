@@ -91,7 +91,6 @@ unsafe fn test_exports(exports: &ModuleExports) -> Option<()> {
 
   exports.leak()?;
 
-  // TODO:
   exports.call_imports()?;
 
   // ------------------------------------------------------------------------
