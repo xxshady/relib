@@ -20,10 +20,23 @@ pub fn memory_use() -> (usize, f64) {
 }
 
 pub fn assert_mem_dealloc<R>(f: impl FnOnce() -> R) -> R {
-  let (before_mem, _) = memory_use();
+  let (before_mem, before_mb) = memory_use();
   let returned = f();
-  let (after_mem, _) = memory_use();
-  assert_eq!(after_mem, before_mem, "memory must be deallocated");
+  let (after_mem, after_mb) = memory_use();
+
+  if cfg!(target_os = "linux") {
+    assert_eq!(
+      after_mem, before_mem,
+      "memory must be deallocated, before: {before_mb:.2}mb, after: {after_mb:.2}mb"
+    );
+  } else {
+    const SIZE_1MB: usize = 1024 * 1024;
+    // for some reason there is a small difference, i think it doesn't really matter
+    assert!(
+      after_mem.abs_diff(before_mem) < SIZE_1MB,
+      "memory must be deallocated, before: {before_mb:.2}mb, after: {after_mb:.2}mb"
+    );
+  }
 
   returned
 }

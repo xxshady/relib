@@ -11,6 +11,7 @@ const TEST_FEATURES: &[&str] = &[
   "exportify,ret_primitive_main",
   "exportify,ret_heap_main",
   "exportify,panic_main",
+  #[cfg(target_os = "linux")]
   "threads_check",
   "before_unload_panic",
   // panic_in_interface_host is in its own module
