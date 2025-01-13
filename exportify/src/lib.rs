@@ -89,7 +89,7 @@ pub fn exportify(input: TokenStream2) -> TokenStream2 {
   quote! {
     #[unsafe(export_name = #mangled_name)]
     #( #attrs )*
-    pub extern "C" fn #ident(
+    pub unsafe extern "C" fn #ident(
       ____success____: *mut bool,
       #inputs
     ) -> std::mem::MaybeUninit<#return_type> // will be initialized if function won't panic
