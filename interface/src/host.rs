@@ -169,7 +169,7 @@ fn generate_exports(
             }
 
             // SAFETY: function returned true so we are allowed to read the pointer
-            #[allow(unused_braces)]
+            #[allow(unused_braces, clippy::unit_arg)]
             Some({ #read_return_value })
           }
         },
@@ -290,6 +290,7 @@ fn generate_imports(
 
             *post_ptr = post_impl;
 
+            #[allow(clippy::needless_lifetimes, clippy::extra_unused_lifetimes)]
             extern "C" fn post_impl #lifetimes_full (return_value_ptr: *mut #return_type) {
               use std::boxed::Box;
               unsafe {
@@ -312,6 +313,7 @@ fn generate_imports(
 
           *ptr = impl_;
 
+          #[allow(clippy::needless_lifetimes)]
           extern "C" fn impl_ #lifetimes_full (
             ____success____: *mut bool,
             #inputs
@@ -331,7 +333,7 @@ fn generate_imports(
                   *____success____ = true;
                 }
 
-                #[allow(unused_braces)]
+                #[allow(unused_braces, clippy::unit_arg)]
                 std::mem::MaybeUninit::new({ #return_value })
               }
               // ignoring content since it's handled in default panic hook of std

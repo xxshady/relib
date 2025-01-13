@@ -37,6 +37,7 @@ pub fn main() {
     return;
   }
 
+  #[allow(clippy::let_unit_value)]
   let ret = ret.unwrap();
   check_main_ret(ret);
 }
