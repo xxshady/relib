@@ -30,7 +30,7 @@ rustdoc-args = ["--generate-link-to-definition"]
 
 [dependencies.relib_internal_shared]
 optional = true
-version = "=0.2.3"
+version = "=0.3.0"
 path = "../shared"
 
 [dependencies.prettyplease]

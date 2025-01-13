@@ -100,7 +100,7 @@ dependencies = [
 
 [[package]]
 name = "basic_host"
-version = "0.2.3"
+version = "0.3.0"
 dependencies = [
  "relib_host",
 ]
@@ -312,18 +312,18 @@ dependencies = [
 
 [[package]]
 name = "relib"
-version = "0.2.3"
+version = "0.3.0"
 
 [[package]]
 name = "relib_export"
-version = "0.2.3"
+version = "0.3.0"
 dependencies = [
  "relib_exportify",
 ]
 
 [[package]]
 name = "relib_exportify"
-version = "0.2.3"
+version = "0.3.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -333,7 +333,7 @@ dependencies = [
 
 [[package]]
 name = "relib_host"
-version = "0.2.3"
+version = "0.3.0"
 dependencies = [
  "libc",
  "libloading 0.8.6",
@@ -346,7 +346,7 @@ dependencies = [
 
 [[package]]
 name = "relib_interface"
-version = "0.2.3"
+version = "0.3.0"
 dependencies = [
  "prettyplease",
  "proc-macro2",
@@ -357,15 +357,15 @@ dependencies = [
 
 [[package]]
 name = "relib_internal_crate_compilation_info"
-version = "0.2.3"
+version = "0.3.0"
 
 [[package]]
 name = "relib_internal_shared"
-version = "0.2.3"
+version = "0.3.0"
 
 [[package]]
 name = "relib_module"
-version = "0.2.3"
+version = "0.3.0"
 dependencies = [
  "backtrace",
  "libc",
@@ -480,7 +480,7 @@ dependencies = [
 
 [[package]]
 name = "test_host"
-version = "0.2.3"
+version = "0.3.0"
 dependencies = [
  "abi_stable",
  "cfg-if",
@@ -492,7 +492,7 @@ dependencies = [
 
 [[package]]
 name = "test_module"
-version = "0.2.3"
+version = "0.3.0"
 dependencies = [
  "abi_stable",
  "cfg-if",
@@ -504,11 +504,11 @@ dependencies = [
 
 [[package]]
 name = "test_runner"
-version = "0.2.3"
+version = "0.3.0"
 
 [[package]]
 name = "test_shared"
-version = "0.2.3"
+version = "0.3.0"
 dependencies = [
  "abi_stable",
  "memory-stats",

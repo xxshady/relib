@@ -57,8 +57,8 @@ fn main() {
   // main function is unsafe to call (as well as any other module export) because these preconditions are not checked by relib:
   // 1. returned value must be actually `R` at runtime, for example you called this function with type bool but module returns i32.
   // 2. type of return value must be FFI-safe.
-  // (see "Module exports" section for more info about ModuleValue)
-  let returned_value: Option<relib_host::ModuleValue<'_, ()>> = unsafe {
+  // 3. returned value must not be a reference-counting pointer (see limitations on main docs page/README).
+  let returned_value: Option<()> = unsafe {
     module.call_main::<()>()
   };
 
@@ -102,6 +102,8 @@ fn main() {
 ## Communication between host and module
 
 To communicate between host and module `relib` provides convenient API for declaring imports and exports and implementing them using Rust traits.
+
+> (which is heavily inspired by the [WASM Component Model](https://component-model.bytecodealliance.org/))
 
 ### Preparations for imports and exports
 
@@ -224,6 +226,7 @@ let module = relib_host::load_module::<()>(
 // 1. types of arguments and return value must be FFI-safe
 //    (you can use abi_stable or stabby crate for it, see "abi_stable_usage" example).
 // 2. host and module crates must be compiled with same shared crate code.
+// 3. returned value must not be a reference-counting pointer (see limitations on main docs page/README).
 let value = unsafe { gen_imports::foo() }; // gen_imports is defined by relib_interface::include_imports!()
 dbg!(value); // prints "value = 10"
 ```
@@ -257,28 +260,7 @@ Except one thing, return value:
 
 ```rust
 // returns None if module export panics
-let value: Option<ModuleValue<'_, u8>> = unsafe { module.exports().bar() };
-```
-
-What is `ModuleValue`?
-
-`relib` tracks all heap allocations in the module and deallocates all leaked ones when module is unloaded (see ["Module alloc tracker"](#module-alloc-tracker)), that's why `ModuleValue` is needed, it acts like a reference bound to the module instance.
-```rust
-// a slice of memory owned by module
-#[repr(C)]
-#[derive(Debug)]
-struct SomeMemory {
-  ptr: *const u8,
-  len: usize,
-}
-
-let slice: ModuleValue<'_, SomeMemory> = module.call_main().unwrap();
-
-// .unload() frees memory of the module
-module.unload().unwrap();
-
-// compile error, this memory slice is deallocated by .unload()
-dbg!(slice);
+let value: Option<u8> = unsafe { module.exports().bar() };
 ```
 
 ## `before_unload` 
@@ -393,6 +375,10 @@ if value.is_none() {
 ```
 
 **note:** not all panics are handled, see a ["double panic"](https://doc.rust-lang.org/std/ops/trait.Drop.html#panics)
+
+##### Behavior of `before_unload`
+
+Currently, `before_unload` is called when `module.unload()` is called after panic, but this may be changed in the future.
 
 #### Imports
 

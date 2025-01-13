@@ -35,23 +35,23 @@ cfg-if.workspace = true
 thread-id.workspace = true
 
 [dependencies.relib_module]
-version = "0.2.3"
+version = "0.3.0"
 path = "../../module"
 
 [dependencies.test_shared]
-version = "=0.2.3"
+version = "=0.3.0"
 path = "../shared"
 
 [dependencies.relib_interface]
-version = "0.2.3"
+version = "0.3.0"
 path = "../../interface"
 features = ["include"]
 
 [build-dependencies.relib_interface]
-version = "0.2.3"
+version = "0.3.0"
 path = "../../interface"
 features = ["build"]
 
 [build-dependencies.test_shared]
-version = "=0.2.3"
+version = "=0.3.0"
 path = "../shared"
