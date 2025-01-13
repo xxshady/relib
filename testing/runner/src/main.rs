@@ -18,8 +18,6 @@ const TEST_FEATURES: &[&str] = &[
 ];
 
 fn main() {
-  // TODO: windows
-
   test_features("debug");
   test_features("release");
 

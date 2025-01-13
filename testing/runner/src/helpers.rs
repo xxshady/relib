@@ -46,7 +46,11 @@ macro_rules! cmd_impl {
 pub(crate) use cmd_impl as cmd;
 
 pub fn host_bin_by_directory(directory: &str) -> String {
-  format!("target/{directory}/test_host")
+  if cfg!(target_os = "linux") {
+    format!("target/{directory}/test_host")
+  } else {
+    format!("target/{directory}/test_host.exe")
+  }
 }
 
 pub fn call_host_by_directory(directory: &str) {

@@ -19,11 +19,19 @@ pub fn main() {
 
 fn run_multiple_modules(directory: &str) {
   for idx in 0..10 {
-    fs::copy(
-      format!("target/{directory}/libtest_module.so"),
-      format!("target/{directory}/libtest_module_{idx}.so"),
-    )
-    .unwrap();
+    if cfg!(target_os = "linux") {
+      fs::copy(
+        format!("target/{directory}/libtest_module.so"),
+        format!("target/{directory}/libtest_module_{idx}.so"),
+      )
+      .unwrap();
+    } else {
+      fs::copy(
+        format!("target/{directory}/test_module.dll"),
+        format!("target/{directory}/test_module_{idx}.dll"),
+      )
+      .unwrap();
+    }
   }
   call_host_by_directory(directory);
 }

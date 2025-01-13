@@ -1,6 +1,6 @@
 use std::process::Command;
 
-use crate::helpers::cmd;
+use crate::helpers::{cmd, host_bin_by_directory};
 
 pub fn main() {
   let (build_debug, build_release) = cmd!(
@@ -13,7 +13,7 @@ pub fn main() {
 
   // panic in host aborts host process thats why it should be tested in a different way
   let run_host = |directory: &str| {
-    let output = Command::new(format!("target/{directory}/test_host"))
+    let output = Command::new(host_bin_by_directory(directory))
       .output()
       .unwrap();
 
