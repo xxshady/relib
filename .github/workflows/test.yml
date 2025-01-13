@@ -3,15 +3,15 @@ name: Test changes
 on:
   push:
     branches: "*"
-  pull_request:
 
 env:
   RUSTFLAGS: -Dwarnings
+  RUST_BACKTRACE: 1
 
 jobs:
   test:
     runs-on: ${{ matrix.os }}
-    if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+    if: ${{ !(startsWith(github.ref, 'refs/tags/v') || endsWith(github.event.head_commit.message, 'wip')) }}
     strategy:
       matrix:
         include:
@@ -25,7 +25,7 @@ jobs:
 
       - name: rust version
         run: rustc -V
-          
+
       - name: cache
         uses: actions/cache@v3
         with:
@@ -36,12 +36,15 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          
+
       - name: build workspace without default features
         run: cargo build --workspace --no-default-features
 
-      - name: build workspace with all features
-        run: cargo build --workspace --all-features
+      # doesn't work due to multiple identical symbol exports (main fn and before_unload) in test module
+      # - name: build workspace with all features
+      #   run: cargo build --workspace --all-features
+      - name: check workspace with all features
+        run: cargo check --workspace --all-features
 
       - name: clippy
         run: cargo clippy --workspace
@@ -84,3 +87,6 @@ jobs:
           cd ../export_main_macro
           cargo build --workspace
           cargo clippy --workspace
+
+      - name: test runner
+        run: cargo run --bin test_runner

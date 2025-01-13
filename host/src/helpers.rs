@@ -1,5 +1,5 @@
 use std::{
-  mem::MaybeUninit,
+  mem::{needs_drop, MaybeUninit},
   path::Path,
   sync::atomic::{AtomicU64, Ordering},
 };
@@ -50,24 +50,61 @@ pub unsafe fn get_library_export<'lib, F>(
   Ok(fn_)
 }
 
-// call module export with panic handling
+// call module export without args with panic handling
 // (in case of panic exported function returns false and return value remains uninitialized)
 pub unsafe fn call_module_pub_export<R>(
   library: &Library,
   name: &str,
-) -> Result<Option<R>, libloading::Error> {
-  let fn_ = get_library_export(library, name)?;
-  let fn_: Symbol<extern "C" fn(*mut MaybeUninit<R>) -> bool> = fn_;
+) -> Result<Option<R>, libloading::Error>
+where
+  R: Clone,
+{
+  // !!! keep in sync with relib_interface crate !!!
 
-  let mut return_value = MaybeUninit::uninit();
+  let mangled_name = format!("__relib__{name}");
+  let mangled_post_fn_name = format!("__post{}", mangled_name);
 
-  let success = fn_(&mut return_value);
-  if !success {
-    return Ok(None);
+  type PostFn<R> = extern "C" fn(*mut R);
+  let post_fn = get_library_export::<PostFn<R>>(library, &mangled_post_fn_name);
+
+  warn_if_type_needs_drop_without_post::<R>(name, post_fn.is_ok());
+
+  // if library has post function for this export return value is heap allocated
+  let return_value = if let Ok(post_fn) = post_fn {
+    let fn_ = get_library_export(library, &mangled_name)?;
+    let fn_: Symbol<extern "C" fn(*mut bool) -> MaybeUninit<*mut R>> = fn_;
+
+    let mut ____success____ = MaybeUninit::<bool>::uninit();
+
+    let return_ptr = fn_(____success____.as_mut_ptr());
+    if !____success____.assume_init() {
+      return Ok(None);
+    }
+
+    // SAFETY: function returned true so we are allowed to read the pointer
+    let return_ptr = return_ptr.assume_init();
+    let return_value: R = Clone::clone(&*return_ptr);
+
+    post_fn(return_ptr);
+
+    return_value
   }
+  // else return value is simple Copy type
+  else {
+    let fn_ = get_library_export(library, &mangled_name)?;
+    let fn_: Symbol<extern "C" fn(*mut bool) -> MaybeUninit<R>> = fn_;
 
-  // SAFETY: function returned true so we are allowed to read the pointer
-  let return_value = return_value.assume_init_read();
+    let mut ____success____ = MaybeUninit::<bool>::uninit();
+
+    let return_value = fn_(____success____.as_mut_ptr());
+    if !____success____.assume_init() {
+      return Ok(None);
+    }
+
+    // SAFETY: function returned true so we are allowed to read the pointer
+    return_value.assume_init()
+  };
+
   Ok(Some(return_value))
 }
 
@@ -94,5 +131,23 @@ pub mod linux {
         false
       }
     })
+  }
+}
+
+fn warn_if_type_needs_drop_without_post<R>(export_name: &str, export_has_post_fn: bool) {
+  let return_type_needs_drop = needs_drop::<R>();
+
+  if return_type_needs_drop != export_has_post_fn {
+    let post_fn_message = if export_has_post_fn {
+      "has post fn exported"
+    } else {
+      "does not have post fn exported"
+    };
+
+    eprintln!(
+      "[relib] warning: \"{export_name}\" export return type (usually exported using `relib_module::export`) \
+      may not match passed generic R type \
+      (std::mem::needs_drop::<R> is {return_type_needs_drop} but exported function {post_fn_message})"
+    );
   }
 }

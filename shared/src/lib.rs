@@ -139,8 +139,18 @@ macro_rules! fn_inputs_without_types {
         };
 
         let ts = quote::ToTokens::to_token_stream(&arg.pat);
-        quote! { #ts , }
+        quote! { #ts, }
       })
-      .collect::<proc_macro2::TokenStream>()
+      .collect::<Vec<_>>()
   };
+}
+
+pub fn type_needs_box(type_: &str) -> bool {
+  let stable_copy_type = [
+    "()", "bool", "u8", "i8", "u16", "i16", "u32", "i32", "u64", "i64", "usize", "isize",
+  ]
+  .contains(&type_)
+    || type_.starts_with(['*', '&']); // a pointer or a reference
+
+  !stable_copy_type
 }

@@ -8,9 +8,7 @@ impl<E: ModuleExportsForHost> Module<E> {
     let library_path = self.library_path.to_string_lossy().into_owned();
 
     unsafe {
-      // println!("Trying to call \"before_unload\");
-
-      let result = call_module_pub_export(library, "__relib__before_unload");
+      let result = call_module_pub_export(library, "before_unload");
       match result {
         Ok(Some(())) => {}
         Err(_) => {
@@ -24,7 +22,7 @@ impl<E: ModuleExportsForHost> Module<E> {
 
     #[cfg(target_os = "linux")]
     {
-      let spawned_threads = unsafe { *self.internal_exports.spawned_threads_count() };
+      let spawned_threads = unsafe { self.internal_exports.spawned_threads_count() };
 
       if spawned_threads > 0 {
         return Err(UnloadError::ThreadsStillRunning(library_path));

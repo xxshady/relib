@@ -1,19 +1,22 @@
 use std::{fs, path::Path};
 
-use proc_macro2::{Span, TokenStream as TokenStream2};
-use quote::{quote, ToTokens};
+use proc_macro2::TokenStream as TokenStream2;
+use quote::{format_ident, quote, ToTokens};
 use syn::{
-  punctuated::Punctuated, FnArg, Ident, Item, ItemTrait, ReturnType, Token, TraitItem, UseTree,
-  ItemUse,
+  punctuated::Punctuated, FnArg, GenericParam, Ident, Item, ItemTrait, ItemUse, ReturnType, Token,
+  TraitItem, UseTree,
 };
 
 use relib_internal_shared::fn_inputs_without_types;
 
-pub fn format_code(code: &str) -> String {
-  let file = syn::parse_file(code).unwrap_or_else(|e| {
-    panic!("Failed to parse code as syn File, reason: {e:#?}");
-  });
-  prettyplease::unparse(&file)
+pub fn format_code(code: &str, file_name: &str) -> String {
+  match syn::parse_file(code) {
+    Ok(file) => prettyplease::unparse(&file),
+    Err(e) => {
+      eprintln!("Failed to parse Rust code for formatting of file: {file_name}, reason: {e:#}");
+      code.to_owned()
+    }
+  }
 }
 
 pub fn parse_trait_file(
@@ -24,7 +27,7 @@ pub fn parse_trait_file(
   let Some((crate_name, _)) = trait_path.split_once("::") else {
     panic!("Failed to extract crate name from trait path: {trait_path}");
   };
-  let crate_name = Ident::new(crate_name, Span::call_site());
+  let crate_name = format_ident!("{crate_name}");
 
   let ast = syn::parse_file(file_content).unwrap_or_else(|e| {
     panic!("Failed to parse Rust code of trait file: {trait_name}: {e:#?}");
@@ -71,7 +74,7 @@ pub fn parse_trait_file(
 
 pub fn write_code_to_file(file: &str, code: TokenStream2) {
   let code = code.to_string();
-  let code = format_code(&code);
+  let code = format_code(&code, file);
   let out = format!(
     "// This file is generated, DO NOT edit manually\n\
     // ---------------------------------------------\n\n\
@@ -89,9 +92,17 @@ pub fn write_code_to_file(file: &str, code: TokenStream2) {
 pub struct TraitFn<'a> {
   pub ident: &'a Ident,
   pub inputs: &'a Punctuated<FnArg, Token![,]>,
-  pub inputs_without_types: TokenStream2,
+  pub inputs_without_types: Vec<TokenStream2>,
   pub output: &'a ReturnType,
   pub mangled_name: String,
+  pub mangled_ident: Ident,
+
+  pub post_ident: Ident,
+  pub post_mangled_name: String,
+  pub post_mangled_ident: Ident,
+
+  pub lifetimes_for: TokenStream2,
+  pub lifetimes_full: TokenStream2,
 }
 
 pub fn for_each_trait_item<'trait_>(
@@ -107,22 +118,64 @@ pub fn for_each_trait_item<'trait_>(
     "Functions in {trait_name} trait must not have `self` receiver"
   );
 
-  assert!(
-    fn_.generics.lt_token.is_none(),
-    "Functions in {trait_name} trait must not have generics since they are not FFI-safe"
-  );
+  let lifetimes = fn_.generics.params.iter().map(|p| {
+    let GenericParam::Lifetime(lt) = p else {
+      panic!(
+        "Functions in {trait_name} trait must not have generic types and const generics since they are not FFI-safe,\
+        it's only possible to use lifetime generics\n\
+        found in \"{}\" function",
+        fn_.ident
+      );
+    };
+
+    if !lt.bounds.is_empty() {
+      panic!(
+        "Functions in {trait_name} trait can't have lifetime bounds (`'a: 'b` syntax)\n\
+        found in \"{}\" function",
+        fn_.ident
+      );
+    }
+
+    lt
+  }).collect::<Vec<_>>();
+
+  // lifetime bounds are not allowed and it doesn't make sense without generics anyway
+  if fn_.generics.where_clause.is_some() {
+    panic!(
+      "Functions in {trait_name} trait can't have where clause\n\
+      found in \"{}\" function",
+      fn_.ident
+    );
+  }
+
+  let (lifetimes_for, lifetimes_full) = if !lifetimes.is_empty() {
+    let lifetimes = quote! { #( #lifetimes, )* };
+    (quote! { for<#lifetimes> }, quote! { <#lifetimes> })
+  } else {
+    (quote! {}, quote! {})
+  };
 
   let ident = &fn_.ident;
-
   let inputs_without_types = fn_inputs_without_types!(fn_.inputs);
+
+  // !!! keep in sync with main and before_unload calls in relib_host crate !!!
+  let mangled_name = format!("__relib__{trait_name}_{ident}");
+  let mangled_ident = format_ident!("{mangled_name}");
+  let post_mangled_name = format!("__post{mangled_name}");
+  let post_mangled_ident = format_ident!("{post_mangled_name}");
 
   TraitFn {
     ident,
     inputs: &fn_.inputs,
     inputs_without_types,
     output: &fn_.output,
-
-    mangled_name: format!("__relib__{trait_name}_{ident}"),
+    mangled_name,
+    mangled_ident,
+    post_ident: format_ident!("post_{ident}"),
+    post_mangled_name,
+    post_mangled_ident,
+    lifetimes_for,
+    lifetimes_full,
   }
 }
 
@@ -165,4 +218,9 @@ fn patch_item_use_if_needed(item_use: &ItemUse, crate_name: &Ident) -> TokenStre
 pub const SAFETY_DOC: &str = "# Safety\n\
   Behavior is undefined if any of the following conditions are violated:\n\
   1. Types of arguments and return value must be FFI-safe.\n\
-  2. Host and module crates must be compiled with same shared crate code (which contains exports and imports traits).";
+  2. Host and module crates must be compiled with same shared crate code (which contains exports and imports traits).\n\
+  3. Returned value must not be a reference-counting pointer (see [limitations](https://docs.rs/relib/latest/relib/#moving-non-copy-types-between-host-and-module)).";
+
+pub fn type_needs_box(type_: &TokenStream2) -> bool {
+  relib_internal_shared::type_needs_box(&type_.to_string())
+}
