@@ -7,6 +7,7 @@ on:
 
 env:
   RUSTFLAGS: -Dwarnings
+  RUST_BACKTRACE: 1
 
 jobs:
   test:
@@ -25,7 +26,7 @@ jobs:
 
       - name: rust version
         run: rustc -V
-          
+
       - name: cache
         uses: actions/cache@v3
         with:
@@ -36,7 +37,7 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          
+
       - name: build workspace without default features
         run: cargo build --workspace --no-default-features
 
