@@ -48,6 +48,140 @@ For ABI stable types, you can use abi_stable or stabby crate for it, see `abi_st
 
 If your program deadlocks unloading won't work and you will have to kill the whole process.
 
+### Moving non-`Copy` types between host and module
+
+#### Return values
+
+Non-`Copy` types (for example, a heap allocated string) are always implicitly cloned (and must implement `Clone` trait) on host-module boundary when returned from an export or import. Since host and module can use different global [allocators](https://doc.rust-lang.org/stable/std/alloc/index.html) and [`dealloc`](https://doc.rust-lang.org/stable/std/alloc/trait.GlobalAlloc.html#tymethod.dealloc) expects a pointer allocated exactly via this global allocator.
+
+For example:
+```rust
+// a type that is common for host and module
+#[repr(C)]
+#[derive(Debug)]
+struct MemoryChunk {
+  ptr: *const u8,
+  len: usize,
+}
+
+// allocates new chunk of memory using global allocator (will be called in generated bindings)
+impl Clone for MemoryChunk { ... }
+
+// deallocates it (will be called in generated bindings)
+impl Drop for MemoryChunk { ... }
+
+// host:
+impl Imports for ModuleImportsImpl {
+  fn example() -> MemoryChunk {
+    MemoryChunk { ... }
+  }
+}
+
+// module:
+// returned value will be implicitly cloned by using Clone trait
+let chunk: MemoryChunk = unsafe { gen_imports::example() }; // gen_imports is defined by relib_interface::include_imports!()
+```
+
+##### Some notes
+
+- Reference-counting pointers don't allocate new memory when cloned, but reuse old one, so they **must not be** moved through module-host boundary (Rc or Arc in std, but keep in mind that these std types don't have [stable ABI](#abi-stability)).
+
+- It's still possible to use raw pointers to avoid cloning if you're sure of what you're doing.
+
+#### Parameters
+
+Parameters are limited to `Copy` types, moving non-`Copy` types is not possible.
+
+For example:
+```rust
+// a type that is common for host and module
+#[repr(C)]
+#[derive(Debug)]
+struct MemoryChunk {
+  ptr: *const u8,
+  len: usize,
+}
+
+// allocates new chunk of memory using global allocator
+impl Clone for MemoryChunk { ... }
+
+// deallocates it
+impl Drop for MemoryChunk { ... }
+
+// host:
+impl Imports for ModuleImportsImpl {
+  fn example(chunk: &MemoryChunk) {
+    // if owned value is needed just call .to_owned() explicitly:
+    let chunk = chunk.to_owned();
+  }
+}
+
+// module:
+let chunk = MemoryChunk { ... };
+unsafe { gen_imports::example(&chunk) }; // gen_imports is defined by relib_interface::include_imports!()
+```
+
+##### Why parameters are limited to `Copy` types?
+
+Because when you can you should pass values by reference to avoid cost of the cloning allocations.
+
+It is the same reason as with return values: host and module can use different global [allocators](https://doc.rust-lang.org/stable/std/alloc/index.html) and [`dealloc`](https://doc.rust-lang.org/stable/std/alloc/trait.GlobalAlloc.html#tymethod.dealloc) expects a pointer allocated exactly via this global allocator. So if moving non-`Copy` types would be possible `relib` would still clone parameters implicitly.
+
+### Lifetime ellision in imports and exports
+
+Due to the code generation this code may not compile: (`RStr` is FFI-safe equivalent of `&str` from [abi_stable](https://docs.rs/abi_stable/latest/abi_stable/std_types/struct.RStr.html))
+
+```rust
+// shared:
+pub trait Exports {
+  fn ret_ref(str: RStr) -> RStr;
+}
+
+// module:
+impl Exports for ModuleExportsImpl {
+  fn ret_ref(str: RStr) -> RStr {
+    str.slice(..) // equal to str[..]
+  }
+}
+```
+
+Will result in:
+```txt
+error[E0621]: explicit lifetime required in the type of `str`
+   --> .../generated_module_exports.rs:234:9
+```
+
+In order to fix it you need add explicit lifetime to trait
+
+```rust
+pub trait Exports {
+  fn ret_ref<'a>(str: RStr<'a>) -> RStr<'a>;
+}
+```
+
+### Lifetime bounds in imports and exports
+
+It's not possible specify lifetime bounds for imports and exports as it's too complex to implement (there is no `for<'a, 'b: 'a> fn(...)` syntax).
+
+Example: (`RStr` is FFI-safe equivalent of `&str` from [abi_stable](https://docs.rs/abi_stable/latest/abi_stable/std_types/struct.RStr.html))
+
+```rust
+pub trait Exports {
+  fn returns_b<'a, 'b: 'a>(a: RStr<'a>, b: RStr<'b>) -> RStr<'a> {
+    b
+  }
+}
+```
+
+And suppress clippy lint if you use it:
+
+```rust
+pub trait Exports {
+  #[expect(clippy::needless_lifetimes)]
+  fn ret_ref<'a>(str: RStr<'a>) -> RStr<'a>;
+}
+```
+
 ## Why dynamic libraries when we already have WASM?
 
 If you can you should use WebAssembly since it's much more memory-safe approach. But what if WASM is not enough for you for some of these reasons: (some of which may be resolved in the future)

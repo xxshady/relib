@@ -9,6 +9,7 @@ members = [
   "testing/shared",
   "testing/host",
   "testing/module",
+  "testing/runner",
   "exportify",
   "export",
   "relib",
@@ -36,6 +37,8 @@ libloading = "0.8.6"
 thread-id = "5.0.0"
 quote = "1.0.37"
 proc-macro2 = "1.0.92"
+abi_stable = "0.11.3"
+cfg-if = "1.0.0"
 
 [workspace.dependencies.syn]
 version = "2.0.89"

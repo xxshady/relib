@@ -13,8 +13,26 @@ crate-type = ["cdylib"]
 
 [features]
 unloading = ["relib_module/unloading"]
+no_unloading = []
+ret_primitive_main = []
+ret_heap_main = []
+panic_main = []
+exportify = []
+threads_check = ["relib_module/unloading"]
+before_unload_panic = ["relib_module/unloading"]
+
+code_change = ["relib_module/unloading"]
+code_change_before_unload = []
+code_change_leak = []
+
+multiple_modules = ["relib_module/unloading"]
+panic_in_interface_host = []
+panic_in_interface_module = []
 
 [dependencies]
+abi_stable.workspace = true
+cfg-if.workspace = true
+thread-id.workspace = true
 
 [dependencies.relib_module]
 version = "0.2.3"

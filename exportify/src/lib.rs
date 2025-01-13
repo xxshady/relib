@@ -1,6 +1,6 @@
-use proc_macro2::{Span, TokenStream as TokenStream2};
-use quote::quote;
-use syn::{Ident, ItemFn};
+use proc_macro2::TokenStream as TokenStream2;
+use quote::{format_ident, quote};
+use syn::ItemFn;
 
 use relib_internal_shared::{fn_inputs_without_types, output_to_return_type};
 
@@ -46,33 +46,79 @@ pub fn exportify(input: TokenStream2) -> TokenStream2 {
   let inputs = sig.inputs;
   let ident = sig.ident;
   let mangled_name = format!("__relib__{ident}");
-  let mangled_name_ident = Ident::new(&mangled_name, Span::call_site());
+  let mangled_name_ident = format_ident!("{mangled_name}");
+  let post_mangled_name_ident = format_ident!("__post{mangled_name}");
   let return_type = output_to_return_type!(output);
   let inputs_without_types = fn_inputs_without_types!(inputs);
+
+  let ret_needs_box = relib_internal_shared::type_needs_box(&return_type.to_string());
+
+  let (return_type, return_value, post_export) = if ret_needs_box {
+    (
+      quote! { *mut #return_type },
+      quote! {
+        unsafe {
+          use std::boxed::Box;
+
+          let ptr = Box::into_raw(Box::new(return_value));
+          ptr
+        }
+      },
+      quote! {
+        #[unsafe(no_mangle)]
+        pub extern "C" fn #post_mangled_name_ident(
+          return_value_ptr: *mut #return_type
+        ) {
+          use std::boxed::Box;
+          unsafe {
+            drop(Box::from_raw(return_value_ptr));
+          }
+        }
+      },
+    )
+  } else {
+    (
+      return_type,
+      quote! {
+        return_value
+      },
+      quote! {},
+    )
+  };
 
   quote! {
     #[unsafe(export_name = #mangled_name)]
     #( #attrs )*
-    extern "C" fn #ident(
-      ____return_value____: *mut std::mem::MaybeUninit<#return_type>, // will be initialized if function won't panic
+    pub extern "C" fn #ident(
+      ____success____: *mut bool,
       #inputs
-    ) -> bool // returns false if function panicked
+    ) -> std::mem::MaybeUninit<#return_type> // will be initialized if function won't panic
     {
       fn #mangled_name_ident( #inputs ) #output #block
 
       let result = std::panic::catch_unwind(|| {
-        #mangled_name_ident( #inputs_without_types )
+        #mangled_name_ident( #( #inputs_without_types )* )
       });
       match result {
-        Ok(value) => {
+        Ok(return_value) => {
           unsafe {
-            (*____return_value____).write(value);
+            *____success____ = true;
           }
-          true
+
+          #[allow(unused_braces)]
+          std::mem::MaybeUninit::new({ #return_value })
         }
         // ignoring content since it's handled in our panic hook
-        Err(_) => { false }
+        Err(_) => {
+          unsafe {
+            *____success____ = false;
+          }
+
+          std::mem::MaybeUninit::uninit()
+        }
       }
     }
+
+    #post_export
   }
 }

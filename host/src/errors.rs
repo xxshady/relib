@@ -2,7 +2,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum LoadError {
-  #[error("libloading error")]
+  #[error("libloading error: {0}")]
   Libloading(#[from] libloading::Error),
 
   #[error("this module is already loaded")]
