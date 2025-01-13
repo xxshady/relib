@@ -34,6 +34,7 @@ fn backtrace_message() -> String {
     }
 
     // TODO: short backtrace when `RUST_BACKTRACE=1`
+    // https://github.com/xxshady/relib/issues/5
     Ok(_) => {
       let backtrace = backtrace::Backtrace::new();
       format!("stack backtrace:\n{backtrace:?}")
