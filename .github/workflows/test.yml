@@ -40,8 +40,11 @@ jobs:
       - name: build workspace without default features
         run: cargo build --workspace --no-default-features
 
+      # doesn't work due to multiple identical symbol exports (main fn and before_unload) in test module
       # - name: build workspace with all features
       #   run: cargo build --workspace --all-features
+      - name: check workspace with all features
+        run: cargo check --workspace --all-features
 
       - name: clippy
         run: cargo clippy --workspace
