@@ -3,7 +3,6 @@ name: Test changes
 on:
   push:
     branches: "*"
-  pull_request:
 
 env:
   RUSTFLAGS: -Dwarnings
