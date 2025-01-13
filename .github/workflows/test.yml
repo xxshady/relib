@@ -87,3 +87,6 @@ jobs:
           cd ../export_main_macro
           cargo build --workspace
           cargo clippy --workspace
+
+      - name: test runner
+        run: cargo run --bin test_runner
