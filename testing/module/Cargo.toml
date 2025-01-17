@@ -34,6 +34,9 @@ abi_stable.workspace = true
 cfg-if.workspace = true
 thread-id.workspace = true
 
+anyhow = { version = "1.0.95", features = ["backtrace"] }
+backtrace = "0.3.74"
+
 [dependencies.relib_module]
 version = "0.3.1"
 path = "../../module"

@@ -7,12 +7,8 @@
 
 #[relib_module::export]
 pub fn main() {
-  println!("[module] hello world");
-
-  // seems like standard library caches something for threads in memory on linux
-  // (it doesn't increase memory usage between module reloads though)
-  // so we need to spawn at least one thread here to "warm up" the memory for testing
-  std::thread::spawn(|| {}).join().unwrap();
+  let err = anyhow::anyhow!("err");
+  println!("[module] hello world\n{err:?}");
 }
 
 #[relib_module::export]

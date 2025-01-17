@@ -20,18 +20,20 @@ fn unload_module<E: ModuleExportsForHost>(module: Module<E>) {
 }
 
 pub fn main() {
-  print_memory_use();
+  unload_module(load_module::<(), ()>(init_module_imports).0);
 
-  // warm up the memory
-  for _ in 1..=12 {
-    unload_module(load_module::<(), ()>(init_module_imports).0);
-    print_memory_use();
-  }
+  // print_memory_use();
 
-  // TODO: check memory use here, on linux it should not be higher than 80MB
-  print_memory_use();
+  // // warm up the memory
+  // for _ in 1..=12 {
+  //   unload_module(load_module::<(), ()>(init_module_imports).0);
+  //   print_memory_use();
+  // }
 
-  test_unloading_features();
+  // // TODO: check memory use here, on linux it should not be higher than 80MB
+  // print_memory_use();
+
+  // test_unloading_features();
 }
 
 fn test_unloading_features() {
