@@ -85,24 +85,6 @@ fn run_host(directory: &str) {
     wait_for_end_of_exec(&mut stderr);
   }
 
-  dbg!();
-  // host_proc.kill().unwrap();
-
-  let (run, _) = cmd!(
-    "powershell",
-    "-Command",
-    "Remove-Item",
-    "-Path",
-    "'target/debug/deps/test_module.pdb'",
-    "-Force"
-  );
-  run();
-
-  // std::thread::sleep(Duration::from_millis(25_000));
-  // TEST
-  // std::fs::remove_file("target/debug/deps/test_module.pdb").unwrap();
-  dbg!();
-
   // TODO: add assert with memory usage check
   let (rebuild_debug, rebuild_release) = cmd!(
     "cargo",
