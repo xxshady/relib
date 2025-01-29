@@ -1,17 +1,31 @@
-use std::io::stdin;
+use std::io::{stderr, stdin, Write};
 
 use cfg_if::cfg_if;
-use relib_host::{Module, ModuleExportsForHost};
 
+use relib_host::{Module, ModuleExportsForHost};
+use test_shared::print_memory_use;
 use crate::shared::{init_module_imports, load_module};
 
 pub fn main() {
   println!("start");
 
   let mut s = String::new();
+  let mut i = 0;
   loop {
-    let (module, _) = load_module::<(), ()>(init_module_imports);
+    print_memory_use();
+
+    let (module, returned) = load_module::<(), ()>(init_module_imports, true);
+    returned.unwrap();
+
     unload_module(module);
+
+    print_memory_use();
+
+    i += 1;
+    let mut stderr = stderr().lock();
+    let message = format!("code_change_module_has_been_exec_{i}\n");
+    stderr.write_all(message.as_bytes()).unwrap();
+    stderr.flush().unwrap();
 
     println!("waiting");
     stdin().read_line(&mut s).unwrap();

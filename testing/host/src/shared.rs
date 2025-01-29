@@ -78,13 +78,15 @@ fn alloc_some_bytes() -> Vec<u8> {
 
 pub fn load_module<Exports: ModuleExportsForHost, MainRet: Clone>(
   init_imports: impl InitImports,
+  check_panic: bool,
 ) -> (Module<Exports>, Option<MainRet>) {
-  load_module_with_name(init_imports, "test_module")
+  load_module_with_name(init_imports, "test_module", check_panic)
 }
 
 pub fn load_module_with_name<Exports: ModuleExportsForHost, MainRet: Clone>(
   init_imports: impl InitImports,
   name: &str,
+  check_panic: bool,
 ) -> (Module<Exports>, Option<MainRet>) {
   let directory = if cfg!(debug_assertions) {
     "debug"
@@ -103,5 +105,10 @@ pub fn load_module_with_name<Exports: ModuleExportsForHost, MainRet: Clone>(
   });
 
   let ret = unsafe { module.call_main::<MainRet>() };
+
+  if check_panic {
+    assert!(ret.is_some(), "module main fn panicked");
+  }
+
   (module, ret)
 }

@@ -9,6 +9,7 @@ mod code_change;
 mod multiple_modules;
 mod panic_in_interface_module;
 mod panic_in_interface_host;
+mod backtrace_unloading;
 
 fn main() {
   if cfg!(feature = "unloading") {
@@ -29,6 +30,10 @@ fn main() {
     panic_in_interface_module::main();
   } else if cfg!(feature = "panic_in_interface_host") {
     panic_in_interface_host::main();
+  }
+  // depends on mmap_hooks in relib_module crate for linux
+  else if cfg!(feature = "backtrace_unloading") {
+    backtrace_unloading::main();
   } else {
     panic!();
   }

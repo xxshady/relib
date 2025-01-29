@@ -304,6 +304,8 @@ It's done using `#[global_allocator]` so if you want to set your own global allo
 | Thread-locals                                              | ✅      | 🟡 [(?)](#thread-locals-on-windows)  |
 | Background threads check [(?)](#background-threads-check)  | ✅      | ❌                                   |
 | Final unload check [(?)](#final-unload-check)              | ✅      | ❌                                   |
+| Before load check [(?)](#before-load-check)                | ✅      | ❌                                   |
+| mmap hooks [(?)](#mmap-hooks)                              | ✅      | Not needed                           |
 
 ### Memory deallocation
 
@@ -403,3 +405,11 @@ unsafe {
 ### Final unload check
 
 After host called `library.close()` ([`close`](https://docs.rs/libloading/latest/libloading/struct.Library.html#method.close) from libloading) it will check if library has indeed been unloaded. On Linux it's done via reading `/proc/self/maps`.
+
+### Before load check
+
+Before loading a module host checks if module is already loaded or not, if it's loaded [`ModuleAlreadyLoaded`](https://docs.rs/relib_host/latest/relib_host/enum.LoadError.html#variant.ModuleAlreadyLoaded) error will be returned.
+
+### mmap hooks
+
+Hooks of libc `mmap64` and `munmap` to unmap leaked memory mappings on module unloading. It's needed for example to unmap leaked mappings in std [backtrace](https://github.com/xxshady/relib/issues/7).

@@ -24,10 +24,14 @@ before_unload_panic = ["relib_module/unloading"]
 code_change = ["relib_module/unloading"]
 code_change_before_unload = []
 code_change_leak = []
+code_change_backtrace_unloading = ["relib_module/unloading"]
+code_change_backtrace_unloading2 = ["relib_module/unloading"]
 
 multiple_modules = ["relib_module/unloading"]
 panic_in_interface_host = []
 panic_in_interface_module = []
+
+backtrace_unloading = ["relib_module/unloading"]
 
 [dependencies]
 abi_stable.workspace = true

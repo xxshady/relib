@@ -21,6 +21,7 @@ code_change = ["relib_host/unloading"]
 multiple_modules = ["relib_host/unloading"]
 panic_in_interface_module = []
 panic_in_interface_host = []
+backtrace_unloading = ["relib_host/unloading"]
 
 [dependencies]
 libloading.workspace = true

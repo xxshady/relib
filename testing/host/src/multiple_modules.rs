@@ -40,6 +40,6 @@ fn unload_module<E: ModuleExportsForHost>(module: Module<E>) {
 }
 
 fn load_module(name: &str) -> Module<()> {
-  let (module, _) = shared::load_module_with_name::<(), ()>(init_module_imports, name);
+  let (module, _) = shared::load_module_with_name::<(), ()>(init_module_imports, name, true);
   module
 }

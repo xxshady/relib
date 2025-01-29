@@ -24,7 +24,7 @@ pub fn main() {
 
   // warm up the memory
   for _ in 1..=12 {
-    unload_module(load_module::<(), ()>(init_module_imports).0);
+    unload_module(load_module::<(), ()>(init_module_imports, true).0);
     print_memory_use();
   }
 
@@ -39,7 +39,7 @@ fn test_unloading_features() {
     println!("[host] loading module");
 
     assert_mem_dealloc(|| {
-      let (module, _) = load_module::<ModuleExports, ()>(init_module_imports);
+      let (module, _) = load_module::<ModuleExports, ()>(init_module_imports, true);
 
       unsafe {
         test_exports(module.exports()).unwrap();

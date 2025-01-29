@@ -5,6 +5,7 @@ mod multiple_modules;
 mod panic_in_interface_host;
 
 const TEST_FEATURES: &[&str] = &[
+  "backtrace_unloading",
   "unloading",
   "no_unloading",
   "exportify",

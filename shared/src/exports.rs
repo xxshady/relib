@@ -7,7 +7,8 @@ pub trait ___Internal___Exports___ {
   fn take_cached_allocs_before_exit();
   fn lock_module_allocator();
 
-  // currently linux-only
+  // linux-only
   fn spawned_threads_count() -> u64;
   fn run_thread_local_dtors();
+  fn unmap_all_mmaps();
 }

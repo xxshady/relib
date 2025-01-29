@@ -9,6 +9,11 @@ relib_interface::include_imports!();
 mod thread_locals;
 #[cfg(target_os = "linux")]
 mod thread_spawn_hook;
+/// hooks of libc mmap64 and munmap to cleanup
+/// leaked memory mappings on module unloading
+/// (for example, std backtrace leaks them)
+#[cfg(target_os = "linux")]
+mod mmap_hooks;
 
 mod helpers;
 mod exports_impl;

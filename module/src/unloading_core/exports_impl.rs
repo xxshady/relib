@@ -53,4 +53,15 @@ impl Exports for ModuleExportsImpl {
       super::helpers::unrecoverable("spawned_threads_count called on windows")
     }
   }
+
+  fn unmap_all_mmaps() {
+    #[cfg(target_os = "linux")]
+    {
+      super::mmap_hooks::unmap_all();
+    }
+    #[cfg(target_os = "windows")]
+    {
+      super::helpers::unrecoverable("unmap_all_mmaps called on windows")
+    }
+  }
 }
