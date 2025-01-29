@@ -14,6 +14,8 @@ pub fn main() {
 
   build_debug();
   run_host("debug");
+  reset_iteration();
+
   build_release();
   run_host("release");
 }
@@ -129,8 +131,13 @@ fn run_host(directory: &str) {
   assert!(stdout_content.contains("[module] before_unload"));
 }
 
+static ITERATION: AtomicI32 = AtomicI32::new(0);
+
+fn reset_iteration() {
+  ITERATION.store(0, Relaxed);
+}
+
 fn wait_for_end_of_exec(stderr: &mut ChildStderr) {
-  static ITERATION: AtomicI32 = AtomicI32::new(0);
   let i = {
     let prev = ITERATION.load(Relaxed);
     let next = prev + 1;
