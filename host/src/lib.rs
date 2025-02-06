@@ -44,7 +44,12 @@ mod windows;
 /// };
 ///
 /// // `()` means empty imports and exports, module doesn't import or export anything
-/// let module = relib_host::load_module::<()>(path_to_dylib, ()).unwrap();
+/// let module = unsafe {
+///   relib_host::load_module::<()>(path_to_dylib, ())
+/// };
+/// let module = module.unwrap_or_else(|e| {
+///   panic!("module loading failed: {e:#}");
+/// });
 ///
 /// // main function is unsafe to call (as well as any other module export) because these pre-conditions are not checked by relib:
 /// // - Returned value must be actually `R` at runtime. For example if you called this function with type bool but module returns i32, UB will occur.

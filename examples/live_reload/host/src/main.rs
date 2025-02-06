@@ -43,7 +43,7 @@ fn run_module() -> AnyErrorResult {
   };
   let path_to_dylib = "target/debug/".to_owned() + file_name;
 
-  let module = relib_host::load_module::<()>(path_to_dylib, ())?;
+  let module = unsafe { relib_host::load_module::<()>(path_to_dylib, ()) }?;
 
   let returned = unsafe { module.call_main::<()>() };
   if returned.is_none() {

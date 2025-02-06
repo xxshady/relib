@@ -50,7 +50,10 @@ fn main() {
   };
 
   // `()` means empty imports and exports, here module doesn't import or export anything
-  let module = relib_host::load_module::<()>(path_to_dylib, ()).unwrap_or_else(|e| {
+  let module = unsafe {
+    relib_host::load_module::<()>(path_to_dylib, ())
+  };
+  let module = module.unwrap_or_else(|e| {
     panic!("module loading failed: {e:#}");
   });
 
@@ -214,10 +217,12 @@ impl shared::imports::Imports for gen_imports::ModuleImportsImpl {
 
 - After that we need to modify `load_module` call in the host crate:
 ```rust
-let module = relib_host::load_module::<()>(
-  path_to_dylib,
-  gen_imports::init_imports
-).unwrap();
+let module = unsafe {
+  relib_host::load_module::<()>(
+    path_to_dylib,
+    gen_imports::init_imports,
+  )
+};
 ```
 
 - And now we can call "foo" from module/src/lib.rs:
@@ -250,10 +255,15 @@ impl shared::exports::Exports for gen_exports::ModuleExportsImpl {
 }
 
 // in host/src/main.rs:
-let module = relib_host::load_module::<gen_exports::ModuleExports>(
-  path_to_dylib,
-  gen_imports::init_imports
-).unwrap();
+let module = unsafe {
+  relib_host::load_module::<gen_exports::ModuleExports>(
+    path_to_dylib,
+    gen_imports::init_imports,
+  )
+};
+let module = module.unwrap_or_else(|e| {
+  panic!("module loading failed: {e:#}");
+});
 ```
 
 Except one thing, return value:
@@ -342,7 +352,9 @@ When any export (`main`, `before_unload` and implemented on `gen_exports::Module
 ```rust
 // host:
 
-let module = relib::load_module::<ModuleExports>("...")?;
+let module = unsafe {
+  relib::load_module::<ModuleExports>("...")
+}?;
 
 let value = module.call_main::<()>();
 if value.is_none() {
