@@ -28,3 +28,9 @@ mod panic_in_interface;
 
 #[cfg(feature = "backtrace_unloading")]
 mod backtrace_unloading;
+
+#[cfg(feature = "is_already_loaded_error")]
+mod is_already_loaded_error;
+
+#[cfg(feature = "dbghelp_is_already_loaded_init")]
+mod dbghelp_is_already_loaded_init;

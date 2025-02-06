@@ -1,3 +1,5 @@
+use std::ffi::c_void;
+
 use crate::{ModuleId, SliceAllocation};
 
 #[expect(non_camel_case_types)]
@@ -11,4 +13,7 @@ pub trait ___Internal___Exports___ {
   fn spawned_threads_count() -> u64;
   fn run_thread_local_dtors();
   fn unmap_all_mmaps();
+
+  // windows-only
+  fn set_dealloc_callback(callback: *const c_void);
 }

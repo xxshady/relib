@@ -22,6 +22,7 @@ pub fn is_it_host_owner_thread() -> bool {
   thread_id::get() == unsafe { HOST_OWNER_THREAD }
 }
 
+// TODO: update this because it turns out it doesnt work as expected
 /// on windows thread-local destructors are called automatically in `library.close()`,
 /// but at that time it's already too late, because we deallocate everything before
 /// `library.close()` (in "exit" module export) so we need to turn allocator dealloc method into no-op

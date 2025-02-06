@@ -8,4 +8,7 @@ pub trait ___Internal___Imports___ {
 
   // for avoiding allocations & thread local creation inside the module
   fn eprintln(message: Str);
+
+  // TEST
+  fn panic(info: &std::panic::PanicHookInfo);
 }

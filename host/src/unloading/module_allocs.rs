@@ -7,8 +7,7 @@ use relib_internal_shared::{
   Allocation, AllocatorOp, AllocatorPtr, ModuleId, SliceAllocatorOp, StableLayout,
 };
 
-use crate::{exports_types::ModuleExportsForHost, Module};
-use super::helpers::unrecoverable;
+use super::{helpers::unrecoverable, InternalModuleExports};
 
 type Allocs = HashMap<ModuleId, HashMap<AllocatorPtr, Allocation>>;
 
@@ -27,14 +26,21 @@ pub fn add_module(module_id: ModuleId) {
   allocs.insert(module_id, Default::default());
 }
 
-pub fn remove_module<E: ModuleExportsForHost>(module: &Module<E>) {
+pub fn remove_module(
+  module_id: ModuleId,
+  internal_exports: &InternalModuleExports,
+  library_path_str: &str,
+) {
   unsafe {
-    module.internal_exports.take_cached_allocs_before_exit();
+    internal_exports.take_cached_allocs_before_exit();
   }
 
   let mut allocs = lock_allocs();
-  let Some(allocs) = allocs.remove(&module.id) else {
-    panic!("Failed to take allocs of module with id: {}", module.id);
+  let Some(allocs) = allocs.remove(&module_id) else {
+    panic!(
+      "Failed to take allocs of module with module_id: {}",
+      module_id
+    );
   };
 
   // this check relies on two allocations in alloc tracker of the module,
@@ -45,7 +51,7 @@ pub fn remove_module<E: ModuleExportsForHost>(module: &Module<E>) {
       module path: {}\n\
       note: if \"global_alloc_tracker\" feature is disabled, \
       make sure that you registered relib_module::AllocTracker<A> using #[global_allocator]",
-      module.library_path.display()
+      library_path_str
     );
   }
 
@@ -53,7 +59,7 @@ pub fn remove_module<E: ModuleExportsForHost>(module: &Module<E>) {
   let allocs: &[Allocation] = &allocs;
 
   unsafe {
-    module.internal_exports.exit(allocs.into());
+    internal_exports.exit(allocs.into());
   }
 }
 

@@ -10,6 +10,8 @@ members = [
   "testing/host",
   "testing/module",
   "testing/runner",
+  "testing/host_as_dylib",
+  "testing/host_shared",
   "exportify",
   "export",
   "relib",

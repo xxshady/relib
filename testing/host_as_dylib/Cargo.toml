@@ -1,5 +1,5 @@
 [package]
-name = "test_host"
+name = "test_host_as_dylib"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -8,28 +8,14 @@ readme.workspace = true
 rust-version.workspace = true
 publish = false
 
+[lib]
+crate-type = ["cdylib"]
+
 [features]
-unloading = ["relib_host/unloading"]
-no_unloading = []
-ret_primitive_main = []
-ret_heap_main = []
-panic_main = []
-exportify = []
-threads_check = ["relib_host/unloading"]
-before_unload_panic = ["relib_host/unloading"]
-code_change = ["relib_host/unloading"]
-multiple_modules = ["relib_host/unloading"]
-panic_in_interface_module = []
-panic_in_interface_host = []
-backtrace_unloading = ["relib_host/unloading"]
 backtrace_unloading_host_as_dylib = ["relib_host/unloading"]
-is_already_loaded_error = ["relib_host/unloading"]
-dbghelp_is_already_loaded_panic = []
-dbghelp_is_already_loaded_init = []
 
 [dependencies]
 libloading.workspace = true
-abi_stable.workspace = true
 cfg-if.workspace = true
 
 [dependencies.test_host_shared]

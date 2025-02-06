@@ -14,15 +14,49 @@ pub fn main() {
   if cfg!(feature = "code_change_backtrace_unloading") {
     println!("code_change_backtrace_unloading");
 
-    let backtrace = Backtrace::force_capture();
-    // TODO: add assert
-    let _ = format!("{backtrace}");
+    if cfg!(debug_assertions) {
+      let backtrace = Backtrace::force_capture();
+      let backtrace = format!("{backtrace}");
+      assert!(backtrace.contains("testing\\module\\src\\code_change.rs:18"));
+    } else {
+      #[inline(never)]
+      #[unsafe(no_mangle)]
+      fn testing_release_backtrace_code_change____() -> (Backtrace, String) {
+        (
+          Backtrace::force_capture(),
+          // a hack to prevent optimization
+          String::from("awdfkjgkfjgfg"),
+        )
+      }
+
+      let (backtrace, _) = testing_release_backtrace_code_change____();
+      let backtrace = format!("{backtrace}");
+      assert!(
+        backtrace.contains("testing_release_backtrace_code_change____"),
+        "backtrace was:\n{backtrace}"
+      );
+    }
   }
 
   if cfg!(feature = "code_change_backtrace_unloading2") {
-    let backtrace = Backtrace::force_capture();
-    // TODO: add assert
-    let _ = format!("{backtrace}");
+    if cfg!(debug_assertions) {
+      let backtrace = Backtrace::force_capture();
+      let backtrace = format!("{backtrace}");
+      assert!(backtrace.contains("testing\\module\\src\\code_change.rs:45"));
+    } else {
+      #[inline(never)]
+      #[unsafe(no_mangle)]
+      fn testing_release_backtrace_code_change2____() -> Backtrace {
+        Backtrace::force_capture()
+      }
+
+      let backtrace = testing_release_backtrace_code_change2____();
+      let backtrace = format!("{backtrace}");
+      assert!(
+        backtrace.contains("testing_release_backtrace_code_change2____"),
+        "backtrace was:\n{backtrace}"
+      );
+    }
   }
 }
 

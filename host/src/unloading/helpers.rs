@@ -10,6 +10,10 @@ pub fn unrecoverable_with_prefix(message: &str, prefix: &str) -> ! {
 
 fn unrecoverable_impl(message: &str) -> ! {
   eprintln!("{message}");
+
+  let backtrace = std::backtrace::Backtrace::capture();
+  eprintln!("backtrace: {backtrace}");
+
   eprintln!("aborting");
   std::process::abort();
 }

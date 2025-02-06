@@ -32,92 +32,102 @@ fn run_host(directory: &str) {
   let mut stderr = host_proc.stderr.take().unwrap();
   let mut stdin = host_proc.stdin.take().unwrap();
 
-  wait_for_end_of_exec(&mut stderr);
+  let mut stderr_content = String::new();
 
-  let (rebuild_debug, rebuild_release) = cmd!(
-    "cargo",
-    "build",
-    "--workspace",
-    "--features",
-    "code_change,code_change_before_unload"
-  );
+  // try blocks when
+  let res: Result<(), ()> = (|| {
+    wait_for_end_of_exec(&mut stderr, &mut stderr_content)?;
 
-  if directory == "release" {
-    rebuild_release();
-  } else {
-    rebuild_debug();
-  }
+    let (rebuild_debug, rebuild_release) = cmd!(
+      "cargo",
+      "build",
+      "--workspace",
+      "--features",
+      "code_change,code_change_before_unload"
+    );
 
-  stdin.write_all(b"next\n").unwrap();
-  wait_for_end_of_exec(&mut stderr);
+    if directory == "release" {
+      rebuild_release();
+    } else {
+      rebuild_debug();
+    }
 
-  let (rebuild_debug, rebuild_release) = cmd!(
-    "cargo",
-    "build",
-    "--workspace",
-    "--features",
-    "code_change,code_change_before_unload,code_change_leak"
-  );
-
-  if directory == "release" {
-    rebuild_release();
-  } else {
-    rebuild_debug();
-  }
-
-  stdin.write_all(b"next\n").unwrap();
-  wait_for_end_of_exec(&mut stderr);
-
-  let (rebuild_debug, rebuild_release) = cmd!(
-    "cargo",
-    "build",
-    "--workspace",
-    "--features",
-    "code_change,code_change_before_unload,code_change_leak,code_change_backtrace_unloading"
-  );
-
-  if directory == "release" {
-    rebuild_release();
-  } else {
-    rebuild_debug();
-  }
-
-  for _ in 1..=10 {
     stdin.write_all(b"next\n").unwrap();
-    wait_for_end_of_exec(&mut stderr);
-  }
+    wait_for_end_of_exec(&mut stderr, &mut stderr_content)?;
 
-  // TODO: add assert with memory usage check
-  let (rebuild_debug, rebuild_release) = cmd!(
-    "cargo",
-    "build",
-    "--workspace",
-    "--features",
-    "code_change,code_change_before_unload,code_change_leak,code_change_backtrace_unloading,code_change_backtrace_unloading2"
-  );
+    let (rebuild_debug, rebuild_release) = cmd!(
+      "cargo",
+      "build",
+      "--workspace",
+      "--features",
+      "code_change,code_change_before_unload,code_change_leak"
+    );
 
-  if directory == "release" {
-    rebuild_release();
-  } else {
-    rebuild_debug();
-  }
+    if directory == "release" {
+      rebuild_release();
+    } else {
+      rebuild_debug();
+    }
 
-  for _ in 1..=10 {
     stdin.write_all(b"next\n").unwrap();
-    wait_for_end_of_exec(&mut stderr);
-  }
+    wait_for_end_of_exec(&mut stderr, &mut stderr_content)?;
 
-  thread::sleep(Duration::from_millis(500));
-  stdin.write_all(b"end\n").unwrap();
+    let (rebuild_debug, rebuild_release) = cmd!(
+      "cargo",
+      "build",
+      "--workspace",
+      "--features",
+      "code_change,code_change_before_unload,code_change_leak,code_change_backtrace_unloading"
+    );
+
+    if directory == "release" {
+      rebuild_release();
+    } else {
+      rebuild_debug();
+    }
+
+    for _ in 1..=10 {
+      stdin.write_all(b"next\n").unwrap();
+      wait_for_end_of_exec(&mut stderr, &mut stderr_content)?;
+    }
+
+    // TODO: add assert with memory usage check
+    let (rebuild_debug, rebuild_release) = cmd!(
+      "cargo",
+      "build",
+      "--workspace",
+      "--features",
+      "code_change,code_change_before_unload,code_change_leak,code_change_backtrace_unloading,code_change_backtrace_unloading2"
+    );
+
+    if directory == "release" {
+      rebuild_release();
+    } else {
+      rebuild_debug();
+    }
+
+    for _ in 1..=10 {
+      stdin.write_all(b"next\n").unwrap();
+      wait_for_end_of_exec(&mut stderr, &mut stderr_content)?;
+    }
+
+    thread::sleep(Duration::from_millis(500));
+    stdin.write_all(b"end\n").unwrap();
+
+    Ok(())
+  })();
+
+  dbg!(&res);
 
   let status = host_proc.wait().unwrap();
 
   let mut stdout_content = String::new();
   stdout.read_to_string(&mut stdout_content).unwrap();
-
-  // TODO: this doesnt work because of wait_for_end_of_exec
-  let mut stderr_content = String::new();
   stderr.read_to_string(&mut stderr_content).unwrap();
+
+  if res.is_ok() {
+    assert!(stderr_content.contains("received_end_______________\n"));
+  }
 
   println!(
     "host code_change test output\n\
@@ -137,7 +147,7 @@ fn reset_iteration() {
   ITERATION.store(0, Relaxed);
 }
 
-fn wait_for_end_of_exec(stderr: &mut ChildStderr) {
+fn wait_for_end_of_exec(stderr: &mut ChildStderr, stderr_content: &mut String) -> Result<(), ()> {
   let i = {
     let prev = ITERATION.load(Relaxed);
     let next = prev + 1;
@@ -152,13 +162,18 @@ fn wait_for_end_of_exec(stderr: &mut ChildStderr) {
   let mut buf = vec![0_u8; 1000];
   loop {
     let count = stderr.read(&mut buf).unwrap();
-    assert_ne!(count, 0);
+    if count == 0 {
+      return Err(());
+    }
 
     let received_chunk = std::str::from_utf8(&buf[..count]).unwrap();
+    *stderr_content += received_chunk;
     dbg!(received_chunk);
 
     if received_chunk.contains(&expected_message) {
       break;
     }
   }
+
+  Ok(())
 }

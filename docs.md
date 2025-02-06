@@ -301,10 +301,10 @@ It's done using `#[global_allocator]` so if you want to set your own global allo
 |----------------------------------------------------------- |-------  |------------------------------------  |
 | Memory deallocation [(?)](#memory-deallocation)            | ✅      | ✅                                   |
 | Panic handling [(?)](#panic-handling)                      | ✅      | ✅                                   |
-| Thread-locals                                              | ✅      | 🟡 [(?)](#thread-locals-on-windows)  |
+| Thread-locals                                              | ✅      | ✅                                   |
 | Background threads check [(?)](#background-threads-check)  | ✅      | ❌                                   |
-| Final unload check [(?)](#final-unload-check)              | ✅      | ❌                                   |
-| Before load check [(?)](#before-load-check)                | ✅      | ❌                                   |
+| Final unload check [(?)](#final-unload-check)              | ✅      | ✅                                   |
+| Before load check [(?)](#before-load-check)                | ✅      | ✅                                   |
 | mmap hooks [(?)](#mmap-hooks)                              | ✅      | Not needed                           |
 
 ### Memory deallocation
@@ -332,27 +332,6 @@ unsafe {
 Dynamic library cannot be unloaded safely if background threads spawned by it are still running at the time of unloading, so host checks them and returns [`ThreadsStillRunning`](https://docs.rs/relib_host/latest/relib_host/enum.UnloadError.html#variant.ThreadsStillRunning) error if so.
 
 **note:** module can register [`before_unload`](#before_unload) function to join threads when host triggers module [`unload`](https://docs.rs/relib_host/latest/relib_host/struct.Module.html#method.unload)
-
-### Thread-locals on Windows
-
-Temporary limitation: destructors of thread-locals must not allocate on Windows.
-
-```rust
-struct DropWithAlloc;
-
-impl Drop for DropWithAlloc {
-  fn drop(&mut self) {
-    // will abort entire process (host) with error
-    vec![1];
-  }
-}
-
-thread_local! {
-  static D: DropWithAlloc = DropWithAlloc;
-}
-
-DropWithAlloc.with(|_| {}); // initialize it
-```
 
 ### Panic handling
 

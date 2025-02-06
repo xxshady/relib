@@ -5,7 +5,7 @@ pub fn main() {
   if cfg!(debug_assertions) {
     let backtrace = Backtrace::force_capture();
     let backtrace = format!("{backtrace}");
-    assert!(backtrace.contains("testing\\module\\src\\backtrace_unloading.rs:6"));
+    assert!(backtrace.contains("testing\\module\\src\\dbghelp_is_already_loaded_init.rs:6"));
   } else {
     #[inline(never)]
     #[unsafe(no_mangle)]

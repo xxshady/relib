@@ -34,6 +34,7 @@ pub fn main() {
 
     if s.trim() == "end" {
       println!("received end");
+      eprintln!("received_end_______________");
       break;
     }
     s.clear();

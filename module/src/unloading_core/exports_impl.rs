@@ -1,4 +1,4 @@
-use std::sync::atomic::Ordering;
+use std::{ffi::c_void, sync::atomic::Ordering};
 
 use relib_internal_shared::{exports::___Internal___Exports___ as Exports, ModuleId};
 use super::{
@@ -62,6 +62,17 @@ impl Exports for ModuleExportsImpl {
     #[cfg(target_os = "windows")]
     {
       super::helpers::unrecoverable("unmap_all_mmaps called on windows")
+    }
+  }
+
+  fn set_dealloc_callback(callback: *const c_void) {
+    #[cfg(target_os = "windows")]
+    unsafe {
+      super::windows_dealloc::set_dealloc_callback(callback);
+    }
+    #[cfg(target_os = "linux")]
+    {
+      super::helpers::unrecoverable("set_dealloc_callback called on linux")
     }
   }
 }

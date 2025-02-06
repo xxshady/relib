@@ -1,9 +1,18 @@
 use std::{env, panic::set_hook, thread};
 
-use super::gen_imports;
+use super::{allocator_lock, gen_imports, helpers::unrecoverable};
 
 pub fn init() {
   set_hook(Box::new(|info| {
+    if allocator_lock() {
+      unsafe {
+        gen_imports::panic(info);
+      }
+      // unrecoverable("panicked after allocator was locked");
+    }
+
+    // TODO: these can cause allocation when thread local destructors are called on windows
+
     let current_thread = thread::current();
     let thread_name = current_thread.name().unwrap_or("<unnamed>");
     let backtrace_message = backtrace_message();

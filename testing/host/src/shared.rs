@@ -1,8 +1,9 @@
 use std::cell::Cell;
 
 use abi_stable::std_types::{RStr, RString, RVec};
-use relib_host::{InitImports, Module, ModuleExportsForHost};
 use test_shared::{imports::Imports, SIZE_200_MB};
+
+pub use test_host_shared::*;
 
 relib_interface::include_exports!();
 relib_interface::include_imports!();
@@ -74,41 +75,4 @@ impl Imports for ModuleImportsImpl {
 
 fn alloc_some_bytes() -> Vec<u8> {
   vec![1_u8; SIZE_200_MB]
-}
-
-pub fn load_module<Exports: ModuleExportsForHost, MainRet: Clone>(
-  init_imports: impl InitImports,
-  check_panic: bool,
-) -> (Module<Exports>, Option<MainRet>) {
-  load_module_with_name(init_imports, "test_module", check_panic)
-}
-
-pub fn load_module_with_name<Exports: ModuleExportsForHost, MainRet: Clone>(
-  init_imports: impl InitImports,
-  name: &str,
-  check_panic: bool,
-) -> (Module<Exports>, Option<MainRet>) {
-  let directory = if cfg!(debug_assertions) {
-    "debug"
-  } else {
-    "release"
-  };
-
-  let path = if cfg!(target_os = "linux") {
-    format!("target/{directory}/lib{name}.so")
-  } else {
-    format!("target/{directory}/{name}.dll")
-  };
-
-  let module = relib_host::load_module::<Exports>(path, init_imports).unwrap_or_else(|e| {
-    panic!("{e:#}");
-  });
-
-  let ret = unsafe { module.call_main::<MainRet>() };
-
-  if check_panic {
-    assert!(ret.is_some(), "module main fn panicked");
-  }
-
-  (module, ret)
 }

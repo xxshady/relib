@@ -14,7 +14,12 @@ unloading_core = ["relib_interface/unloading", "dep:thread-id"]
 global_alloc_tracker = []
 
 [lints.clippy]
+# unrecoverable must be used instead
 unwrap_used = "forbid"
+panic = "forbid"
+unreachable = "forbid"
+unimplemented = "forbid"
+todo = "forbid"
 
 [package.metadata.docs.rs]
 all-features = true

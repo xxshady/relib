@@ -21,4 +21,15 @@ impl Imports for ModuleImportsImpl {
     let message = unsafe { message.into_str() };
     eprintln!("{message}");
   }
+
+  // TEST
+  fn panic(info: &std::panic::PanicHookInfo) {
+    let message = info.payload().downcast_ref::<&str>().expect("awdawd");
+    eprintln!("panic: {message}");
+    let backtrace = std::backtrace::Backtrace::capture();
+    eprintln!("backtrace: {backtrace}");
+    std::process::abort();
+    // panic!();
+    // helpers::unrecoverable_with_prefix(message, "module");
+  }
 }
