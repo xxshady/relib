@@ -6,7 +6,10 @@ use super::errors::UnloadError;
 
 impl<E: ModuleExportsForHost> Module<E> {
   /// Unloads module, if it fails, module may be leaked and never be unloaded.
-  pub fn unload(mut self) -> Result<(), UnloadError> {
+  pub fn unload(
+    #[allow(unused_mut)] // only used on windows
+    mut self,
+  ) -> Result<(), UnloadError> {
     let library = self.library();
     let library_path = self.library_path.to_string_lossy().into_owned();
 

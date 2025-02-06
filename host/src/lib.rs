@@ -147,3 +147,12 @@ pub unsafe fn __suppress_unused_warning_for_linux_only_exports(
 ) {
   exports.spawned_threads_count();
 }
+
+#[cfg(all(target_os = "windows", feature = "unloading"))]
+#[expect(clippy::missing_safety_doc)]
+pub unsafe fn __suppress_unused_warning_for_windows_only_exports(
+  exports: unloading::InternalModuleExports,
+) {
+  #[expect(unreachable_code)]
+  exports.set_dealloc_callback(todo!());
+}
