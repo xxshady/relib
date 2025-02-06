@@ -146,9 +146,8 @@ impl Exports for ModuleExportsImpl {
       fn drop(&mut self) {
         // TODO: add custom println for testing? since println uses thread-local
         // println!("[module] thread local 2 drop called");
-        unsafe {
-          DROP_IN_THREAD_CALLED.store(true, Relaxed);
-        }
+
+        DROP_IN_THREAD_CALLED.store(true, Relaxed);
       }
     }
 

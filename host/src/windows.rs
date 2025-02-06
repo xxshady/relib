@@ -6,7 +6,6 @@ use std::{ffi::OsString, os::windows::ffi::OsStringExt, path::PathBuf};
 /// 2. Fixes unloading of dynamic libraries from dbghelp.dll
 // TODO: load dbghelp.dll lazily when std or backtrace crate calls LoadLibrary?
 // TODO: crate feature to disable dbghelp stuff if backtraces are not needed
-#[cfg(target_os = "windows")]
 pub mod dbghelp;
 
 #[allow(clippy::upper_case_acronyms)]
@@ -45,11 +44,10 @@ pub fn get_current_dylib() -> Option<PathBuf> {
   fn get_dylib_path(len: usize) -> Option<PathBuf> {
     let mut buf = Vec::with_capacity(len);
     unsafe {
-      // TODO: test it
       let module_handle = std::ptr::null_mut();
-
       let flags =
         GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
+
       let failed = GetModuleHandleExW(flags, get_dylib_path as *const _, module_handle) == 0;
       if failed {
         None

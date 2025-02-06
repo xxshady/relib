@@ -30,18 +30,6 @@ impl<A: GlobalAlloc> AllocTracker<A> {
 
 unsafe impl<A: GlobalAlloc> GlobalAlloc for AllocTracker<A> {
   unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-    // #[cfg(target_os = "windows")]
-    // {
-    //   use super::helpers::disable_allocator_for_thread_local_destructors;
-    //   if disable_allocator_for_thread_local_destructors() {
-    //     unrecoverable(
-    //       "module cannot allocate after its memory has been freed\n\
-    //       note: check if thread-locals registered in main thread of the module have allocations \
-    //       inside Drop implementation, since currently it's not supported on windows",
-    //     );
-    //   }
-    // }
-
     assert_allocator_is_still_accessible();
 
     let ptr = self.allocator.alloc(layout);
@@ -61,17 +49,6 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for AllocTracker<A> {
   }
 
   unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-    // #[cfg(target_os = "windows")]
-    // {
-    //   use super::helpers::disable_allocator_for_thread_local_destructors;
-
-    //   if !UNLOAD_DEALLOCATION.load(Ordering::SeqCst)
-    //     && disable_allocator_for_thread_local_destructors()
-    //   {
-    //     return;
-    //   }
-    // }
-
     assert_allocator_is_still_accessible();
 
     self.allocator.dealloc(ptr, layout);

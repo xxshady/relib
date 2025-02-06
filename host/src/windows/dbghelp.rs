@@ -2,10 +2,7 @@ use std::{
   env::current_exe,
   ffi::c_void,
   path::{Path, PathBuf},
-  sync::{
-    atomic::{AtomicBool, Ordering::Relaxed},
-    LazyLock, Mutex, MutexGuard, PoisonError,
-  },
+  sync::{Mutex, MutexGuard},
 };
 
 use libloading::Library;
@@ -25,19 +22,15 @@ use super::{
 
 const STATIC_SEARCH_PATH_ENTRIES: usize = 2;
 
+static INSTANCE: Mutex<Option<Dbghelp>> = Mutex::new(None);
+
 // dbghelp.dll is single-threaded, so for a multi-threaded environment
 // we need to lock it manually
-fn lock() -> MutexGuard<'static, ()> {
-  static LOCK: Mutex<()> = Mutex::new(());
-  LOCK
-    .lock()
-    // copy pasted it from std
-    .unwrap_or_else(PoisonError::into_inner)
+fn lock_instance() -> MutexGuard<'static, Option<Dbghelp>> {
+  INSTANCE.lock().unwrap_or_else(|e| {
+    panic!("Failed to lock dbghelp instance: {e}");
+  })
 }
-
-static INSTANCE: LazyLock<Mutex<Dbghelp>> = LazyLock::new(|| Mutex::new(unsafe { init() }));
-
-static INITIALIZED: AtomicBool = AtomicBool::new(false);
 
 #[cfg(feature = "unloading")]
 type SymUnloadModule64 = unsafe extern "system" fn(process: HANDLE, base: u64) -> BOOL;
@@ -61,13 +54,11 @@ struct Dbghelp {
 }
 
 pub fn try_init_from_load_module() {
-  let _lock = lock();
-
-  if INITIALIZED.load(Relaxed) {
+  let mut instance = lock_instance();
+  if instance.is_some() {
     return;
   }
 
-  // TODO: add test for this check
   if is_library_loaded("dbghelp.dll") {
     panic!(
       "dbghelp.dll must not be loaded before any module is loaded \
@@ -77,18 +68,15 @@ pub fn try_init_from_load_module() {
     );
   }
 
-  LazyLock::force(&INSTANCE);
-  INITIALIZED.store(true, Relaxed);
+  *instance = Some(unsafe { init() });
 }
 
 pub fn try_init() {
-  let _lock = lock();
-
-  if INITIALIZED.load(Relaxed) {
+  let mut instance = lock_instance();
+  if instance.is_some() {
     return;
   }
 
-  // TODO: add test for this check
   if is_library_loaded("dbghelp.dll") {
     panic!(
       "dbghelp.dll must not be loaded before calling `relib_host::init` \
@@ -96,8 +84,7 @@ pub fn try_init() {
     );
   }
 
-  LazyLock::force(&INSTANCE);
-  INITIALIZED.store(true, Relaxed);
+  *instance = Some(unsafe { init() });
 }
 
 unsafe fn init() -> Dbghelp {
@@ -236,11 +223,10 @@ unsafe fn init() -> Dbghelp {
 }
 
 pub fn add_module(path: &str) {
-  let _lock = lock();
-
-  let mut instance = INSTANCE.lock().unwrap_or_else(|e| {
-    panic!("Failed to lock dbghelp instance: {e}");
-  });
+  let mut instance = lock_instance();
+  let instance = instance
+    .as_mut()
+    .expect("add_module must be called after init");
 
   if let Some(module_dirname) = module_path_str_to_dirname(path) {
     let dirname = module_dirname.dirname();
@@ -249,16 +235,15 @@ pub fn add_module(path: &str) {
     }
   }
 
-  refresh_modules_and_search_path(&mut instance);
+  refresh_modules_and_search_path(instance);
 }
 
 #[cfg(feature = "unloading")]
 pub fn remove_module(handle: isize, path: &str) {
-  let _lock = lock();
-
-  let mut instance = INSTANCE.lock().unwrap_or_else(|e| {
-    panic!("Failed to lock dbghelp instance: {e}");
-  });
+  let mut instance = lock_instance();
+  let instance = instance
+    .as_mut()
+    .expect("remove_module must be called after init");
 
   if let Some(module_dirname) = module_path_str_to_dirname(path) {
     let dirname = module_dirname.dirname();
@@ -283,7 +268,7 @@ pub fn remove_module(handle: isize, path: &str) {
   let result = unsafe { (instance.unload_module)(process, handle as u64) };
   handle_error(result, "SymUnloadModule64");
 
-  refresh_modules_and_search_path(&mut instance);
+  refresh_modules_and_search_path(instance);
 }
 
 fn handle_error(result: BOOL, fn_name: &str) {
@@ -300,6 +285,7 @@ fn refresh_modules_and_search_path(instance: &mut Dbghelp) {
   let mut search_path = instance.search_path_entries.join(";");
   search_path += ";";
   let search_path = str_to_wide_cstring(&search_path);
+
   let result = unsafe { (instance.set_search_path)(process, search_path.as_ptr()) };
   handle_error(result, "SymSetSearchPathW");
 

@@ -12,7 +12,7 @@ fn unrecoverable_impl(message: &str) -> ! {
   eprintln!("{message}");
 
   let backtrace = std::backtrace::Backtrace::capture();
-  eprintln!("backtrace: {backtrace}");
+  eprintln!("backtrace:\n{backtrace}");
 
   eprintln!("aborting");
   std::process::abort();

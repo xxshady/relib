@@ -1,13 +1,14 @@
 use crate::{
-  helpers::{call_module_pub_export, is_library_loaded, path_to_str},
-  unloading::helpers::unrecoverable,
-  windows, Module, ModuleExportsForHost,
+  helpers::{call_module_pub_export, is_library_loaded},
+  leak_library::LeakLibrary,
+  unloading::windows_dealloc,
+  Module, ModuleExportsForHost,
 };
-use super::{errors::UnloadError, module_allocs};
+use super::errors::UnloadError;
 
 impl<E: ModuleExportsForHost> Module<E> {
   /// Unloads module, if it fails, module may be leaked and never be unloaded.
-  pub fn unload(self) -> Result<(), UnloadError> {
+  pub fn unload(mut self) -> Result<(), UnloadError> {
     let library = self.library();
     let library_path = self.library_path.to_string_lossy().into_owned();
 
@@ -48,65 +49,40 @@ impl<E: ModuleExportsForHost> Module<E> {
     #[cfg(target_os = "linux")]
     module_allocs::remove_module(self.id, &self.internal_exports, &library_path);
 
-    let library_path_str = library_path.as_str();
-
     #[cfg(target_os = "linux")]
     self.library.take().close()?;
 
     #[cfg(target_os = "windows")]
     {
-      use std::{cell::RefCell, ffi::c_void};
       use libloading::os::windows::Library as WindowsLibrary;
+      use crate::windows::dbghelp;
 
       let library = self.library.take();
-
-      // converting it into raw handle
       let handle = WindowsLibrary::from(library).into_raw();
 
-      thread_local! {
-        static DEALLOC_CLOSURE: RefCell<Option<Box<dyn FnOnce()>>> = Default::default();
-      }
+      dbghelp::remove_module(handle, &library_path);
 
-      extern "C" fn dealloc_callback() {
-        DEALLOC_CLOSURE.with_borrow_mut(|v| {
-          let callback = v.take().unwrap_or_else(|| {
-            unrecoverable("DEALLOC_CLOSURE must be set when dealloc_callback is called");
-          });
-          callback();
-        });
-      }
+      // re-initializing self.library because windows_dealloc::set
+      // takes module instance by value
+      // (shouldn't be expensive, just looks weird)
+      let library = unsafe { WindowsLibrary::from_raw(handle) };
+      let library = libloading::Library::from(library);
+      self.library = LeakLibrary::new(library);
 
-      unsafe {
-        self
-          .internal_exports
-          .set_dealloc_callback(dealloc_callback as *const c_void);
-      }
+      windows_dealloc::set(self, library_path.clone());
 
-      DEALLOC_CLOSURE.set(Some(Box::new({
-        let library_path = library_path.clone();
-
-        move || {
-          unsafe {
-            self.internal_exports.lock_module_allocator();
-          }
-          windows::dbghelp::remove_module(handle, &library_path);
-          module_allocs::remove_module(self.id, &self.internal_exports, &library_path);
-        }
-      })));
-
-      // converting it back into library instance
       let library = unsafe { WindowsLibrary::from_raw(handle) };
       library.close()?;
 
       assert!(
-        DEALLOC_CLOSURE.take().is_none(),
-        "DEALLOC_CLOSURE must be called in library.close()"
+        windows_dealloc::successfully_called(),
+        "windows dealloc callback must be called in library.close()"
       );
     }
 
     // final unload check
 
-    let still_loaded = is_library_loaded(library_path_str);
+    let still_loaded = is_library_loaded(&library_path);
     if still_loaded {
       return Err(UnloadError::UnloadingFail(library_path));
     }

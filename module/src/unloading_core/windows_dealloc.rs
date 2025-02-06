@@ -25,29 +25,24 @@ static SUPER_SPECIAL_CALLBACK_CALLED: AtomicBool = AtomicBool::new(false);
 // SAFETY: will be set from main thread and be read too
 static mut DEALLOC_CALLBACK: *const c_void = std::ptr::null();
 
-// TODO: check if its called for other dlls as well
 #[unsafe(no_mangle)]
-extern "system" fn DllMain(_: *mut c_void, reason: u32, _: *mut c_void) -> BOOL {
-  if reason != DLL_PROCESS_DETACH {
+extern "system" fn DllMain(_: *mut c_void, reason: u32, lpv_reserved: *mut c_void) -> BOOL {
+  if !(
+    reason == DLL_PROCESS_DETACH && 
+    // lpv_reserved is null if FreeLibrary has been called or the DLL load failed and non-null
+    // if the process is terminating
+    lpv_reserved.is_null()
+  ) {
     return TRUE;
   }
 
-  // use std::io::Write;
-  // let mut buffer = [0u8; 32];
-  // // let msg = {
-  // let mut writer = &mut buffer[..];
-  // writeln!(writer, "DllMain reason: {}", reason).unwrap();
-  // let mut stdout = std::io::stdout().lock();
-  // stdout.write_all(&buffer).unwrap();
-  // stdout.flush().unwrap();
-
   if !SUPER_SPECIAL_CALLBACK_CALLED.load(Relaxed) {
-    unrecoverable("super special callback was not called before DLL_PROCESS_DETACH :c");
+    unrecoverable("super special callback was not called before DLL_PROCESS_DETACH");
   }
 
   unsafe {
     if DEALLOC_CALLBACK.is_null() {
-      unrecoverable("dealloc callback was not set before DLL_PROCESS_DETACH :c");
+      unrecoverable("dealloc callback was not set before DLL_PROCESS_DETACH");
     }
 
     // SAFETY: see dealloc_callback in host Module unload() impl
@@ -75,7 +70,6 @@ extern "system" fn DllMain(_: *mut c_void, reason: u32, _: *mut c_void) -> BOOL 
 static SUPER_SPECIAL_CALLBACK: extern "system" fn(*mut c_void, u32, *mut c_void) =
   callback_to_ensure_tls_destructors_are_called_before_dllmain;
 
-// TODO: check if its called for other dlls as well
 extern "system" fn callback_to_ensure_tls_destructors_are_called_before_dllmain(
   _: *mut c_void,
   reason: u32,

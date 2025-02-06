@@ -31,7 +31,7 @@ fn unload_module<E: ModuleExportsForHost>(module: Module<E>) {
     if #[cfg(feature = "multiple_modules")] {
       let id = module.id;
       module.unload().unwrap();
-      dbg!(id);
+      println!("{:?} unloaded: {id}", std::thread::current().id());
     } else {
       drop(module);
       panic!("this branch must not be called");
