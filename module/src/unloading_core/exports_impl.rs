@@ -72,6 +72,7 @@ impl Exports for ModuleExportsImpl {
     }
     #[cfg(target_os = "linux")]
     {
+      let _ = callback;
       super::helpers::unrecoverable("set_dealloc_callback called on linux")
     }
   }
