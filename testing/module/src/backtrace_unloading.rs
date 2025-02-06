@@ -1,11 +1,14 @@
-use std::backtrace::Backtrace;
+use std::{backtrace::Backtrace, path::MAIN_SEPARATOR};
 
 #[relib_module::export]
 pub fn main() {
   if cfg!(debug_assertions) {
     let backtrace = Backtrace::force_capture();
     let backtrace = format!("{backtrace}");
-    assert!(backtrace.contains("testing\\module\\src\\backtrace_unloading.rs:6"));
+    let s = MAIN_SEPARATOR;
+    assert!(backtrace.contains(&format!(
+      "testing{s}module{s}src{s}backtrace_unloading.rs:6"
+    )));
   } else {
     #[inline(never)]
     #[unsafe(no_mangle)]

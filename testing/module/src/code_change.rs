@@ -1,4 +1,4 @@
-use std::{backtrace::Backtrace, mem::forget};
+use std::{backtrace::Backtrace, mem::forget, path::MAIN_SEPARATOR};
 
 use crate::shared::alloc_some_bytes;
 
@@ -11,6 +11,8 @@ pub fn main() {
     forget(alloc_some_bytes());
   }
 
+  let s = MAIN_SEPARATOR;
+
   if cfg!(feature = "code_change_backtrace_unloading") {
     println!("code_change_backtrace_unloading");
 
@@ -18,7 +20,7 @@ pub fn main() {
       let backtrace = Backtrace::force_capture();
       let backtrace = format!("{backtrace}");
       assert!(
-        backtrace.contains("testing\\module\\src\\code_change.rs:18"),
+        backtrace.contains(&format!("testing{s}module{s}src{s}code_change.rs:20")),
         "backtrace was:\n{backtrace}"
       );
     } else {
@@ -45,7 +47,7 @@ pub fn main() {
     if cfg!(debug_assertions) {
       let backtrace = Backtrace::force_capture();
       let backtrace = format!("{backtrace}");
-      assert!(backtrace.contains("testing\\module\\src\\code_change.rs:46"));
+      assert!(backtrace.contains(&format!("testing{s}module{s}src{s}code_change.rs:48")));
     } else {
       #[inline(never)]
       #[unsafe(no_mangle)]
