@@ -1,7 +1,5 @@
 use crate::{
   helpers::{call_module_pub_export, is_library_loaded},
-  leak_library::LeakLibrary,
-  unloading::windows_dealloc,
   Module, ModuleExportsForHost,
 };
 use super::errors::UnloadError;
@@ -47,7 +45,7 @@ impl<E: ModuleExportsForHost> Module<E> {
     // are called by standard library in `library.close()`)
 
     #[cfg(target_os = "linux")]
-    module_allocs::remove_module(self.id, &self.internal_exports, &library_path);
+    super::module_allocs::remove_module(self.id, &self.internal_exports, &library_path);
 
     #[cfg(target_os = "linux")]
     self.library.take().close()?;
@@ -55,7 +53,7 @@ impl<E: ModuleExportsForHost> Module<E> {
     #[cfg(target_os = "windows")]
     {
       use libloading::os::windows::Library as WindowsLibrary;
-      use crate::windows::dbghelp;
+      use crate::{windows::dbghelp, unloading::windows_dealloc, leak_library::LeakLibrary};
 
       let library = self.library.take();
       let handle = WindowsLibrary::from(library).into_raw();
