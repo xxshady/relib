@@ -14,12 +14,10 @@ mod thread_spawn_hook;
 /// (for example, std backtrace leaks them)
 #[cfg(target_os = "linux")]
 mod mmap_hooks;
-
 mod helpers;
 mod exports_impl;
 mod alloc_tracker;
 pub use alloc_tracker::AllocTracker;
-mod panic_hook;
 #[cfg(target_os = "windows")]
 mod windows_dealloc;
 
