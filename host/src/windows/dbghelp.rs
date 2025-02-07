@@ -43,7 +43,7 @@ type SymGetSearchPathW =
   unsafe extern "system" fn(hprocess: HANDLE, searchpatha: PWSTR, searchpathlength: u32) -> BOOL;
 type SymRefreshModuleList = unsafe extern "system" fn(process: HANDLE) -> BOOL;
 
-struct Dbghelp {
+pub struct Dbghelp {
   _lib: Library,
   search_path_entries: Vec<String>,
 
@@ -239,9 +239,9 @@ pub fn add_module(path: &str) {
 }
 
 #[cfg(feature = "unloading")]
-pub fn remove_module(handle: isize, path: &str) {
-  let mut instance = lock_instance();
-  let instance = instance
+pub fn remove_module(handle: isize, path: &str) -> MutexGuard<'static, Option<Dbghelp>> {
+  let mut instance_ = lock_instance();
+  let instance = instance_
     .as_mut()
     .expect("remove_module must be called after init");
 
@@ -268,6 +268,14 @@ pub fn remove_module(handle: isize, path: &str) {
   let result = unsafe { (instance.unload_module)(process, handle as u64) };
   handle_error(result, "SymUnloadModule64");
 
+  instance_
+}
+
+pub fn refresh_modules(mut instance: MutexGuard<'static, Option<Dbghelp>>) {
+  // TODO: refactor this
+  let instance = instance
+    .as_mut()
+    .expect("refresh_modules must be called after init");
   refresh_modules_and_search_path(instance);
 }
 
