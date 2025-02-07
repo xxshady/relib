@@ -284,6 +284,10 @@ fn refresh_modules_and_search_path(instance: &mut Dbghelp) {
 
   let mut search_path = instance.search_path_entries.join(";");
   search_path += ";";
+
+  // TEST
+  println!("[host] search_path: {search_path}");
+
   let search_path = str_to_wide_cstring(&search_path);
 
   let result = unsafe { (instance.set_search_path)(process, search_path.as_ptr()) };

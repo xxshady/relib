@@ -15,7 +15,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-22.04
+          # // TEST
+          # - os: ubuntu-22.04
           - os: windows-2022
     steps:
       - name: checkout

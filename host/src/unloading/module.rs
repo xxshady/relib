@@ -61,8 +61,7 @@ impl<E: ModuleExportsForHost> Module<E> {
       let library = self.library.take();
       let handle = WindowsLibrary::from(library).into_raw();
 
-      dbghelp::remove_module(handle, &library_path);
-
+      // TODO: is it needed if dbg help remove module will be moved?
       // re-initializing self.library because windows_dealloc::set
       // takes module instance by value
       // (shouldn't be expensive, just looks weird)
@@ -79,6 +78,8 @@ impl<E: ModuleExportsForHost> Module<E> {
         windows_dealloc::successfully_called(),
         "windows dealloc callback must be called in library.close()"
       );
+
+      dbghelp::remove_module(handle, &library_path);
     }
 
     // final unload check
