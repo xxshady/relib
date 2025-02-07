@@ -71,8 +71,7 @@ impl<E: ModuleExportsForHost> Module<E> {
 
       windows_dealloc::set(self, library_path.clone());
 
-      // TEST
-      drop(dbghelp::remove_module(handle, &library_path));
+      dbghelp::remove_module(handle, &library_path);
 
       let library = unsafe { WindowsLibrary::from_raw(handle) };
       library.close()?;
