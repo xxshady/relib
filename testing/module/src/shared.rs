@@ -1,4 +1,8 @@
-use std::{mem::forget, thread};
+use std::{
+  mem::forget,
+  sync::atomic::{AtomicBool, Ordering::Relaxed},
+  thread,
+};
 
 use abi_stable::std_types::{RStr, RString, RVec};
 
@@ -88,7 +92,9 @@ impl Exports for ModuleExportsImpl {
 
     impl Drop for TlsWithDrop {
       fn drop(&mut self) {
-        println!("[module] thread local drop called");
+        // TODO: add custom println for testing? since println uses thread-local
+        // println!("[module] thread local drop called");
+
         unsafe {
           gen_imports::thread_local_drop_called();
         }
@@ -98,32 +104,66 @@ impl Exports for ModuleExportsImpl {
     thread_local! {
       static TLS_WITH_DROP: TlsWithDrop = TlsWithDrop {
         _mem: alloc_some_bytes(),
-      }
+      };
+
+      static TLS_WITH_DROP2: TlsWithDrop2 = TlsWithDrop2 {
+        _mem: alloc_some_bytes(),
+      };
+
+      static TLS_WITH_DROP3: TlsWithDrop2 = TlsWithDrop2 {
+        _mem: alloc_some_bytes(),
+      };
     }
 
-    TLS_WITH_DROP.with(|_| {});
+    println!("before init of thread local");
+    TLS_WITH_DROP.with(|v| {
+      println!("after init of thread local");
+      assert_eq!(v._mem.len(), SIZE_200_MB);
+    });
 
     struct TlsWithDrop2 {
       _mem: Vec<u8>,
     }
 
-    impl Drop for TlsWithDrop2 {
+    println!("22222222 before init of thread local");
+    TLS_WITH_DROP2.with(|v| {
+      println!("22222222 after init of thread local");
+      assert_eq!(v._mem.len(), SIZE_200_MB);
+    });
+
+    println!("33333333 before init of thread local");
+    TLS_WITH_DROP3.with(|v| {
+      println!("33333333 after init of thread local");
+      assert_eq!(v._mem.len(), SIZE_200_MB);
+    });
+
+    struct AnotherTlsWithDrop {
+      _mem: Vec<u8>,
+    }
+
+    static DROP_IN_THREAD_CALLED: AtomicBool = AtomicBool::new(false);
+    impl Drop for AnotherTlsWithDrop {
       fn drop(&mut self) {
-        println!("[module] thread local 2 drop called");
+        // TODO: add custom println for testing? since println uses thread-local
+        // println!("[module] thread local 2 drop called");
+
+        DROP_IN_THREAD_CALLED.store(true, Relaxed);
       }
     }
 
     thread_local! {
-      static TLS_WITH_DROP2: TlsWithDrop2 = TlsWithDrop2 {
+      static ANOTHER_TLS_WITH_DROP: AnotherTlsWithDrop = AnotherTlsWithDrop {
         _mem: alloc_some_bytes(),
       }
     }
 
     thread::spawn(|| {
-      TLS_WITH_DROP2.with(|_| {});
+      ANOTHER_TLS_WITH_DROP.with(|_| {});
     })
     .join()
     .unwrap();
+
+    assert!(DROP_IN_THREAD_CALLED.load(Relaxed));
   }
 
   fn alloc_mem() -> RVec<u8> {
@@ -137,6 +177,15 @@ impl Exports for ModuleExportsImpl {
   fn call_host_panic() {
     unsafe {
       gen_imports::panic();
+    }
+  }
+
+  fn only_called_once() -> bool {
+    static mut CALLED: bool = false;
+    unsafe {
+      let val = CALLED;
+      CALLED = true;
+      !val
     }
   }
 }

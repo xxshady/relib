@@ -21,11 +21,20 @@ code_change = ["relib_host/unloading"]
 multiple_modules = ["relib_host/unloading"]
 panic_in_interface_module = []
 panic_in_interface_host = []
+backtrace_unloading = ["relib_host/unloading"]
+backtrace_unloading_host_as_dylib = ["relib_host/unloading"]
+is_already_loaded_error = ["relib_host/unloading"]
+dbghelp_is_already_loaded_panic = []
+dbghelp_is_already_loaded_init = []
 
 [dependencies]
 libloading.workspace = true
 abi_stable.workspace = true
 cfg-if.workspace = true
+
+[dependencies.test_host_shared]
+version = "0.3.1"
+path = "../host_shared"
 
 [dependencies.relib_host]
 version = "0.3.1"

@@ -2,7 +2,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum LoadError {
-  #[error("libloading error: {0}")]
+  #[error("libloading error: {0:#?}")]
   Libloading(#[from] libloading::Error),
 
   #[error("this module is already loaded")]
@@ -18,4 +18,10 @@ pub enum LoadError {
     and with identical relib features: \"unloading\" enabled/disabled"
   )]
   ModuleCompilationMismatch { module: String, host: String },
+
+  #[error(
+    "failed to get compilation info\n\
+    note: make sure that compiled .so/.dll has relib_module crate in it"
+  )]
+  CouldNotGetCompilationInfo,
 }

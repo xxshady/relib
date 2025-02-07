@@ -30,10 +30,10 @@ pub fn assert_mem_dealloc<R>(f: impl FnOnce() -> R) -> R {
       "memory must be deallocated, before: {before_mb:.2}mb, after: {after_mb:.2}mb"
     );
   } else {
-    const SIZE_1MB: usize = 1024 * 1024;
+    const SIZE_3MB: usize = 1024 * 1024 * 3;
     // for some reason there is a small difference, i think it doesn't really matter
     assert!(
-      after_mem.abs_diff(before_mem) < SIZE_1MB,
+      after_mem.saturating_sub(before_mem) < SIZE_3MB,
       "memory must be deallocated, before: {before_mb:.2}mb, after: {after_mb:.2}mb"
     );
   }

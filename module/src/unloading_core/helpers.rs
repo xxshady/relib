@@ -21,12 +21,3 @@ pub fn assert_allocator_is_still_accessible() {
 pub fn is_it_host_owner_thread() -> bool {
   thread_id::get() == unsafe { HOST_OWNER_THREAD }
 }
-
-/// on windows thread-local destructors are called automatically in `library.close()`,
-/// but at that time it's already too late, because we deallocate everything before
-/// `library.close()` (in "exit" module export) so we need to turn allocator dealloc method into no-op
-/// (unlike linux where we call thread-local destructors ourselves, see `thread_locals` module)
-#[cfg(target_os = "windows")]
-pub fn disable_allocator_for_thread_local_destructors() -> bool {
-  allocator_lock()
-}

@@ -29,7 +29,7 @@ cfg_if! {
 }
 
 pub fn main() {
-  let (_, ret) = load_module::<(), MainRet>(init_module_imports);
+  let (_, ret) = load_module::<(), MainRet>(init_module_imports, false);
 
   if cfg!(feature = "panic_main") {
     assert_eq!(ret, None);

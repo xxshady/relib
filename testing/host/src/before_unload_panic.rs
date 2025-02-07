@@ -4,7 +4,7 @@ use relib_host::{Module, ModuleExportsForHost};
 use crate::shared::{init_module_imports, load_module};
 
 pub fn main() {
-  let (module, _) = load_module::<(), ()>(init_module_imports);
+  let (module, _) = load_module::<(), ()>(init_module_imports, true);
   unload_module(module);
 }
 

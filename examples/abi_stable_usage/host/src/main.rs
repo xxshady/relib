@@ -20,10 +20,10 @@ fn main() {
     "target/debug/module.dll"
   };
 
-  let module = relib_host::load_module::<ModuleExports>(path_to_dylib, init_imports)
-    .unwrap_or_else(|e| {
-      panic!("module loading failed: {e:#}");
-    });
+  let module = unsafe { relib_host::load_module::<ModuleExports>(path_to_dylib, init_imports) };
+  let module = module.unwrap_or_else(|e| {
+    panic!("module loading failed: {e:#}");
+  });
 
   unsafe { module.call_main::<()>() }.unwrap();
 

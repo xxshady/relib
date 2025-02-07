@@ -23,8 +23,9 @@ pub fn main() {
   print_memory_use();
 
   // warm up the memory
+  // NOTE: on windows it jumps to ~16MB on first load due to the initialization of dbglhelp.dll
   for _ in 1..=12 {
-    unload_module(load_module::<(), ()>(init_module_imports).0);
+    unload_module(load_module::<(), ()>(init_module_imports, true).0);
     print_memory_use();
   }
 
@@ -39,7 +40,7 @@ fn test_unloading_features() {
     println!("[host] loading module");
 
     assert_mem_dealloc(|| {
-      let (module, _) = load_module::<ModuleExports, ()>(init_module_imports);
+      let (module, _) = load_module::<ModuleExports, ()>(init_module_imports, true);
 
       unsafe {
         test_exports(module.exports()).unwrap();
@@ -92,6 +93,12 @@ unsafe fn test_exports(exports: &ModuleExports) -> Option<()> {
   exports.leak()?;
 
   exports.call_imports()?;
+
+  let must_be_true = exports.only_called_once()?;
+  assert!(must_be_true);
+
+  let must_be_false = exports.only_called_once()?;
+  assert!(!must_be_false);
 
   // ------------------------------------------------------------------------
   let _suppress_unused_warn = || {

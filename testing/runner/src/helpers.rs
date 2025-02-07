@@ -1,3 +1,5 @@
+use std::env::consts::{DLL_PREFIX, DLL_SUFFIX};
+
 macro_rules! cmd_impl {
   ( $program:expr $(, $arg:expr )* $(; current_dir: $current_dir:expr )? ) => {
     (
@@ -56,4 +58,9 @@ pub fn host_bin_by_directory(directory: &str) -> String {
 pub fn call_host_by_directory(directory: &str) {
   let (host_bin, _) = cmd!(&host_bin_by_directory(directory));
   host_bin();
+}
+
+// TODO: move it to some testing shared crate (see host_shared crate)
+pub fn dylib_filename(name: &str) -> String {
+  format!("{DLL_PREFIX}{name}{DLL_SUFFIX}")
 }

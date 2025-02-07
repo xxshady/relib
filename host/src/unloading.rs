@@ -4,6 +4,8 @@ pub use errors::UnloadError;
 pub(crate) mod module_allocs;
 mod helpers;
 mod imports_impl;
+#[cfg(target_os = "windows")]
+mod windows_dealloc;
 
 relib_interface::include_exports!();
 relib_interface::include_imports!();

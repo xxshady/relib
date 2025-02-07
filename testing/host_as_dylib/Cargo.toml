@@ -1,0 +1,45 @@
+[package]
+name = "test_host_as_dylib"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+backtrace_unloading_host_as_dylib = ["relib_host/unloading"]
+
+[dependencies]
+libloading.workspace = true
+cfg-if.workspace = true
+
+[dependencies.test_host_shared]
+version = "0.3.1"
+path = "../host_shared"
+
+[dependencies.relib_host]
+version = "0.3.1"
+path = "../../host"
+
+[dependencies.test_shared]
+version = "=0.3.1"
+path = "../shared"
+
+[dependencies.relib_interface]
+version = "0.3.1"
+path = "../../interface"
+features = ["include"]
+
+[build-dependencies.relib_interface]
+version = "0.3.1"
+path = "../../interface"
+features = ["build"]
+
+[build-dependencies.test_shared]
+version = "=0.3.1"
+path = "../shared"

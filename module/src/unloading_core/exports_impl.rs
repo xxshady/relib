@@ -1,9 +1,8 @@
-use std::sync::atomic::Ordering;
+use std::{ffi::c_void, sync::atomic::Ordering};
 
 use relib_internal_shared::{exports::___Internal___Exports___ as Exports, ModuleId};
 use super::{
-  alloc_tracker, gen_exports::ModuleExportsImpl, panic_hook, ALLOCATOR_LOCK, HOST_OWNER_THREAD,
-  MODULE_ID,
+  alloc_tracker, gen_exports::ModuleExportsImpl, ALLOCATOR_LOCK, HOST_OWNER_THREAD, MODULE_ID,
 };
 
 impl Exports for ModuleExportsImpl {
@@ -14,8 +13,6 @@ impl Exports for ModuleExportsImpl {
 
       alloc_tracker::init();
     }
-
-    panic_hook::init();
   }
 
   fn exit(allocs: relib_internal_shared::SliceAllocation) {
@@ -51,6 +48,29 @@ impl Exports for ModuleExportsImpl {
     #[cfg(target_os = "windows")]
     {
       super::helpers::unrecoverable("spawned_threads_count called on windows")
+    }
+  }
+
+  fn unmap_all_mmaps() {
+    #[cfg(target_os = "linux")]
+    {
+      super::mmap_hooks::unmap_all();
+    }
+    #[cfg(target_os = "windows")]
+    {
+      super::helpers::unrecoverable("unmap_all_mmaps called on windows")
+    }
+  }
+
+  fn set_dealloc_callback(callback: *const c_void) {
+    #[cfg(target_os = "windows")]
+    unsafe {
+      super::windows_dealloc::set_dealloc_callback(callback);
+    }
+    #[cfg(target_os = "linux")]
+    {
+      let _ = callback;
+      super::helpers::unrecoverable("set_dealloc_callback called on linux")
     }
   }
 }

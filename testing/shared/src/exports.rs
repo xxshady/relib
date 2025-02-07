@@ -34,4 +34,6 @@ pub trait Exports {
   fn thread_locals();
 
   fn call_imports();
+
+  fn only_called_once() -> bool;
 }

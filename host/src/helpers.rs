@@ -109,18 +109,13 @@ where
 }
 
 #[cfg(target_os = "linux")]
-pub mod linux {
+mod linux_impl {
   use std::{
     fs::File,
     io::{BufRead, BufReader},
-    path::Path,
   };
 
-  pub fn is_library_loaded(library_path: &Path) -> bool {
-    let library_path = library_path
-      .to_str()
-      .expect("library path must be UTF-8 string");
-
+  pub fn is_library_loaded(library_path: &str) -> bool {
     let file = File::open("/proc/self/maps").expect("Failed to open /proc/self/maps");
     let reader = BufReader::new(file);
 
@@ -133,6 +128,28 @@ pub mod linux {
     })
   }
 }
+
+#[cfg(target_os = "windows")]
+mod windows_impl {
+  use crate::windows::{
+    imports::{GetModuleHandleExW, GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT},
+    str_to_wide_cstring,
+  };
+
+  pub fn is_library_loaded(library_path: &str) -> bool {
+    let library_path = str_to_wide_cstring(library_path);
+
+    let mut module = 0;
+    let flags = GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
+    let r = unsafe { GetModuleHandleExW(flags, library_path.as_ptr(), &mut module) };
+    r != 0
+  }
+}
+
+#[cfg(target_os = "linux")]
+pub use linux_impl::is_library_loaded;
+#[cfg(target_os = "windows")]
+pub use windows_impl::is_library_loaded;
 
 fn warn_if_type_needs_drop_without_post<R>(export_name: &str, export_has_post_fn: bool) {
   let return_type_needs_drop = needs_drop::<R>();
@@ -150,4 +167,8 @@ fn warn_if_type_needs_drop_without_post<R>(export_name: &str, export_has_post_fn
       (std::mem::needs_drop::<R> is {return_type_needs_drop} but exported function {post_fn_message})"
     );
   }
+}
+
+pub fn path_to_str(path: &Path) -> &str {
+  path.to_str().expect("library path must be UTF-8 string")
 }

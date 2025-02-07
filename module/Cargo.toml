@@ -14,14 +14,18 @@ unloading_core = ["relib_interface/unloading", "dep:thread-id"]
 global_alloc_tracker = []
 
 [lints.clippy]
+# unrecoverable must be used instead
 unwrap_used = "forbid"
+panic = "forbid"
+unreachable = "forbid"
+unimplemented = "forbid"
+todo = "forbid"
 
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--generate-link-to-definition"]
 
 [dependencies]
-backtrace = "0.3.74"
 
 [dependencies.thread-id]
 optional = true

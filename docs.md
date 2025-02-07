@@ -50,7 +50,10 @@ fn main() {
   };
 
   // `()` means empty imports and exports, here module doesn't import or export anything
-  let module = relib_host::load_module::<()>(path_to_dylib, ()).unwrap_or_else(|e| {
+  let module = unsafe {
+    relib_host::load_module::<()>(path_to_dylib, ())
+  };
+  let module = module.unwrap_or_else(|e| {
     panic!("module loading failed: {e:#}");
   });
 
@@ -214,10 +217,12 @@ impl shared::imports::Imports for gen_imports::ModuleImportsImpl {
 
 - After that we need to modify `load_module` call in the host crate:
 ```rust
-let module = relib_host::load_module::<()>(
-  path_to_dylib,
-  gen_imports::init_imports
-).unwrap();
+let module = unsafe {
+  relib_host::load_module::<()>(
+    path_to_dylib,
+    gen_imports::init_imports,
+  )
+};
 ```
 
 - And now we can call "foo" from module/src/lib.rs:
@@ -250,10 +255,15 @@ impl shared::exports::Exports for gen_exports::ModuleExportsImpl {
 }
 
 // in host/src/main.rs:
-let module = relib_host::load_module::<gen_exports::ModuleExports>(
-  path_to_dylib,
-  gen_imports::init_imports
-).unwrap();
+let module = unsafe {
+  relib_host::load_module::<gen_exports::ModuleExports>(
+    path_to_dylib,
+    gen_imports::init_imports,
+  )
+};
+let module = module.unwrap_or_else(|e| {
+  panic!("module loading failed: {e:#}");
+});
 ```
 
 Except one thing, return value:
@@ -283,7 +293,7 @@ When you need to unload modules `relib` provides memory deallocation, background
 
 But `relib` can also be used without these features. For example, you probably don't want to reload modules in production since it can be dangerous.
 
-Even without unloading `relib` provides some useful features: imports/exports, panic handling in exports, and some checks in module loading (see [`LoadError`](https://docs.rs/relib_host/latest/relib_host/enum.LoadError.html)).
+Even without unloading `relib` provides some useful features: imports/exports, panic handling in exports, backtraces [support](#backtraces) for multiple modules (dynamic libraries), and some checks in module loading (see [`LoadError`](https://docs.rs/relib_host/latest/relib_host/enum.LoadError.html)).
 
 ### How to turn off module unloading
 
@@ -301,9 +311,11 @@ It's done using `#[global_allocator]` so if you want to set your own global allo
 |----------------------------------------------------------- |-------  |------------------------------------  |
 | Memory deallocation [(?)](#memory-deallocation)            | ✅      | ✅                                   |
 | Panic handling [(?)](#panic-handling)                      | ✅      | ✅                                   |
-| Thread-locals                                              | ✅      | 🟡 [(?)](#thread-locals-on-windows)  |
+| Thread-locals                                              | ✅      | ✅                                   |
 | Background threads check [(?)](#background-threads-check)  | ✅      | ❌                                   |
-| Final unload check [(?)](#final-unload-check)              | ✅      | ❌                                   |
+| Final unload check [(?)](#final-unload-check)              | ✅      | ✅                                   |
+| Before load check [(?)](#before-load-check)                | ✅      | ✅                                   |
+| Backtraces [(?)](#backtraces)                              | ✅      | ✅                                   |
 
 ### Memory deallocation
 
@@ -331,27 +343,6 @@ Dynamic library cannot be unloaded safely if background threads spawned by it ar
 
 **note:** module can register [`before_unload`](#before_unload) function to join threads when host triggers module [`unload`](https://docs.rs/relib_host/latest/relib_host/struct.Module.html#method.unload)
 
-### Thread-locals on Windows
-
-Temporary limitation: destructors of thread-locals must not allocate on Windows.
-
-```rust
-struct DropWithAlloc;
-
-impl Drop for DropWithAlloc {
-  fn drop(&mut self) {
-    // will abort entire process (host) with error
-    vec![1];
-  }
-}
-
-thread_local! {
-  static D: DropWithAlloc = DropWithAlloc;
-}
-
-DropWithAlloc.with(|_| {}); // initialize it
-```
-
 ### Panic handling
 
 #### Exports
@@ -361,7 +352,9 @@ When any export (`main`, `before_unload` and implemented on `gen_exports::Module
 ```rust
 // host:
 
-let module = relib::load_module::<ModuleExports>("...")?;
+let module = unsafe {
+  relib::load_module::<ModuleExports>("...")
+}?;
 
 let value = module.call_main::<()>();
 if value.is_none() {
@@ -403,3 +396,12 @@ unsafe {
 ### Final unload check
 
 After host called `library.close()` ([`close`](https://docs.rs/libloading/latest/libloading/struct.Library.html#method.close) from libloading) it will check if library has indeed been unloaded. On Linux it's done via reading `/proc/self/maps`.
+
+### Before load check
+
+Before loading a module host checks if module is already loaded or not, if it's loaded [`ModuleAlreadyLoaded`](https://docs.rs/relib_host/latest/relib_host/enum.LoadError.html#variant.ModuleAlreadyLoaded) error will be returned.
+
+### Backtraces
+
+On Linux there are hooks of libc `mmap64` and `munmap` to unmap leaked memory mappings on module unloading in `std::backtrace` since there is no public API for that.<br>
+On Windows there is a `dbghelp.dll` hook, which is initialized in `relib_host::load_module` when it's called for the first time. It adds support for backtraces in multiple modules (even without [unloading](#usage-without-unloading) feature).

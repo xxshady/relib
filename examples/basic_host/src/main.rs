@@ -2,7 +2,8 @@ fn main() {
   let path_to_dylib = std::env::args().nth(1).unwrap();
 
   // `()` means empty imports and exports, here module doesn't import or export anything
-  let module = relib_host::load_module::<()>(path_to_dylib, ()).unwrap_or_else(|e| {
+  let module = unsafe { relib_host::load_module::<()>(path_to_dylib, ()) };
+  let module = module.unwrap_or_else(|e| {
     panic!("module loading failed: {e:#}");
   });
 

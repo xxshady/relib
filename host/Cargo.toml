@@ -29,6 +29,10 @@ workspace = true
 [target.'cfg(target_os = "linux")'.dependencies]
 libc.workspace = true
 
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-targets = "0.53.0"
+minhook = "0.6.0"
+
 [dependencies.relib_internal_shared]
 version = "=0.3.1"
 path = "../shared"

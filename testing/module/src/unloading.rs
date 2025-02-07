@@ -5,9 +5,15 @@
 //   // .join();
 //   // let _ = dbg!(res);
 
+use crate::shared::alloc_some_bytes;
+
 #[relib_module::export]
 pub fn main() {
-  println!("[module] hello world");
+  println!("[module] main called");
+
+  let vec = alloc_some_bytes();
+  println!("[module] allocated {} bytes", vec.len());
+  drop(vec);
 
   // seems like standard library caches something for threads in memory on linux
   // (it doesn't increase memory usage between module reloads though)
