@@ -2,8 +2,7 @@ use std::{ffi::c_void, sync::atomic::Ordering};
 
 use relib_internal_shared::{exports::___Internal___Exports___ as Exports, ModuleId};
 use super::{
-  alloc_tracker, gen_exports::ModuleExportsImpl, panic_hook, ALLOCATOR_LOCK, HOST_OWNER_THREAD,
-  MODULE_ID,
+  alloc_tracker, gen_exports::ModuleExportsImpl, ALLOCATOR_LOCK, HOST_OWNER_THREAD, MODULE_ID,
 };
 
 impl Exports for ModuleExportsImpl {
@@ -14,8 +13,6 @@ impl Exports for ModuleExportsImpl {
 
       alloc_tracker::init();
     }
-
-    panic_hook::init();
   }
 
   fn exit(allocs: relib_internal_shared::SliceAllocation) {
