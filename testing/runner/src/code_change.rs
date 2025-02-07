@@ -14,10 +14,10 @@ pub fn main() {
 
   build_debug();
   run_host("debug");
-  // reset_iteration();
+  reset_iteration();
 
-  // build_release();
-  // run_host("release");
+  build_release();
+  run_host("release");
 }
 
 fn run_host(directory: &str) {
