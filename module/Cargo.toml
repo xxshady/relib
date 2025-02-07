@@ -32,38 +32,38 @@ optional = true
 workspace = true
 
 [dependencies.relib_export]
-version = "=0.3.1"
+version = "=0.4.0"
 path = "../export"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 libc.workspace = true
 
 [dependencies.relib_internal_shared]
-version = "=0.3.1"
+version = "=0.4.0"
 path = "../shared"
 
 [dependencies.relib_interface]
-version = "=0.3.1"
+version = "=0.4.0"
 path = "../interface"
 features = ["include"]
 
 [dependencies.relib_internal_crate_compilation_info]
-version = "=0.3.1"
+version = "=0.4.0"
 path = "../crate_compilation_info"
 features = ["normal"]
 
 [build-dependencies]
 
 [build-dependencies.relib_interface]
-version = "=0.3.1"
+version = "=0.4.0"
 path = "../interface"
 features = ["internal", "build"]
 
 [build-dependencies.relib_internal_shared]
-version = "=0.3.1"
+version = "=0.4.0"
 path = "../shared"
 
 [build-dependencies.relib_internal_crate_compilation_info]
-version = "=0.3.1"
+version = "=0.4.0"
 path = "../crate_compilation_info"
 features = ["build"]

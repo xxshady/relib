@@ -3,42 +3,6 @@
 version = 4
 
 [[package]]
-name = "addr2line"
-version = "0.24.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dfbe277e56a376000877090da837660b4427aad530e3028d44e0bffe4f89a1c1"
-dependencies = [
- "gimli",
-]
-
-[[package]]
-name = "adler2"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "512761e0bb2578dd7380c6baaa0f4ce03e84f95e960231d1dec8bf4d7d6e2627"
-
-[[package]]
-name = "backtrace"
-version = "0.3.74"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d82cb332cdfaed17ae235a638438ac4d4839913cc2af585c3c6746e8f8bee1a"
-dependencies = [
- "addr2line",
- "cfg-if",
- "libc",
- "miniz_oxide",
- "object",
- "rustc-demangle",
- "windows-targets",
-]
-
-[[package]]
-name = "cfg-if"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
-
-[[package]]
 name = "custom_global_alloc"
 version = "0.1.0"
 dependencies = [
@@ -46,40 +10,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "gimli"
-version = "0.31.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07e28edb80900c19c28f1072f2e8aeca7fa06b23cd4169cefe1af5aa3260783f"
-
-[[package]]
 name = "libc"
 version = "0.2.168"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5aaeb2981e0606ca11d79718f8bb01164f1d6ed75080182d3abf017e6d244b6d"
-
-[[package]]
-name = "memchr"
-version = "2.7.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
-
-[[package]]
-name = "miniz_oxide"
-version = "0.8.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ffbe83022cedc1d264172192511ae958937694cd57ce297164951b8b3568394"
-dependencies = [
- "adler2",
-]
-
-[[package]]
-name = "object"
-version = "0.36.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aedf0a2d09c573ed1d8d85b30c119153926a2b36dce0ab28322c09a117a4683e"
-dependencies = [
- "memchr",
-]
 
 [[package]]
 name = "prettyplease"
@@ -111,14 +45,14 @@ dependencies = [
 
 [[package]]
 name = "relib_export"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "relib_exportify",
 ]
 
 [[package]]
 name = "relib_exportify"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -128,7 +62,7 @@ dependencies = [
 
 [[package]]
 name = "relib_interface"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "prettyplease",
  "proc-macro2",
@@ -139,17 +73,16 @@ dependencies = [
 
 [[package]]
 name = "relib_internal_crate_compilation_info"
-version = "0.3.1"
+version = "0.4.0"
 
 [[package]]
 name = "relib_internal_shared"
-version = "0.3.1"
+version = "0.4.0"
 
 [[package]]
 name = "relib_module"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
- "backtrace",
  "libc",
  "relib_export",
  "relib_interface",
@@ -157,12 +90,6 @@ dependencies = [
  "relib_internal_shared",
  "thread-id",
 ]
-
-[[package]]
-name = "rustc-demangle"
-version = "0.1.24"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "719b953e2095829ee67db738b3bfa9fa368c94900df327b3f07fe6e794d2fe1f"
 
 [[package]]
 name = "syn"

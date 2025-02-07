@@ -127,7 +127,7 @@ Because when you can you should pass values by reference to avoid cost of the cl
 
 It is the same reason as with return values: host and module can use different global [allocators](https://doc.rust-lang.org/stable/std/alloc/index.html) and [`dealloc`](https://doc.rust-lang.org/stable/std/alloc/trait.GlobalAlloc.html#tymethod.dealloc) expects a pointer allocated exactly via this global allocator. So if moving non-`Copy` types would be possible `relib` would still clone parameters implicitly.
 
-### Lifetime ellision in imports and exports
+### Lifetime elision in imports and exports
 
 Due to the code generation this code may not compile: (`RStr` is FFI-safe equivalent of `&str` from [abi_stable](https://docs.rs/abi_stable/latest/abi_stable/std_types/struct.RStr.html))
 
