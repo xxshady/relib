@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   release:
@@ -19,19 +19,19 @@ jobs:
         run: |
           git config --global user.name "release"
           git config --global user.email "release@release.release"
-          
+
       - name: rust version
         run: rustc -V
 
       - name: extract branch from tag
         id: extract_branch
         run: |
-          BRANCH=$( git log -1 --format='%D' ${{ github.ref_name }} | grep -oP 'origin/\K.*' )
+          BRANCH=$( git log -1 --format='%D' ${{ github.ref_name }} | grep -oP 'origin/\K\w+' | head -n 1 )
           echo "BRANCH=$BRANCH" >> $GITHUB_OUTPUT
 
       - name: print branch
         run: echo ${{ steps.extract_branch.outputs.BRANCH }}
-      
+
       - name: switch to branch
         run: git switch ${{ steps.extract_branch.outputs.BRANCH }}
 
@@ -41,7 +41,7 @@ jobs:
           ./scripts/build_relib_crate.sh
           git add .
           git commit --allow-empty -m "relib files"
- 
+
       - name: cargo login
         run: cargo login ${{ secrets.CRATES_IO_TOKEN }}
 
