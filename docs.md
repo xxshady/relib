@@ -293,7 +293,7 @@ When you need to unload modules `relib` provides memory deallocation, background
 
 But `relib` can also be used without these features. For example, you probably don't want to reload modules in production since it can be dangerous.
 
-Even without unloading `relib` provides some useful features: imports/exports, panic handling in exports, and some checks in module loading (see [`LoadError`](https://docs.rs/relib_host/latest/relib_host/enum.LoadError.html)).
+Even without unloading `relib` provides some useful features: imports/exports, panic handling in exports, backtraces [support](#backtraces) for multiple modules (dynamic libraries), and some checks in module loading (see [`LoadError`](https://docs.rs/relib_host/latest/relib_host/enum.LoadError.html)).
 
 ### How to turn off module unloading
 
@@ -315,7 +315,7 @@ It's done using `#[global_allocator]` so if you want to set your own global allo
 | Background threads check [(?)](#background-threads-check)  | ✅      | ❌                                   |
 | Final unload check [(?)](#final-unload-check)              | ✅      | ✅                                   |
 | Before load check [(?)](#before-load-check)                | ✅      | ✅                                   |
-| mmap hooks [(?)](#mmap-hooks)                              | ✅      | Not needed                           |
+| Backtraces [(?)](#backtraces)                              | ✅      | ✅                                   |
 
 ### Memory deallocation
 
@@ -401,6 +401,7 @@ After host called `library.close()` ([`close`](https://docs.rs/libloading/latest
 
 Before loading a module host checks if module is already loaded or not, if it's loaded [`ModuleAlreadyLoaded`](https://docs.rs/relib_host/latest/relib_host/enum.LoadError.html#variant.ModuleAlreadyLoaded) error will be returned.
 
-### mmap hooks
+### Backtraces
 
-Hooks of libc `mmap64` and `munmap` to unmap leaked memory mappings on module unloading. It's needed for example to unmap leaked mappings in std [backtrace](https://github.com/xxshady/relib/issues/7).
+On Linux there are hooks of libc `mmap64` and `munmap` to unmap leaked memory mappings on module unloading in `std::backtrace` since there is no public API for that.<br>
+On Windows there is a `dbghelp.dll` hook, which is initialized in `relib_host::load_module` when it's called for the first time. It adds support for backtraces in multiple modules (even without [unloading](#usage-without-unloading) feature).
