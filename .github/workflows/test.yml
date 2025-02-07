@@ -5,8 +5,7 @@ on:
     branches: "*"
 
 env:
-  # // TEST
-  # RUSTFLAGS: -Dwarnings
+  RUSTFLAGS: -Dwarnings
   RUST_BACKTRACE: 1
 
 jobs:
@@ -16,8 +15,7 @@ jobs:
     strategy:
       matrix:
         include:
-          # // TEST
-          # - os: ubuntu-22.04
+          - os: ubuntu-22.04
           - os: windows-2022
     steps:
       - name: checkout
