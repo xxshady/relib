@@ -12,4 +12,4 @@ description = "relib is a framework for reloadable dynamic libraries"
 proc-macro = true
 
 [dependencies]
-relib_exportify = { version = "=0.4.0", path = "../exportify" }
+relib_exportify = { version = "=0.4.1", path = "../exportify" }

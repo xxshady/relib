@@ -14,7 +14,7 @@ Currently Linux has the best support, Windows is supported partially, macOS is n
 
 Since it's not possible to make this completely safe: memory leaks, UB can still happen (for example, due to some unsafe call to C library), you should only use unloading for development (see [live reload](https://github.com/xxshady/relib/tree/main/examples/README.md#live-reload) example). `relib` can also be used without unloading, see ["Usage without unloading"](https://docs.rs/relib/latest/relib/docs/index.html#usage-without-unloading).
 
-See [feature support matrix](https://docs.rs/relib/latest/relib/docs/index.html#feature-support-matrix) for what `relib` offers to improve unloading of dynamic libraries in Rust. And for what not, check out [limitations](#limitations).
+See [feature support matrix](https://docs.rs/relib/latest/relib/docs/index.html#feature-support-matrix) for what `relib` offers to improve unloading of dynamic libraries in Rust. And for what not, check out [caveats](#caveats).
 
 ## Examples
 
@@ -24,7 +24,7 @@ See [examples](https://github.com/xxshady/relib/tree/main/examples/README.md).
 
 See [`docs`](https://docs.rs/relib/latest/relib/docs/index.html) of `relib` crate.
 
-## Limitations
+## Caveats
 
 ### Imports/exports runtime validation
 
@@ -181,6 +181,10 @@ pub trait Exports {
   }
 }
 ```
+
+### Each module has its own standard library
+
+Each compiled module (.dll or .so) uses its own copy of standard library. Because of this, for example, [`std::thread::current().id()`](https://doc.rust-lang.org/stable/std/thread/fn.current.html) called in a module may return different id compared to the host, since each module has it's own thread id counter (in this particular case you can use [thread_id](https://docs.rs/thread-id) instead to get thread identifiers from operating system).
 
 ## Why dynamic libraries when we already have WASM?
 
