@@ -154,7 +154,7 @@ fn generate_exports(
             #inputs
           ) -> Option<#pub_return_type>
           {
-            /// All parameters must be Copy, see relib limitations in the readme for more info.
+            /// All parameters must be Copy, see relib caveats in the readme for more info.
             fn ____assert_type_is_copy____(_: impl Copy) {}
             #( ____assert_type_is_copy____( #inputs_without_types ); )*
 
@@ -317,7 +317,7 @@ fn generate_imports(
             #inputs
           ) -> std::mem::MaybeUninit<#return_type> // will be initialized if function won't panic
           {
-            /// All parameters must be Copy, see relib limitations in the readme for more info.
+            /// All parameters must be Copy, see relib caveats in the readme for more info.
             fn ____assert_type_is_copy____(_: impl Copy) {}
             #( ____assert_type_is_copy____( #inputs_without_types ); )*
 

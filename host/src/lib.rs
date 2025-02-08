@@ -54,7 +54,7 @@ mod windows;
 /// // main function is unsafe to call (as well as any other module export) because these pre-conditions are not checked by relib:
 /// // - Returned value must be actually `R` at runtime. For example if you called this function with type bool but module returns i32, UB will occur.
 /// // - Type of return value must be FFI-safe.
-/// // - Returned value must not be a reference-counting pointer (see limitations in README or docs page).
+/// // - Returned value must not be a reference-counting pointer (see caveats in README or docs page).
 /// let returned_value = unsafe { module.call_main::<()>() };
 ///
 /// // if module panics while executing any export it returns None

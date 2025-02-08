@@ -51,10 +51,11 @@ impl Exports for ModuleExportsImpl {
     }
   }
 
-  fn unmap_all_mmaps() {
+  fn misc_cleanup() {
     #[cfg(target_os = "linux")]
     {
-      super::mmap_hooks::unmap_all();
+      super::mmap_hooks::cleanup();
+      super::pthread_key_hooks::cleanup();
     }
     #[cfg(target_os = "windows")]
     {

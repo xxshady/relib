@@ -12,7 +12,7 @@ pub trait ___Internal___Exports___ {
   // linux-only
   fn spawned_threads_count() -> u64;
   fn run_thread_local_dtors();
-  fn unmap_all_mmaps();
+  fn misc_cleanup();
 
   // windows-only
   fn set_dealloc_callback(callback: *const c_void);

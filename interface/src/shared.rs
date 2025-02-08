@@ -219,7 +219,7 @@ pub const SAFETY_DOC: &str = "# Safety\n\
   Behavior is undefined if any of the following conditions are violated:\n\
   1. Types of arguments and return value must be FFI-safe.\n\
   2. Host and module crates must be compiled with same shared crate code (which contains exports and imports traits).\n\
-  3. Returned value must not be a reference-counting pointer (see [limitations](https://docs.rs/relib/latest/relib/#moving-non-copy-types-between-host-and-module)).";
+  3. Returned value must not be a reference-counting pointer (see [caveats](https://docs.rs/relib/latest/relib/#moving-non-copy-types-between-host-and-module)).";
 
 pub fn type_needs_box(type_: &TokenStream2) -> bool {
   relib_internal_shared::type_needs_box(&type_.to_string())
