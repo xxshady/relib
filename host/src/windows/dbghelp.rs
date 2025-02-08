@@ -231,19 +231,19 @@ unsafe fn init(cleanup: bool) -> Dbghelp {
 }
 
 pub fn add_module(path: &str) {
-  // let mut instance = lock_instance();
-  // let instance = instance
-  //   .as_mut()
-  //   .expect("add_module must be called after init");
+  let mut instance = lock_instance();
+  let instance = instance
+    .as_mut()
+    .expect("add_module must be called after init");
 
-  // if let Some(module_dirname) = module_path_str_to_dirname(path) {
-  //   let dirname = module_dirname.dirname();
-  //   if !instance.search_path_entries.iter().any(|el| el == dirname) {
-  //     instance.search_path_entries.push(dirname.to_owned());
-  //   }
-  // }
+  if let Some(module_dirname) = module_path_str_to_dirname(path) {
+    let dirname = module_dirname.dirname();
+    if !instance.search_path_entries.iter().any(|el| el == dirname) {
+      instance.search_path_entries.push(dirname.to_owned());
+    }
+  }
 
-  // refresh_modules_and_search_path(instance);
+  refresh_modules_and_search_path(instance);
 }
 
 #[cfg(feature = "unloading")]
@@ -332,6 +332,22 @@ pub unsafe fn super_special_reinit_of_dbghelp() {
   if instance.is_some() {
     return;
   }
+
+  windows_targets::link!("kernel32.dll" "system" fn FreeLibrary(module: isize) -> BOOL);
+
+  let lib = libloading::Library::new("dbghelp.dll").unwrap_or_else(|e| {
+    panic!("Failed to load dbghelp.dll which is needed for backtraces to work correctly: {e}");
+  });
+  let lib = libloading::os::windows::Library::from(lib);
+  let handle = lib.into_raw();
+
+  dbg!();
+  while is_library_loaded("dbghelp.dll") {
+    dbg!();
+    let result = FreeLibrary(handle);
+    handle_error(result, "FreeLibrary");
+  }
+  dbg!();
 
   *instance = Some(unsafe { init(true) });
 }
