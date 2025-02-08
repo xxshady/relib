@@ -64,7 +64,7 @@ unsafe extern "C" fn munmap(addr: *mut c_void, len: libc::size_t) -> libc::c_int
   original_impl(addr, len)
 }
 
-pub fn unmap_all() {
+pub fn cleanup() {
   unsafe {
     let mmaps = std::mem::take(&mut *lock_mmaps());
     for (ptr, len) in mmaps {

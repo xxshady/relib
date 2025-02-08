@@ -14,6 +14,8 @@ mod thread_spawn_hook;
 /// (for example, std backtrace leaks them)
 #[cfg(target_os = "linux")]
 mod mmap_hooks;
+#[cfg(target_os = "linux")]
+mod pthread_key_hooks;
 mod helpers;
 mod exports_impl;
 mod alloc_tracker;

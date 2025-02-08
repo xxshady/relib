@@ -39,7 +39,7 @@ impl<E: ModuleExportsForHost> Module<E> {
       unsafe {
         self.internal_exports.lock_module_allocator();
         self.internal_exports.run_thread_local_dtors();
-        self.internal_exports.unmap_all_mmaps();
+        self.internal_exports.misc_cleanup();
       }
     }
 

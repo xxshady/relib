@@ -14,16 +14,6 @@ pub fn main() {
       });
     }
   });
-
-  // TODO: fix std::thread::current() https://github.com/xxshady/relib/issues/4
-  // thread::spawn(|| {
-  //   let module = load_module(&format!("test_module_0"));
-  //   unload_module(module);
-
-  //   thread::sleep(Duration::from_millis(1000));
-  // })
-  // .join()
-  // .unwrap();
 }
 
 fn unload_module<E: ModuleExportsForHost>(module: Module<E>) {
