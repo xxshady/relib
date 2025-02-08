@@ -10,6 +10,7 @@ description = "relib is a framework for reloadable dynamic libraries"
 
 [features]
 unloading = ["relib_interface/unloading", "dep:thread-id"]
+super_special_reinit_of_dbghelp = []
 
 [lints.clippy]
 unwrap_used = "forbid"

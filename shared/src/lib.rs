@@ -87,6 +87,12 @@ impl Str {
     std::str::from_utf8(bytes).expect("Failed to get valid UTF-8 string slice back")
   }
 
+  pub unsafe fn as_str<'a>(&self) -> &'a str {
+    let RawSlice { ptr, len } = self.0;
+    let bytes = std::slice::from_raw_parts(ptr, len);
+    std::str::from_utf8(bytes).expect("Failed to get valid UTF-8 string slice back")
+  }
+
   /// # Safety
   /// See `Safety` of [`std::slice::from_raw_parts`]
   pub unsafe fn to_string(&self) -> String {

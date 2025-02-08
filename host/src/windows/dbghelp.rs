@@ -42,6 +42,7 @@ type SymSetOptions = unsafe extern "system" fn(symoptions: u32) -> u32;
 type SymGetSearchPathW =
   unsafe extern "system" fn(hprocess: HANDLE, searchpatha: PWSTR, searchpathlength: u32) -> BOOL;
 type SymRefreshModuleList = unsafe extern "system" fn(process: HANDLE) -> BOOL;
+type SymCleanup = unsafe extern "system" fn(process: HANDLE) -> BOOL;
 
 struct Dbghelp {
   _lib: Library,
@@ -68,7 +69,7 @@ pub fn try_init_from_load_module() {
     );
   }
 
-  *instance = Some(unsafe { init() });
+  *instance = Some(unsafe { init(false) });
 }
 
 pub fn try_init() {
@@ -84,10 +85,10 @@ pub fn try_init() {
     );
   }
 
-  *instance = Some(unsafe { init() });
+  *instance = Some(unsafe { init(false) });
 }
 
-unsafe fn init() -> Dbghelp {
+unsafe fn init(cleanup: bool) -> Dbghelp {
   let lib = libloading::Library::new("dbghelp.dll").unwrap_or_else(|e| {
     panic!("Failed to load dbghelp.dll which is needed for backtraces to work correctly: {e}");
   });
@@ -183,6 +184,13 @@ unsafe fn init() -> Dbghelp {
   set_options(current_options | SYMOPT_DEFERRED_LOADS);
 
   let process = GetCurrentProcess();
+
+  // if cleanup {
+  //   let cleanup = get_lib!(SymCleanup);
+  //   let result = cleanup(process);
+  //   handle_error(result, "SymCleanup");
+  // }
+
   let result = initialize(process, std::ptr::null(), FALSE);
   handle_error(result, "SymInitializeW");
 
@@ -223,19 +231,19 @@ unsafe fn init() -> Dbghelp {
 }
 
 pub fn add_module(path: &str) {
-  let mut instance = lock_instance();
-  let instance = instance
-    .as_mut()
-    .expect("add_module must be called after init");
+  // let mut instance = lock_instance();
+  // let instance = instance
+  //   .as_mut()
+  //   .expect("add_module must be called after init");
 
-  if let Some(module_dirname) = module_path_str_to_dirname(path) {
-    let dirname = module_dirname.dirname();
-    if !instance.search_path_entries.iter().any(|el| el == dirname) {
-      instance.search_path_entries.push(dirname.to_owned());
-    }
-  }
+  // if let Some(module_dirname) = module_path_str_to_dirname(path) {
+  //   let dirname = module_dirname.dirname();
+  //   if !instance.search_path_entries.iter().any(|el| el == dirname) {
+  //     instance.search_path_entries.push(dirname.to_owned());
+  //   }
+  // }
 
-  refresh_modules_and_search_path(instance);
+  // refresh_modules_and_search_path(instance);
 }
 
 #[cfg(feature = "unloading")]
@@ -316,4 +324,14 @@ fn module_path_to_dirname(path: &Path) -> Option<ModuleDirname> {
   });
   path.parent()?;
   Some(ModuleDirname(path))
+}
+
+#[cfg(feature = "super_special_reinit_of_dbghelp")]
+pub unsafe fn super_special_reinit_of_dbghelp() {
+  let mut instance = lock_instance();
+  if instance.is_some() {
+    return;
+  }
+
+  *instance = Some(unsafe { init(true) });
 }

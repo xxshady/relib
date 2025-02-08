@@ -71,16 +71,18 @@ pub unsafe fn load_module<E: ModuleExportsForHost>(
   init_imports: impl InitImports,
 ) -> Result<Module<E>, crate::LoadError> {
   #[cfg(target_os = "windows")]
-  windows::dbghelp::try_init_from_load_module();
-
+  // windows::dbghelp::try_init_from_load_module();
   let path = Path::new(path.as_ref());
   let path_str = path_to_str(path);
 
+  dbg!();
   if is_library_loaded(path_str) {
     return Err(LoadError::ModuleAlreadyLoaded);
   }
 
+  dbg!();
   let library = open_library(path)?;
+  dbg!();
 
   let module_comp_info = unsafe {
     let compiled_with = library.get(b"__RELIB__CRATE_COMPILATION_INFO__\0");
@@ -89,19 +91,25 @@ pub unsafe fn load_module<E: ModuleExportsForHost>(
     };
     let compiled_with: Symbol<*const Str> = compiled_with;
     let compiled_with: &Str = &**compiled_with;
-    compiled_with.to_string()
+    compiled_with.as_str().to_owned()
   };
 
   let host_comp_info = relib_internal_crate_compilation_info::get!();
+  dbg!(&module_comp_info, &host_comp_info);
   if module_comp_info != host_comp_info {
+    dbg!();
+    library.close().unwrap();
+    dbg!();
     return Err(LoadError::ModuleCompilationMismatch {
       module: module_comp_info,
       host: host_comp_info.to_owned(),
     });
   }
 
+  dbg!();
   #[cfg(target_os = "windows")]
   windows::dbghelp::add_module(path_str);
+  dbg!();
 
   let module_id = next_module_id();
 
@@ -160,4 +168,10 @@ pub unsafe fn __suppress_unused_warning_for_windows_only_exports(
 ) {
   #[expect(unreachable_code)]
   exports.set_dealloc_callback(todo!());
+}
+
+#[cfg(target_os = "windows")]
+#[cfg(feature = "super_special_reinit_of_dbghelp")]
+pub unsafe fn super_special_reinit_of_dbghelp() {
+  windows::dbghelp::super_special_reinit_of_dbghelp();
 }

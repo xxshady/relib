@@ -25,8 +25,10 @@ static SUPER_SPECIAL_CALLBACK_CALLED: AtomicBool = AtomicBool::new(false);
 // SAFETY: will be set from main thread and be read too
 static mut DEALLOC_CALLBACK: *const c_void = std::ptr::null();
 
+// TODO: fix early unloading when nothing is initialized and library is freed 
+// (see comp info check in load_module)
 #[unsafe(no_mangle)]
-extern "system" fn DllMain(_: *mut c_void, reason: u32, lpv_reserved: *mut c_void) -> BOOL {
+unsafe extern "system" fn DllMain(_: *mut c_void, reason: u32, lpv_reserved: *mut c_void) -> BOOL {
   if !(
     reason == DLL_PROCESS_DETACH && 
     // lpv_reserved is null if FreeLibrary has been called or the DLL load failed and non-null
