@@ -42,6 +42,7 @@ type SymSetOptions = unsafe extern "system" fn(symoptions: u32) -> u32;
 type SymGetSearchPathW =
   unsafe extern "system" fn(hprocess: HANDLE, searchpatha: PWSTR, searchpathlength: u32) -> BOOL;
 type SymRefreshModuleList = unsafe extern "system" fn(process: HANDLE) -> BOOL;
+type SymCleanup = unsafe extern "system" fn(process: HANDLE) -> BOOL;
 
 struct Dbghelp {
   _lib: Library,
@@ -54,34 +55,29 @@ struct Dbghelp {
 }
 
 pub fn try_init_from_load_module() {
-  let mut instance = lock_instance();
-  if instance.is_some() {
-    return;
-  }
-
-  if is_library_loaded("dbghelp.dll") {
-    panic!(
-      "dbghelp.dll must not be loaded before any module is loaded \
-      for backtraces to work correctly on Windows, make sure you don't create backtraces \
-      before calling `relib_host::load_module`\n\
-      note: if you really need to create backtraces before loading modules consider using `relib_host::init`"
-    );
-  }
-
-  *instance = Some(unsafe { init() });
+  try_init(
+    "dbghelp.dll must not be loaded before any module is loaded \
+    for backtraces to work correctly on Windows, make sure you don't create backtraces \
+    before calling `relib_host::load_module`\n\
+    note: if you really need to create backtraces before loading modules consider using `relib_host::init`"
+  );
 }
 
-pub fn try_init() {
+pub fn try_init_standalone() {
+  try_init(
+    "dbghelp.dll must not be loaded before calling `relib_host::init` \
+    make sure you don't create backtraces before it",
+  );
+}
+
+fn try_init(already_loaded_message: &str) {
   let mut instance = lock_instance();
   if instance.is_some() {
     return;
   }
 
-  if is_library_loaded("dbghelp.dll") {
-    panic!(
-      "dbghelp.dll must not be loaded before calling `relib_host::init` \
-      make sure you don't create backtraces before it"
-    );
+  if !cfg!(feature = "super_special_reinit_of_dbghelp") && is_library_loaded("dbghelp.dll") {
+    panic!("{already_loaded_message}");
   }
 
   *instance = Some(unsafe { init() });
@@ -183,8 +179,18 @@ unsafe fn init() -> Dbghelp {
   set_options(current_options | SYMOPT_DEFERRED_LOADS);
 
   let process = GetCurrentProcess();
+
   let result = initialize(process, std::ptr::null(), FALSE);
   handle_error(result, "SymInitializeW");
+
+  if cfg!(feature = "super_special_reinit_of_dbghelp") {
+    let cleanup = get_lib!(SymCleanup);
+    let result = cleanup(process);
+    handle_error(result, "SymCleanup");
+
+    let result = initialize(process, std::ptr::null(), FALSE);
+    handle_error(result, "SymInitializeW");
+  }
 
   MinHook::enable_all_hooks().unwrap_or_else(|e| {
     panic!("Failed to enable dbghelp.dll hooks: {e:?}");
@@ -316,4 +322,14 @@ fn module_path_to_dirname(path: &Path) -> Option<ModuleDirname> {
   });
   path.parent()?;
   Some(ModuleDirname(path))
+}
+
+#[cfg(feature = "super_special_reinit_of_dbghelp")]
+pub unsafe fn forcibly_reinit_dbghelp() {
+  let mut instance = lock_instance();
+  if instance.is_some() {
+    return;
+  }
+
+  *instance = Some(unsafe { init() });
 }

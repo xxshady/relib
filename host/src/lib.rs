@@ -141,7 +141,20 @@ pub unsafe fn load_module<E: ModuleExportsForHost>(
 /// Panics on Windows if `dbghelp.dll` was already loaded (for example, by `backtrace` crate or standard library).
 pub unsafe fn init() {
   #[cfg(target_os = "windows")]
-  windows::dbghelp::try_init();
+  windows::dbghelp::try_init_standalone();
+}
+
+/// Don't use it unless you really need to.
+/// Forcibly terminates and reinitializes dbghelp.dll for backtraces on Windows.
+///
+/// # Safety
+/// God knows...
+///
+#[cfg(any(target_os = "windows", relib_docs))]
+#[cfg(feature = "super_special_reinit_of_dbghelp")]
+pub unsafe fn forcibly_reinit_dbghelp() {
+  #[cfg(target_os = "windows")]
+  windows::dbghelp::forcibly_reinit_dbghelp();
 }
 
 // TODO: fix it

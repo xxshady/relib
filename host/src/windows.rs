@@ -24,7 +24,7 @@ pub mod imports {
   pub const GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS: u32 = 0x00000004;
   pub const ERROR_INSUFFICIENT_BUFFER: u32 = 122;
 
-  windows_targets::link!("kernel32.dll" "system" fn GetModuleHandleExW(flags: u32, module_name: *const u16, module: *mut isize) -> BOOL);
+  windows_targets::link!("kernel32.dll" "system" fn GetModuleHandleExW(flags: u32, module_name: *const u16, module: *mut *mut isize) -> BOOL);
   windows_targets::link!("kernel32.dll" "system" fn GetModuleFileNameW(module: *const isize, file_name: PWSTR, size: DWORD) -> DWORD);
 
   windows_targets::link!("kernel32.dll" "system" fn GetCurrentProcess() -> HANDLE);
@@ -44,11 +44,11 @@ pub fn get_current_dylib() -> Option<PathBuf> {
   fn get_dylib_path(len: usize) -> Option<PathBuf> {
     let mut buf = Vec::with_capacity(len);
     unsafe {
-      let module_handle = std::ptr::null_mut();
+      let mut module_handle = std::ptr::null_mut();
       let flags =
         GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
 
-      let failed = GetModuleHandleExW(flags, get_dylib_path as *const _, module_handle) == 0;
+      let failed = GetModuleHandleExW(flags, get_dylib_path as *const _, &mut module_handle) == 0;
       if failed {
         None
       } else {

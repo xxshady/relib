@@ -10,13 +10,16 @@ description = "relib is a framework for reloadable dynamic libraries"
 
 [features]
 unloading = ["relib_interface/unloading", "dep:thread-id"]
+super_special_reinit_of_dbghelp = []
 
 [lints.clippy]
 unwrap_used = "forbid"
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(relib_docs)'] }
 
 [package.metadata.docs.rs]
 all-features = true
-rustdoc-args = ["--generate-link-to-definition"]
+rustdoc-args = ["--generate-link-to-definition", "--cfg", "relib_docs"]
 
 [dependencies]
 libloading.workspace = true

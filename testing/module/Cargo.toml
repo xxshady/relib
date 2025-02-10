@@ -29,7 +29,7 @@ multiple_modules = ["relib_module/unloading"]
 panic_in_interface_host = []
 panic_in_interface_module = []
 backtrace_unloading = ["relib_module/unloading"]
-backtrace_unloading_host_as_dylib = ["backtrace_unloading"]
+backtrace_unloading_host_as_dylib = ["relib_module/unloading"]
 is_already_loaded_error = ["relib_module/unloading"]
 dbghelp_is_already_loaded_init = []
 
