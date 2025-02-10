@@ -139,7 +139,7 @@ mod windows_impl {
   pub fn is_library_loaded(library_path: &str) -> bool {
     let library_path = str_to_wide_cstring(library_path);
 
-    let mut module = 0;
+    let mut module = std::ptr::null_mut();
     let flags = GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
     let r = unsafe { GetModuleHandleExW(flags, library_path.as_ptr(), &mut module) };
     r != 0

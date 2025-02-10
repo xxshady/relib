@@ -6,13 +6,7 @@ use test_host_shared::dylib_filename;
 
 #[no_mangle]
 pub extern "C" fn main() {
-  let filename = dylib_filename("test_module");
-  let path = format!("backtrace_unloading_host_as_dylib/{filename}");
-
-  dbg!();
-  let (module, _) = test_host_shared::load_module_with_path::<(), ()>((), &path, true);
-  unload_module(module);
-  dbg!();
+  testing_release_backtrace_in_host____();
 }
 
 fn unload_module<E: ModuleExportsForHost>(module: Module<E>) {
@@ -24,4 +18,16 @@ fn unload_module<E: ModuleExportsForHost>(module: Module<E>) {
       panic!("this branch must not be called");
     }
   }
+}
+
+#[inline(never)]
+#[unsafe(no_mangle)]
+fn testing_release_backtrace_in_host____() {
+  let filename = dylib_filename("test_module");
+  let path = format!("backtrace_unloading_host_as_dylib/{filename}");
+
+  dbg!();
+  let (module, _) = test_host_shared::load_module_with_path::<(), ()>((), &path, true);
+  unload_module(module);
+  dbg!();
 }

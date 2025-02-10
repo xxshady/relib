@@ -34,3 +34,6 @@ mod is_already_loaded_error;
 
 #[cfg(feature = "dbghelp_is_already_loaded_init")]
 mod dbghelp_is_already_loaded_init;
+
+#[cfg(feature = "backtrace_unloading_host_as_dylib")]
+mod backtrace_unloading_host_as_dylib;
