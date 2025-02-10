@@ -13,7 +13,7 @@ use std::{
   sync::atomic::{AtomicBool, Ordering::Relaxed},
 };
 
-use super::helpers::unrecoverable;
+use super::{helpers::unrecoverable, MODULE_ID};
 
 #[expect(clippy::upper_case_acronyms)]
 type BOOL = i32;
@@ -26,7 +26,14 @@ static SUPER_SPECIAL_CALLBACK_CALLED: AtomicBool = AtomicBool::new(false);
 static mut DEALLOC_CALLBACK: *const c_void = std::ptr::null();
 
 #[unsafe(no_mangle)]
-extern "system" fn DllMain(_: *mut c_void, reason: u32, lpv_reserved: *mut c_void) -> BOOL {
+unsafe extern "system" fn DllMain(_: *mut c_void, reason: u32, lpv_reserved: *mut c_void) -> BOOL {
+  // are we actually initialized?
+  // maybe current module was unloaded before initialization
+  // (for example, due to compilation info check fail)
+  if MODULE_ID == 0 {
+    return TRUE;  
+  }
+
   if !(
     reason == DLL_PROCESS_DETACH && 
     // lpv_reserved is null if FreeLibrary has been called or the DLL load failed and non-null
