@@ -76,6 +76,7 @@ pub unsafe fn load_module<E: ModuleExportsForHost>(
   let path = Path::new(path.as_ref());
   let path_str = path_to_str(path);
 
+  // TODO: test if multiple threads may load same module in parallel
   if is_library_loaded(path_str) {
     return Err(LoadError::ModuleAlreadyLoaded);
   }
