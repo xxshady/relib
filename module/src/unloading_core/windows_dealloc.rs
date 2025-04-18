@@ -30,7 +30,7 @@ unsafe extern "system" fn DllMain(_: *mut c_void, reason: u32, lpv_reserved: *mu
   // are we actually initialized?
   // maybe current module was unloaded before initialization
   // (for example, due to compilation info check fail)
-  if MODULE_ID == 0 {
+  if unsafe { MODULE_ID } == 0 {
     return TRUE;  
   }
 
@@ -72,7 +72,7 @@ unsafe extern "system" fn DllMain(_: *mut c_void, reason: u32, lpv_reserved: *mu
 //
 // we are interested in this callback because it's called when module is being unloaded
 // and standard library uses it to call thread-local destructors
-#[link_section = ".CRT$XLB"]
+#[unsafe(link_section = ".CRT$XLB")]
 #[used]
 static SUPER_SPECIAL_CALLBACK: extern "system" fn(*mut c_void, u32, *mut c_void) =
   callback_to_ensure_tls_destructors_are_called_before_dllmain;
@@ -90,5 +90,5 @@ extern "system" fn callback_to_ensure_tls_destructors_are_called_before_dllmain(
 }
 
 pub unsafe fn set_dealloc_callback(callback: *const c_void) {
-  DEALLOC_CALLBACK = callback;
+  unsafe { DEALLOC_CALLBACK = callback; }
 }

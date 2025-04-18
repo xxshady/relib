@@ -76,6 +76,7 @@ pub unsafe fn load_module<E: ModuleExportsForHost>(
   let path = Path::new(path.as_ref());
   let path_str = path_to_str(path);
 
+  // TODO: test if multiple threads may load same module in parallel
   if is_library_loaded(path_str) {
     return Err(LoadError::ModuleAlreadyLoaded);
   }
@@ -154,23 +155,28 @@ pub unsafe fn init() {
 #[cfg(feature = "super_special_reinit_of_dbghelp")]
 pub unsafe fn forcibly_reinit_dbghelp() {
   #[cfg(target_os = "windows")]
-  windows::dbghelp::forcibly_reinit_dbghelp();
+  unsafe {
+    windows::dbghelp::forcibly_reinit_dbghelp();
+  }
 }
 
 // TODO: fix it
-#[cfg(all(target_os = "windows", feature = "unloading"))]
+#[doc(hidden)]
 #[expect(clippy::missing_safety_doc)]
+#[cfg(all(target_os = "windows", feature = "unloading"))]
 pub unsafe fn __suppress_unused_warning_for_linux_only_exports(
   exports: unloading::InternalModuleExports,
 ) {
-  exports.spawned_threads_count();
+  unsafe {
+    exports.spawned_threads_count();
+  }
 }
 
+#[doc(hidden)]
+#[expect(unreachable_code, clippy::missing_safety_doc)]
 #[cfg(all(target_os = "linux", feature = "unloading"))]
-#[expect(clippy::missing_safety_doc)]
 pub unsafe fn __suppress_unused_warning_for_windows_only_exports(
   exports: unloading::InternalModuleExports,
 ) {
-  #[expect(unreachable_code)]
-  exports.set_dealloc_callback(todo!());
+  unsafe { exports.set_dealloc_callback(todo!()) }
 }

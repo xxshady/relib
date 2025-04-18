@@ -32,7 +32,7 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for AllocTracker<A> {
   unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
     assert_allocator_is_still_accessible();
 
-    let ptr = self.allocator.alloc(layout);
+    let ptr = unsafe { self.allocator.alloc(layout) };
 
     let c_layout = StableLayout {
       size: layout.size(),
@@ -40,7 +40,10 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for AllocTracker<A> {
     };
 
     if ALLOC_INIT.load(Ordering::SeqCst) {
-      gen_imports::on_alloc(MODULE_ID, ptr, c_layout);
+      // TODO: SAFETY
+      unsafe {
+        gen_imports::on_alloc(MODULE_ID, ptr, c_layout);
+      }
     } else {
       save_alloc_in_cache(ptr, c_layout);
     }
@@ -51,7 +54,10 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for AllocTracker<A> {
   unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
     assert_allocator_is_still_accessible();
 
-    self.allocator.dealloc(ptr, layout);
+    // TODO: SAFETY
+    unsafe {
+      self.allocator.dealloc(ptr, layout);
+    }
 
     if !UNLOAD_DEALLOCATION.load(Ordering::SeqCst) {
       let c_layout = StableLayout {

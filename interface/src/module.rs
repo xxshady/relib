@@ -241,11 +241,18 @@ fn generate_imports(
             }
           },
           quote! {
-            let return_ptr = return_value.assume_init();
+            // SAFETY: function returned true so we are allowed to read the pointer
+            let return_ptr = unsafe { return_value.assume_init() };
             let return_value: #return_type = unsafe {
               Clone::clone(&*return_ptr)
             };
-            #post_mangled_ident(return_ptr);
+
+            // SAFETY: user of relib_interface crate should guarantee that
+            // module and host binaries are compiled with the same shared crate code
+            unsafe {
+              #post_mangled_ident(return_ptr);
+            }
+
             return_value
           },
         )
@@ -254,7 +261,9 @@ fn generate_imports(
           return_type,
           quote! {},
           quote! {
-            return_value.assume_init()
+            unsafe {
+              return_value.assume_init()
+            }
           },
         )
       };
@@ -282,7 +291,8 @@ fn generate_imports(
           #mangled_ident( ____success____.as_mut_ptr(), #( #inputs_without_types )* )
         };
 
-        if !____success____.assume_init() {
+        // SAFETY: this bool is guaranteed to be initialized by the host
+        if !unsafe{ ____success____.assume_init() } {
           // TODO: expose unrecoverable helper in relib_module::__internal and use it here?
           eprintln!("[relib] host panicked while executing import {:?} of module, aborting", stringify!(#ident));
           std::process::abort();

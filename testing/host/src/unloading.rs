@@ -58,55 +58,57 @@ fn test_unloading_features() {
 }
 
 unsafe fn test_exports(exports: &ModuleExports) -> Option<()> {
-  exports.empty()?;
-  exports.empty_default()?;
-  exports.dbg_default()?;
+  unsafe {
+    exports.empty()?;
+    exports.empty_default()?;
+    exports.dbg_default()?;
 
-  let string = "1".repeat(100);
-  let str = string.as_str().into();
+    let string = "1".repeat(100);
+    let str = string.as_str().into();
 
-  exports.ref_(str)?;
-  let string_ = exports.ref_owned_ret(str)?;
-  assert_eq!(string_, string);
+    exports.ref_(str)?;
+    let string_ = exports.ref_owned_ret(str)?;
+    assert_eq!(string_, string);
 
-  let ref_ = exports.ref_ret(str)?;
-  assert_eq!(ref_, str[1..]);
+    let ref_ = exports.ref_ret(str)?;
+    assert_eq!(ref_, str[1..]);
 
-  let ref_ = exports.ref_ret2(str, str)?;
-  assert_eq!(ref_, str);
+    let ref_ = exports.ref_ret2(str, str)?;
+    assert_eq!(ref_, str);
 
-  exports.primitive(i32::MAX)?;
+    exports.primitive(i32::MAX)?;
 
-  let ret = exports.primitive_ret(i32::MIN)?;
-  assert_eq!(ret, i32::MIN);
+    let ret = exports.primitive_ret(i32::MIN)?;
+    assert_eq!(ret, i32::MIN);
 
-  THREAD_LOCAL_DROP_CALL_STATE.set(DropCallState::NotCalled);
-  exports.thread_locals()?;
+    THREAD_LOCAL_DROP_CALL_STATE.set(DropCallState::NotCalled);
+    exports.thread_locals()?;
 
-  assert_mem_dealloc(|| {
-    let mem = exports.alloc_mem()?;
-    assert_eq!(mem.len(), SIZE_200_MB);
+    assert_mem_dealloc(|| {
+      let mem = exports.alloc_mem()?;
+      assert_eq!(mem.len(), SIZE_200_MB);
+
+      Some(())
+    })?;
+
+    exports.leak()?;
+
+    exports.call_imports()?;
+
+    let must_be_true = exports.only_called_once()?;
+    assert!(must_be_true);
+
+    let must_be_false = exports.only_called_once()?;
+    assert!(!must_be_false);
+
+    // ------------------------------------------------------------------------
+    let _suppress_unused_warn = || {
+      #[expect(unreachable_code, clippy::diverging_sub_expression)]
+      exports._params_lt_and_output_without(unreachable!(), unreachable!())?;
+
+      Some(())
+    };
 
     Some(())
-  })?;
-
-  exports.leak()?;
-
-  exports.call_imports()?;
-
-  let must_be_true = exports.only_called_once()?;
-  assert!(must_be_true);
-
-  let must_be_false = exports.only_called_once()?;
-  assert!(!must_be_false);
-
-  // ------------------------------------------------------------------------
-  let _suppress_unused_warn = || {
-    #[expect(unreachable_code, clippy::diverging_sub_expression)]
-    exports._params_lt_and_output_without(unreachable!(), unreachable!())?;
-
-    Some(())
-  };
-
-  Some(())
+  }
 }

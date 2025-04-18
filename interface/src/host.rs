@@ -102,7 +102,7 @@ fn generate_exports(
           },
           quote! { *mut #pub_return_type },
           quote! {
-            let return_ptr = return_value.assume_init();
+            let return_ptr = unsafe { return_value.assume_init() };
 
             let return_value: #pub_return_type = unsafe {
               Clone::clone(&*return_ptr)
@@ -117,7 +117,7 @@ fn generate_exports(
           quote! {},
           quote! {},
           pub_return_type.clone(),
-          quote! { return_value.assume_init() },
+          quote! { unsafe { return_value.assume_init() } },
         )
       };
 
@@ -164,7 +164,9 @@ fn generate_exports(
               ____success____.as_mut_ptr(),
               #( #inputs_without_types )*
             );
-            if !____success____.assume_init() {
+
+            // SAFETY: this bool is guaranteed to be initialized by the module
+            if !unsafe { ____success____.assume_init() } {
               return None;
             }
 

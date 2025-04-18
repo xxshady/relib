@@ -29,8 +29,9 @@ unsafe extern "C" fn pthread_create(
     value: *mut libc::c_void,
   ) -> libc::c_int;
 
+  // TODO: SAFETY
   let original_impl: OriginalImpl =
-    std::mem::transmute(libc::dlsym(libc::RTLD_NEXT, c"pthread_create".as_ptr()));
+    unsafe { std::mem::transmute(libc::dlsym(libc::RTLD_NEXT, c"pthread_create".as_ptr())) };
 
   let result = original_impl(native, attr, thread_start, payload as *mut libc::c_void);
 

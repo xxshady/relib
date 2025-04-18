@@ -4,7 +4,7 @@ use cfg_if::cfg_if;
 use relib_host::{Module, ModuleExportsForHost};
 use test_host_shared::dylib_filename;
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn main() {
   testing_release_backtrace_in_host____();
 }

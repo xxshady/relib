@@ -1,5 +1,5 @@
 [workspace]
-resolver = "2"
+resolver = "3"
 members = [
   "interface",
   "host",
@@ -23,11 +23,11 @@ members = [
 
 [workspace.package]
 version = "0.4.2"
-edition = "2021"
+edition = "2024"
 license = "MIT"
 repository = "https://github.com/xxshady/relib"
 readme = "README.md"
-rust-version = "1.83.0"
+rust-version = "1.85.0"
 
 [workspace.metadata.release]
 pre-release-commit-message = "v{{version}}"
