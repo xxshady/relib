@@ -30,7 +30,7 @@ unsafe extern "system" fn DllMain(_: *mut c_void, reason: u32, lpv_reserved: *mu
   // are we actually initialized?
   // maybe current module was unloaded before initialization
   // (for example, due to compilation info check fail)
-  if MODULE_ID == 0 {
+  if unsafe { MODULE_ID } == 0 {
     return TRUE;  
   }
 
@@ -90,5 +90,5 @@ extern "system" fn callback_to_ensure_tls_destructors_are_called_before_dllmain(
 }
 
 pub unsafe fn set_dealloc_callback(callback: *const c_void) {
-  DEALLOC_CALLBACK = callback;
+  unsafe { DEALLOC_CALLBACK = callback; }
 }
