@@ -12,11 +12,11 @@
 - Create Rust workspace: create empty directory with the following `Cargo.toml` (at the time of writing there is no cargo command to create workspace):<br>
 ```toml
 [workspace]
-resolver = "2" # edition "2021" implies resolver "2"
+resolver = "3" # edition "2024" implies resolver "3"
 
 [workspace.package]
 version = "0.1.0"
-edition = "2021" # or set a later one
+edition = "2024" # or set a later one
 ```
 
 - Create host crate: (`--vcs none` to not create unneeded git stuff)<br>
