@@ -161,8 +161,9 @@ pub unsafe fn forcibly_reinit_dbghelp() {
 }
 
 // TODO: fix it
+#[doc(hidden)]
 #[expect(clippy::missing_safety_doc)]
-#[cfg(all(target_os = "windows", feature = "unloading", not(relib_docs)))]
+#[cfg(all(target_os = "windows", feature = "unloading"))]
 pub unsafe fn __suppress_unused_warning_for_linux_only_exports(
   exports: unloading::InternalModuleExports,
 ) {
@@ -171,8 +172,9 @@ pub unsafe fn __suppress_unused_warning_for_linux_only_exports(
   }
 }
 
+#[doc(hidden)]
 #[expect(unreachable_code, clippy::missing_safety_doc)]
-#[cfg(all(target_os = "linux", feature = "unloading", not(relib_docs)))]
+#[cfg(all(target_os = "linux", feature = "unloading"))]
 pub unsafe fn __suppress_unused_warning_for_windows_only_exports(
   exports: unloading::InternalModuleExports,
 ) {
