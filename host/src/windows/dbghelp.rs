@@ -59,7 +59,7 @@ pub fn try_init_from_load_module() {
     "dbghelp.dll must not be loaded before any module is loaded \
     for backtraces to work correctly on Windows, make sure you don't create backtraces \
     before calling `relib_host::load_module`\n\
-    note: if you really need to create backtraces before loading modules consider using `relib_host::init`"
+    note: if you really need to create backtraces before loading modules consider using `relib_host::init`",
   );
 }
 
@@ -84,7 +84,8 @@ fn try_init(already_loaded_message: &str) {
 }
 
 unsafe fn init() -> Dbghelp {
-  let lib = libloading::Library::new("dbghelp.dll").unwrap_or_else(|e| {
+  let lib = unsafe { libloading::Library::new("dbghelp.dll") };
+  let lib = lib.unwrap_or_else(|e| {
     panic!("Failed to load dbghelp.dll which is needed for backtraces to work correctly: {e}");
   });
 
@@ -101,7 +102,7 @@ unsafe fn init() -> Dbghelp {
   }
 
   let initialize: SymInitializeW = {
-    let orig = get_lib!(SymInitializeW);
+    let orig = unsafe { get_lib!(SymInitializeW) };
 
     unsafe extern "system" fn hook(
       _hprocess: HANDLE,
@@ -112,52 +113,57 @@ unsafe fn init() -> Dbghelp {
     }
     let _type_assert: SymInitializeW = hook;
 
-    let orig = MinHook::create_hook(orig as *mut c_void, hook as *mut c_void).unwrap_or_else(|e| {
+    let orig = unsafe { MinHook::create_hook(orig as *mut c_void, hook as *mut c_void) };
+    let orig = orig.unwrap_or_else(|e| {
       panic!("Failed to hook dbghelp.dll SymInitializeW: {e:?}");
     });
-    std::mem::transmute(orig)
+    unsafe { std::mem::transmute(orig) }
   };
   let set_search_path: SymSetSearchPathW = {
-    let orig = get_lib!(SymSetSearchPathW);
+    let orig = unsafe { get_lib!(SymSetSearchPathW) };
 
     unsafe extern "system" fn hook(_hprocess: HANDLE, _searchpatha: PCWSTR) -> BOOL {
       TRUE
     }
     let _type_assert: SymSetSearchPathW = hook;
 
-    let orig = MinHook::create_hook(orig as *mut c_void, hook as *mut c_void).unwrap_or_else(|e| {
+    let orig = unsafe { MinHook::create_hook(orig as *mut c_void, hook as *mut c_void) };
+    let orig = orig.unwrap_or_else(|e| {
       panic!("Failed to hook dbghelp.dll SymSetSearchPathW: {e:?}");
     });
-    std::mem::transmute(orig)
+    unsafe { std::mem::transmute(orig) }
   };
   let get_options: SymGetOptions = {
-    let orig = get_lib!(SymGetOptions);
+    let orig = unsafe { get_lib!(SymGetOptions) };
 
     unsafe extern "system" fn hook() -> u32 {
       0
     }
     let _type_assert: SymGetOptions = hook;
 
-    let orig = MinHook::create_hook(orig as *mut c_void, hook as *mut c_void).unwrap_or_else(|e| {
+    let orig = unsafe { MinHook::create_hook(orig as *mut c_void, hook as *mut c_void) };
+    let orig = orig.unwrap_or_else(|e| {
       panic!("Failed to hook dbghelp.dll SymGetOptions: {e:?}");
     });
-    std::mem::transmute(orig)
+
+    unsafe { std::mem::transmute(orig) }
   };
   let set_options: SymSetOptions = {
-    let orig = get_lib!(SymSetOptions);
+    let orig = unsafe { get_lib!(SymSetOptions) };
 
     unsafe extern "system" fn hook(_symoptions: u32) -> u32 {
       0
     }
     let _type_assert: SymSetOptions = hook;
 
-    let orig = MinHook::create_hook(orig as *mut c_void, hook as *mut c_void).unwrap_or_else(|e| {
+    let orig = unsafe { MinHook::create_hook(orig as *mut c_void, hook as *mut c_void) };
+    let orig = orig.unwrap_or_else(|e| {
       panic!("Failed to hook dbghelp.dll SymSetOptions: {e:?}");
     });
-    std::mem::transmute(orig)
+    unsafe { std::mem::transmute(orig) }
   };
   let _get_search_path: SymGetSearchPathW = {
-    let orig = get_lib!(SymGetSearchPathW);
+    let orig = unsafe { get_lib!(SymGetSearchPathW) };
 
     unsafe extern "system" fn hook(
       _hprocess: HANDLE,
@@ -168,33 +174,36 @@ unsafe fn init() -> Dbghelp {
     }
     let _type_assert: SymGetSearchPathW = hook;
 
-    let orig = MinHook::create_hook(orig as *mut c_void, hook as *mut c_void).unwrap_or_else(|e| {
+    let orig = unsafe { MinHook::create_hook(orig as *mut c_void, hook as *mut c_void) };
+    let orig = orig.unwrap_or_else(|e| {
       panic!("Failed to hook dbghelp.dll SymGetSearchPathW: {e:?}");
     });
-    std::mem::transmute(orig)
+    unsafe { std::mem::transmute(orig) }
   };
 
-  let current_options = get_options();
-  const SYMOPT_DEFERRED_LOADS: u32 = 0x00000004;
-  set_options(current_options | SYMOPT_DEFERRED_LOADS);
+  unsafe {
+    let current_options = get_options();
+    const SYMOPT_DEFERRED_LOADS: u32 = 0x00000004;
+    set_options(current_options | SYMOPT_DEFERRED_LOADS);
 
-  let process = GetCurrentProcess();
-
-  let result = initialize(process, std::ptr::null(), FALSE);
-  handle_error(result, "SymInitializeW");
-
-  if cfg!(feature = "super_special_reinit_of_dbghelp") {
-    let cleanup = get_lib!(SymCleanup);
-    let result = cleanup(process);
-    handle_error(result, "SymCleanup");
+    let process = GetCurrentProcess();
 
     let result = initialize(process, std::ptr::null(), FALSE);
     handle_error(result, "SymInitializeW");
-  }
 
-  MinHook::enable_all_hooks().unwrap_or_else(|e| {
-    panic!("Failed to enable dbghelp.dll hooks: {e:?}");
-  });
+    if cfg!(feature = "super_special_reinit_of_dbghelp") {
+      let cleanup = get_lib!(SymCleanup);
+      let result = cleanup(process);
+      handle_error(result, "SymCleanup");
+
+      let result = initialize(process, std::ptr::null(), FALSE);
+      handle_error(result, "SymInitializeW");
+    }
+
+    MinHook::enable_all_hooks().unwrap_or_else(|e| {
+      panic!("Failed to enable dbghelp.dll hooks: {e:?}");
+    });
+  }
 
   let search_path_entries = {
     let mut entries = vec![".".to_owned()];
@@ -214,10 +223,10 @@ unsafe fn init() -> Dbghelp {
   };
 
   let mut instance = Dbghelp {
-    refresh_module_list: get_lib!(SymRefreshModuleList),
+    refresh_module_list: unsafe { get_lib!(SymRefreshModuleList) },
     set_search_path,
     #[cfg(feature = "unloading")]
-    unload_module: get_lib!(SymUnloadModule64),
+    unload_module: unsafe { get_lib!(SymUnloadModule64) },
 
     _lib: lib,
     search_path_entries,
