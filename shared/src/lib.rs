@@ -53,7 +53,7 @@ impl<T> RawSlice<T> {
   /// # Safety
   /// See `Safety` of [`std::slice::from_raw_parts`]
   pub unsafe fn into_slice<'a>(self) -> &'a [T] {
-    std::slice::from_raw_parts(self.ptr, self.len)
+    unsafe { std::slice::from_raw_parts(self.ptr, self.len) }
   }
 
   /// # Safety
@@ -62,7 +62,7 @@ impl<T> RawSlice<T> {
   where
     T: Clone,
   {
-    std::slice::from_raw_parts(self.ptr, self.len).to_vec()
+    unsafe { std::slice::from_raw_parts(self.ptr, self.len).to_vec() }
   }
 }
 
@@ -83,14 +83,14 @@ impl Str {
   /// # Safety
   /// See `Safety` of [`std::slice::from_raw_parts`]
   pub unsafe fn into_str<'a>(self) -> &'a str {
-    let bytes = self.0.into_slice();
+    let bytes = unsafe { self.0.into_slice() };
     std::str::from_utf8(bytes).expect("Failed to get valid UTF-8 string slice back")
   }
 
   /// # Safety
   /// See `Safety` of [`std::slice::from_raw_parts`]
   pub unsafe fn to_string(&self) -> String {
-    let bytes = self.0.to_vec();
+    let bytes = unsafe { self.0.to_vec() };
     String::from_utf8(bytes).expect("Failed to convert to valid UTF-8 string")
   }
 

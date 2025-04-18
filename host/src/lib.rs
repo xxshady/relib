@@ -155,21 +155,26 @@ pub unsafe fn init() {
 #[cfg(feature = "super_special_reinit_of_dbghelp")]
 pub unsafe fn forcibly_reinit_dbghelp() {
   #[cfg(target_os = "windows")]
-  windows::dbghelp::forcibly_reinit_dbghelp();
+  unsafe {
+    windows::dbghelp::forcibly_reinit_dbghelp();
+  }
 }
 
 // TODO: fix it
-#[cfg(all(target_os = "windows", feature = "unloading"))]
-unsafe fn __suppress_unused_warning_for_linux_only_exports(
+#[expect(unreachable_code, clippy::missing_safety_doc)]
+#[cfg(all(target_os = "windows", feature = "unloading", not(relib_docs)))]
+pub unsafe fn __suppress_unused_warning_for_linux_only_exports(
   exports: unloading::InternalModuleExports,
 ) {
-  exports.spawned_threads_count();
+  unsafe {
+    exports.spawned_threads_count();
+  }
 }
 
-#[cfg(all(target_os = "linux", feature = "unloading"))]
-unsafe fn __suppress_unused_warning_for_windows_only_exports(
+#[expect(unreachable_code, clippy::missing_safety_doc)]
+#[cfg(all(target_os = "linux", feature = "unloading", not(relib_docs)))]
+pub unsafe fn __suppress_unused_warning_for_windows_only_exports(
   exports: unloading::InternalModuleExports,
 ) {
-  #[expect(unreachable_code)]
-  exports.set_dealloc_callback(todo!());
+  unsafe { exports.set_dealloc_callback(todo!()) }
 }

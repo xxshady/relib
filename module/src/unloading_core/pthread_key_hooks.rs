@@ -27,16 +27,18 @@ pub fn lock_store() -> MutexGuard<'static, Store> {
 unsafe extern "C" fn pthread_key_create(key: *mut pthread_key_t, dtor: Dtor) -> c_int {
   type OriginalImpl = unsafe extern "C" fn(key: *mut pthread_key_t, dtor: Dtor) -> c_int;
 
-  let original_impl: OriginalImpl =
-    std::mem::transmute(libc::dlsym(libc::RTLD_NEXT, c"pthread_key_create".as_ptr()));
+  unsafe {
+    let original_impl: OriginalImpl =
+      std::mem::transmute(libc::dlsym(libc::RTLD_NEXT, c"pthread_key_create".as_ptr()));
 
-  let result = original_impl(key, dtor);
+    let result = original_impl(key, dtor);
 
-  if result == 0 {
-    lock_store().push((*key, dtor));
+    if result == 0 {
+      lock_store().push((*key, dtor));
+    }
+
+    result
   }
-
-  result
 }
 
 #[unsafe(no_mangle)]
@@ -53,10 +55,13 @@ pub unsafe extern "C" fn pthread_key_delete(key: pthread_key_t) -> c_int {
 
   type OriginalImpl = unsafe extern "C" fn(key: pthread_key_t) -> c_int;
 
-  let original_impl: OriginalImpl =
-    std::mem::transmute(libc::dlsym(libc::RTLD_NEXT, c"pthread_key_delete".as_ptr()));
+  // TODO: SAFETY
+  unsafe {
+    let original_impl: OriginalImpl =
+      std::mem::transmute(libc::dlsym(libc::RTLD_NEXT, c"pthread_key_delete".as_ptr()));
 
-  original_impl(key)
+    original_impl(key)
+  }
 }
 
 pub fn cleanup() {

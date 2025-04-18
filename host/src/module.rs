@@ -90,7 +90,8 @@ impl<E: ModuleExportsForHost> Module<E> {
   where
     R: Clone,
   {
-    call_module_pub_export(self.library(), "main").unwrap_or_else(|e| {
+    let res = unsafe { call_module_pub_export(self.library(), "main") };
+    res.unwrap_or_else(|e| {
       panic!("Failed to get main fn from module, reason: {e:#}");
     })
   }

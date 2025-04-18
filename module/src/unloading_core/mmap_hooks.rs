@@ -38,14 +38,17 @@ unsafe extern "C" fn mmap64(
     offset: libc::off64_t,
   ) -> *mut c_void;
 
-  let original_impl: OriginalImpl = transmute(libc::dlsym(libc::RTLD_NEXT, c"mmap64".as_ptr()));
-  let ptr = original_impl(addr, len, prot, flags, fd, offset);
+  // TODO: SAFETY
+  unsafe {
+    let original_impl: OriginalImpl = transmute(libc::dlsym(libc::RTLD_NEXT, c"mmap64".as_ptr()));
+    let ptr = original_impl(addr, len, prot, flags, fd, offset);
 
-  if ptr != libc::MAP_FAILED {
-    lock_mmaps().push((Ptr(ptr), len));
+    if ptr != libc::MAP_FAILED {
+      lock_mmaps().push((Ptr(ptr), len));
+    }
+
+    ptr
   }
-
-  ptr
 }
 
 #[unsafe(no_mangle)]
@@ -60,8 +63,11 @@ unsafe extern "C" fn munmap(addr: *mut c_void, len: libc::size_t) -> libc::c_int
 
   type OriginalImpl = unsafe extern "C" fn(addr: *mut c_void, len: libc::size_t) -> libc::c_int;
 
-  let original_impl: OriginalImpl = transmute(libc::dlsym(libc::RTLD_NEXT, c"munmap".as_ptr()));
-  original_impl(addr, len)
+  // TODO: SAFETY
+  unsafe {
+    let original_impl: OriginalImpl = transmute(libc::dlsym(libc::RTLD_NEXT, c"munmap".as_ptr()));
+    original_impl(addr, len)
+  }
 }
 
 pub fn cleanup() {

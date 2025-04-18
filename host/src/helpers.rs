@@ -46,7 +46,7 @@ pub unsafe fn get_library_export<'lib, F>(
   library: &'lib Library,
   name: &str,
 ) -> Result<Symbol<'lib, F>, libloading::Error> {
-  let fn_ = library.get(&cstr_bytes(name))?;
+  let fn_ = unsafe { library.get(&cstr_bytes(name)) }?;
   Ok(fn_)
 }
 
@@ -65,25 +65,30 @@ where
   let mangled_post_fn_name = format!("__post{}", mangled_name);
 
   type PostFn<R> = extern "C" fn(*mut R);
-  let post_fn = get_library_export::<PostFn<R>>(library, &mangled_post_fn_name);
+  let post_fn = unsafe { get_library_export::<PostFn<R>>(library, &mangled_post_fn_name) };
 
   warn_if_type_needs_drop_without_post::<R>(name, post_fn.is_ok());
 
   // if library has post function for this export return value is heap allocated
   let return_value = if let Ok(post_fn) = post_fn {
-    let fn_ = get_library_export(library, &mangled_name)?;
+    let fn_ = unsafe { get_library_export(library, &mangled_name) }?;
     let fn_: Symbol<extern "C" fn(*mut bool) -> MaybeUninit<*mut R>> = fn_;
 
     let mut ____success____ = MaybeUninit::<bool>::uninit();
 
     let return_ptr = fn_(____success____.as_mut_ptr());
-    if !____success____.assume_init() {
+
+    // SAFETY: this bool is guaranteed to be initialized by the module
+    if !unsafe { ____success____.assume_init() } {
       return Ok(None);
     }
 
     // SAFETY: function returned true so we are allowed to read the pointer
-    let return_ptr = return_ptr.assume_init();
-    let return_value: R = Clone::clone(&*return_ptr);
+    let (return_ptr, return_value) = unsafe {
+      let return_ptr = return_ptr.assume_init();
+      let return_value: R = Clone::clone(&*return_ptr);
+      (return_ptr, return_value)
+    };
 
     post_fn(return_ptr);
 
@@ -91,18 +96,21 @@ where
   }
   // else return value is simple Copy type
   else {
-    let fn_ = get_library_export(library, &mangled_name)?;
+    let fn_ = unsafe { get_library_export(library, &mangled_name) }?;
     let fn_: Symbol<extern "C" fn(*mut bool) -> MaybeUninit<R>> = fn_;
 
     let mut ____success____ = MaybeUninit::<bool>::uninit();
 
     let return_value = fn_(____success____.as_mut_ptr());
-    if !____success____.assume_init() {
+
+    // SAFETY: this bool is guaranteed to be initialized by the module
+    let success = unsafe { ____success____.assume_init() };
+    if !success {
       return Ok(None);
     }
 
     // SAFETY: function returned true so we are allowed to read the pointer
-    return_value.assume_init()
+    unsafe { return_value.assume_init() }
   };
 
   Ok(Some(return_value))
