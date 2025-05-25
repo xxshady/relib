@@ -312,7 +312,7 @@ It's done using `#[global_allocator]` so if you want to set your own global allo
 | Memory deallocation [(?)](#memory-deallocation)            | ✅      | ✅                                   |
 | Panic handling [(?)](#panic-handling)                      | ✅      | ✅                                   |
 | Thread-locals                                              | ✅      | ✅                                   |
-| Background threads check [(?)](#background-threads-check)  | ✅      | ❌                                   |
+| Background threads check [(?)](#background-threads-check)  | ✅      | ✅                                   |
 | Final unload check [(?)](#final-unload-check)              | ✅      | ✅                                   |
 | Before load check [(?)](#before-load-check)                | ✅      | ✅                                   |
 | Backtraces [(?)](#backtraces)                              | ✅      | ✅                                   |

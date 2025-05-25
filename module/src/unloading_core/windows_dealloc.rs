@@ -13,34 +13,27 @@ use std::{
   sync::atomic::{AtomicBool, Ordering::Relaxed},
 };
 
-use super::{helpers::unrecoverable, MODULE_ID};
-
-#[expect(clippy::upper_case_acronyms)]
-type BOOL = i32;
-const DLL_PROCESS_DETACH: u32 = 0;
-const TRUE: i32 = 1;
+use super::{helpers::unrecoverable, windows_dll_main::DLL_PROCESS_DETACH, MODULE_ID};
 
 static SUPER_SPECIAL_CALLBACK_CALLED: AtomicBool = AtomicBool::new(false);
 
 // SAFETY: will be set from main thread and be read too
 static mut DEALLOC_CALLBACK: *const c_void = std::ptr::null();
 
-#[unsafe(no_mangle)]
-unsafe extern "system" fn DllMain(_: *mut c_void, reason: u32, lpv_reserved: *mut c_void) -> BOOL {
+pub fn on_dll_main_call(reason: u32, lpv_reserved: *mut c_void) {
   // are we actually initialized?
   // maybe current module was unloaded before initialization
   // (for example, due to compilation info check fail)
   if unsafe { MODULE_ID } == 0 {
-    return TRUE;  
+    return;
   }
 
-  if !(
-    reason == DLL_PROCESS_DETACH && 
+  if !(reason == DLL_PROCESS_DETACH &&
     // lpv_reserved is null if FreeLibrary has been called or the DLL load failed and non-null
     // if the process is terminating
-    lpv_reserved.is_null()
-  ) {
-    return TRUE;
+    lpv_reserved.is_null())
+  {
+    return;
   }
 
   if !SUPER_SPECIAL_CALLBACK_CALLED.load(Relaxed) {
@@ -56,8 +49,6 @@ unsafe extern "system" fn DllMain(_: *mut c_void, reason: u32, lpv_reserved: *mu
     let callback: extern "system" fn() = std::mem::transmute(DEALLOC_CALLBACK);
     callback();
   }
-
-  TRUE
 }
 
 // wtf is this? let me explain it with a wonderful quote from standard library:
@@ -90,5 +81,7 @@ extern "system" fn callback_to_ensure_tls_destructors_are_called_before_dllmain(
 }
 
 pub unsafe fn set_dealloc_callback(callback: *const c_void) {
-  unsafe { DEALLOC_CALLBACK = callback; }
+  unsafe {
+    DEALLOC_CALLBACK = callback;
+  }
 }

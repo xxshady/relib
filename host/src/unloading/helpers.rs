@@ -17,3 +17,16 @@ fn unrecoverable_impl(message: &str) -> ! {
   eprintln!("aborting");
   std::process::abort();
 }
+
+#[cfg(target_os = "windows")]
+pub mod windows {
+  use libloading::{os::windows::Library as WindowsLibrary, Library};
+  use crate::module::WindowsLibraryHandle;
+
+  pub fn library_handle(library: Library) -> (Library, WindowsLibraryHandle) {
+    let handle = WindowsLibrary::from(library).into_raw();
+    let library = unsafe { WindowsLibrary::from_raw(handle) };
+    let library = Library::from(library);
+    (library, handle)
+  }
+}

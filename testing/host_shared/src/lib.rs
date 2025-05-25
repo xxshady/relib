@@ -66,7 +66,7 @@ pub fn current_target_dir() -> &'static str {
   }
 }
 
-// TODO: move it to some testing shared crate (see helpers of test_runner crate)
+// TODO: use libloading::library_filename?
 pub fn dylib_filename(name: &str) -> String {
   format!("{DLL_PREFIX}{name}{DLL_SUFFIX}")
 }

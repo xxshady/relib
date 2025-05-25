@@ -36,4 +36,8 @@ pub trait Exports {
   fn call_imports();
 
   fn only_called_once() -> bool;
+
+  // background threads check on windows
+  fn spawn_background_threads(module_id: u64, how_many: u8);
+  fn join_background_threads();
 }

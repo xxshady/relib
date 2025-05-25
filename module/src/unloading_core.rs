@@ -21,6 +21,8 @@ mod exports_impl;
 mod alloc_tracker;
 pub use alloc_tracker::AllocTracker;
 #[cfg(target_os = "windows")]
+mod windows_dll_main;
+#[cfg(target_os = "windows")]
 mod windows_dealloc;
 
 /// Middleware for tracking all allocations to deallocate leaks

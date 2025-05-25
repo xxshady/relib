@@ -37,3 +37,6 @@ mod dbghelp_is_already_loaded_init;
 
 #[cfg(feature = "backtrace_unloading_host_as_dylib")]
 mod backtrace_unloading_host_as_dylib;
+
+#[cfg(feature = "windows_background_threads")]
+mod windows_background_threads;

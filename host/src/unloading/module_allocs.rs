@@ -11,7 +11,7 @@ use super::{helpers::unrecoverable, InternalModuleExports};
 
 type Allocs = HashMap<ModuleId, HashMap<AllocatorPtr, Allocation>>;
 
-static ALLOCS: LazyLock<Mutex<Allocs>> = LazyLock::new(|| Mutex::new(HashMap::new()));
+static ALLOCS: LazyLock<Mutex<Allocs>> = LazyLock::new(Default::default);
 
 fn lock_allocs() -> MutexGuard<'static, Allocs> {
   let Ok(allocs) = ALLOCS.lock() else {
@@ -37,10 +37,7 @@ pub fn remove_module(
 
   let mut allocs = lock_allocs();
   let Some(allocs) = allocs.remove(&module_id) else {
-    panic!(
-      "Failed to take allocs of module with module_id: {}",
-      module_id
-    );
+    panic!("Failed to take allocs of module with id: {module_id}");
   };
 
   // this check relies on two allocations in alloc tracker of the module,

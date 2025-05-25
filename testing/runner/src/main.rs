@@ -4,6 +4,8 @@ mod code_change;
 mod multiple_modules;
 mod panic_in_interface_host;
 mod backtrace_unloading_host_as_dylib;
+#[cfg(target_os = "windows")]
+mod windows_background_threads;
 
 const TEST_FEATURES: &[&str] = &[
   #[cfg(target_os = "windows")]
@@ -34,6 +36,8 @@ fn main() {
   panic_in_interface_host::main();
 
   backtrace_unloading_host_as_dylib::main();
+
+  windows_background_threads::main();
 
   println!();
   println!();

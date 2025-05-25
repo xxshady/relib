@@ -13,11 +13,17 @@ use crate::{
 #[cfg(feature = "unloading")]
 use crate::unloading::InternalModuleExports;
 
+#[cfg(all(target_os = "windows", feature = "unloading"))]
+pub(crate) type WindowsLibraryHandle = isize;
+
 #[must_use = "module will be leaked if dropped, \
   if you don't want that consider using `unload` method (see \"unloading\" feature)"]
 pub struct Module<E: ModuleExportsForHost> {
   pub id: ModuleId,
   pub(crate) library: LeakLibrary,
+
+  #[cfg(all(target_os = "windows", feature = "unloading"))]
+  pub(crate) library_handle: WindowsLibraryHandle,
 
   #[cfg(feature = "unloading")]
   pub(crate) library_path: PathBuf,
@@ -28,6 +34,7 @@ pub struct Module<E: ModuleExportsForHost> {
   pub_exports: E,
 
   /// Module must be loaded and unloaded from the same thread
+  /// for thread locals destructors to work correctly.
   _not_thread_safe: PhantomData<*const ()>,
 }
 
@@ -42,6 +49,9 @@ impl<E: ModuleExportsForHost> Module<E> {
       PathBuf,
     ),
   ) -> Self {
+    #[cfg(all(target_os = "windows", feature = "unloading"))]
+    let (library, library_handle) = { crate::unloading::helpers::windows::library_handle(library) };
+
     Self {
       id,
       library: LeakLibrary::new(library),
@@ -52,6 +62,9 @@ impl<E: ModuleExportsForHost> Module<E> {
       library_path,
       #[cfg(feature = "unloading")]
       internal_exports,
+
+      #[cfg(all(target_os = "windows", feature = "unloading"))]
+      library_handle,
     }
   }
 

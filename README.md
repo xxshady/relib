@@ -6,7 +6,7 @@
 
 ## Platforms supported
 
-Currently Linux has the best support, Windows is supported partially, macOS is not supported (not tested), see [support matrix](https://docs.rs/relib/latest/relib/docs/index.html#feature-support-matrix).
+Linux and Windows are fully supported, macOS is not supported (not tested), see [support matrix](https://docs.rs/relib/latest/relib/docs/index.html#feature-support-matrix).
 
 ## Overview
 
@@ -46,7 +46,7 @@ For ABI stable types, you can use abi_stable or stabby crate for it, see `abi_st
 
 ### Dead locks
 
-If your program deadlocks unloading won't work and you will have to kill the whole process.
+If your program (module) deadlocks unloading won't work and you will have to kill the whole process.
 
 ### Moving non-`Copy` types between host and module
 

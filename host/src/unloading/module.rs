@@ -43,6 +43,14 @@ impl<E: ModuleExportsForHost> Module<E> {
       }
     }
 
+    #[cfg(target_os = "windows")]
+    {
+      let res = super::windows_thread_spawn_hook::remove_module(self.library_handle);
+      if res.is_err() {
+        return Err(UnloadError::ThreadsStillRunning(library_path));
+      }
+    }
+
     // removing module from global allocations store
     // (removing happens later on windows because thread-local destructors
     // are called by standard library in `library.close()`)
@@ -55,24 +63,16 @@ impl<E: ModuleExportsForHost> Module<E> {
 
     #[cfg(target_os = "windows")]
     {
-      use libloading::os::windows::Library as WindowsLibrary;
-      use crate::{windows::dbghelp, unloading::windows_dealloc, leak_library::LeakLibrary};
+      use crate::{windows::dbghelp, unloading::windows_dealloc};
 
+      let handle = self.library_handle;
       let library = self.library.take();
-      let handle = WindowsLibrary::from(library).into_raw();
-
-      // re-initializing self.library because windows_dealloc::set
-      // takes module instance by value
-      // (shouldn't be expensive, just looks weird)
-      let library = unsafe { WindowsLibrary::from_raw(handle) };
-      let library = libloading::Library::from(library);
-      self.library = LeakLibrary::new(library);
 
       windows_dealloc::set(self, library_path.clone());
 
       dbghelp::remove_module(handle, &library_path);
 
-      let library = unsafe { WindowsLibrary::from_raw(handle) };
+      // let library = unsafe { WindowsLibrary::from_raw(handle) };
       library.close()?;
 
       assert!(

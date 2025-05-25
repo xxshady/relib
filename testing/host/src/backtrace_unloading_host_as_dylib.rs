@@ -6,7 +6,9 @@ use crate::shared::current_target_dir;
 
 pub fn main() {
   let target_dir = current_target_dir();
-  let path = format!("{target_dir}/backtrace_unloading_host_as_dylib__host/{DLL_PREFIX}test_host_as_dylib{DLL_SUFFIX}");
+  let path = format!(
+    "{target_dir}/backtrace_unloading_host_as_dylib__host/{DLL_PREFIX}test_host_as_dylib{DLL_SUFFIX}"
+  );
 
   unsafe {
     let host = Library::new(path).unwrap();
