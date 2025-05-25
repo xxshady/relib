@@ -60,7 +60,7 @@ pub fn call_host_by_directory(directory: &str) {
   host_bin();
 }
 
-// TODO: move it to some testing shared crate (see host_shared crate)
+// TODO: use libloading::library_filename?
 pub fn dylib_filename(name: &str) -> String {
   format!("{DLL_PREFIX}{name}{DLL_SUFFIX}")
 }

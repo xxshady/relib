@@ -14,6 +14,8 @@ mod backtrace_unloading_host_as_dylib;
 mod is_already_loaded_error;
 mod dbghelp_is_already_loaded_panic;
 mod dbghelp_is_already_loaded_init;
+mod windows_background_threads;
+mod windows_background_threads_fail;
 
 fn main() {
   if cfg!(feature = "unloading") {
@@ -47,6 +49,10 @@ fn main() {
     dbghelp_is_already_loaded_panic::main();
   } else if cfg!(feature = "dbghelp_is_already_loaded_init") {
     dbghelp_is_already_loaded_init::main();
+  } else if cfg!(feature = "windows_background_threads") {
+    windows_background_threads::main();
+  } else if cfg!(feature = "windows_background_threads_fail") {
+    windows_background_threads_fail::main();
   } else {
     panic!();
   }

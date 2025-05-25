@@ -1,7 +1,10 @@
 use std::{
   mem::forget,
-  sync::atomic::{AtomicBool, Ordering::Relaxed},
-  thread,
+  sync::{
+    atomic::{AtomicBool, Ordering::Relaxed},
+    Mutex, MutexGuard,
+  },
+  thread::{self, JoinHandle},
 };
 
 use abi_stable::std_types::{RStr, RString, RVec};
@@ -188,8 +191,31 @@ impl Exports for ModuleExportsImpl {
       !val
     }
   }
+
+  fn spawn_background_threads(module_id: u64, how_many: u8) {
+    for i in 0..how_many {
+      let handle = thread::spawn(move || {
+        thread::park();
+        println!("[module: {module_id}] thread {i} unparked");
+      });
+      background_threads().push(handle);
+    }
+  }
+
+  fn join_background_threads() {
+    background_threads().drain(..).for_each(|handle| {
+      handle.thread().unpark();
+      handle.join().unwrap();
+    });
+  }
 }
 
 pub fn alloc_some_bytes() -> Vec<u8> {
   vec![1_u8; SIZE_200_MB]
+}
+
+fn background_threads() -> MutexGuard<'static, Vec<JoinHandle<()>>> {
+  static HANDLES: Mutex<Vec<JoinHandle<()>>> = Mutex::new(Vec::new());
+
+  HANDLES.lock().unwrap()
 }

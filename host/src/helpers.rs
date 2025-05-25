@@ -27,6 +27,7 @@ pub fn open_library(path: &Path) -> Result<libloading::Library, crate::LoadError
     use libc::{RTLD_DEEPBIND, RTLD_LAZY, RTLD_LOCAL};
 
     // RTLD_DEEPBIND allows replacing __cxa_thread_atexit_impl (it's needed to call destructors of thread-locals)
+    // as well as mmap functions (to unmap leaked mappings) and thread spawn function (to check detached threads)
     // only for dynamic library without replacing it for the whole executable
     const FLAGS: i32 = RTLD_LAZY | RTLD_LOCAL | RTLD_DEEPBIND;
 

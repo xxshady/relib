@@ -20,8 +20,10 @@ pub fn main() {
     let stderr = String::from_utf8(output.stderr).unwrap();
     println!("stderr:\n{stderr}");
 
-    assert!(stderr
-      .contains(r#"[relib] host panicked while executing import "panic" of module, aborting"#));
+    assert!(
+      stderr
+        .contains(r#"[relib] host panicked while executing import "panic" of module, aborting"#)
+    );
     dbg!(output.status);
     assert!(!output.status.success());
   };

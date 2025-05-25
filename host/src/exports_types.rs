@@ -1,4 +1,3 @@
-
 use libloading::Library;
 
 pub trait ModuleExportsForHost {

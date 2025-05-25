@@ -32,6 +32,7 @@ backtrace_unloading = ["relib_module/unloading"]
 backtrace_unloading_host_as_dylib = ["relib_module/unloading"]
 is_already_loaded_error = ["relib_module/unloading"]
 dbghelp_is_already_loaded_init = []
+windows_background_threads = ["relib_module/unloading"]
 
 [dependencies]
 abi_stable.workspace = true
