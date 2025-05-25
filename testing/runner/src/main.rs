@@ -37,6 +37,7 @@ fn main() {
 
   backtrace_unloading_host_as_dylib::main();
 
+  #[cfg(target_os = "windows")]
   windows_background_threads::main();
 
   println!();
