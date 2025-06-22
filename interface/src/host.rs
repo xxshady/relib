@@ -290,7 +290,7 @@ fn generate_imports(
 
             *post_ptr = post_impl;
 
-            #[allow(clippy::needless_lifetimes, clippy::extra_unused_lifetimes)]
+            #[allow(clippy::extra_unused_lifetimes)]
             extern "C" fn post_impl #lifetimes_full (return_value_ptr: *mut #return_type) {
               use std::boxed::Box;
               unsafe {
@@ -313,7 +313,6 @@ fn generate_imports(
 
           *ptr = impl_;
 
-          #[allow(clippy::needless_lifetimes)]
           extern "C" fn impl_ #lifetimes_full (
             ____success____: *mut bool,
             #inputs

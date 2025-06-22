@@ -92,7 +92,7 @@ fn generate_exports(
           },
           quote! {
             #[unsafe(no_mangle)]
-            #[allow(clippy::needless_lifetimes, clippy::extra_unused_lifetimes)]
+            #[allow(clippy::extra_unused_lifetimes)]
             pub extern "C" fn #post_mangled_ident #lifetimes_full (
               return_value_ptr: *mut #return_type
             ) {
@@ -109,7 +109,6 @@ fn generate_exports(
 
       quote! {
         #[unsafe(no_mangle)]
-        #[allow(clippy::needless_lifetimes)]
         pub extern "C" fn #mangled_ident #lifetimes_full (
           ____success____: *mut bool,
           #inputs
@@ -235,7 +234,7 @@ fn generate_imports(
             #[unsafe(no_mangle)]
             static mut #post_mangled_ident: #lifetimes_for extern "C" fn(return_value_ptr: *mut #return_type) = ____post_placeholder____;
 
-            #[allow(clippy::needless_lifetimes, clippy::extra_unused_lifetimes)]
+            #[allow(clippy::extra_unused_lifetimes)]
             extern "C" fn ____post_placeholder____ #lifetimes_full (_: *mut #return_type) {
               unreachable!();
             }
@@ -274,7 +273,6 @@ fn generate_imports(
           #inputs
         ) -> std::mem::MaybeUninit<#return_type> = ____placeholder____;
 
-        #[allow(clippy::needless_lifetimes)]
         extern "C" fn ____placeholder____ #lifetimes_full (
           _: *mut bool,
           #placeholder_inputs
