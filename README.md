@@ -159,15 +159,6 @@ pub trait Exports {
 }
 ```
 
-And suppress clippy lint if you use it:
-
-```rust
-pub trait Exports {
-  #[expect(clippy::needless_lifetimes)]
-  fn ret_ref<'a>(str: RStr<'a>) -> RStr<'a>;
-}
-```
-
 ### Lifetime bounds in imports and exports
 
 It's not possible specify lifetime bounds for imports and exports as it's too complex to implement (there is no `for<'a, 'b: 'a> fn(...)` syntax).

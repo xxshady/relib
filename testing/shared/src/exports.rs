@@ -12,7 +12,6 @@ pub trait Exports {
 
   fn ref_(r: RStr);
 
-  #[expect(clippy::needless_lifetimes)]
   fn ref_ret<'a>(r: RStr<'a>) -> RStr<'a>;
   fn ref_ret2<'a>(r: RStr<'a>, r2: RStr<'a>) -> RStr<'a>;
 
