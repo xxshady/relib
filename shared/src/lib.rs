@@ -21,7 +21,7 @@ pub struct Allocation(pub AllocatorPtr, pub StableLayout);
 impl Debug for Allocation {
   fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
     let Self(AllocatorPtr(ptr), StableLayout { size, .. }) = self;
-    write!(f, "({:?}, {:?})", ptr, size)
+    write!(f, "({ptr:?}, {size:?})")
   }
 }
 

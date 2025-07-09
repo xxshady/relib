@@ -21,7 +21,6 @@ pub fn main() {
 }
 
 fn run_host(directory: &str) {
-  #[expect(clippy::zombie_processes)] // he is lying
   let mut host_proc = Command::new(host_bin_by_directory(directory))
     .stdout(Stdio::piped())
     .stderr(Stdio::piped())

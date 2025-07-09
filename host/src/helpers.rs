@@ -63,7 +63,7 @@ where
   // !!! keep in sync with relib_interface crate !!!
 
   let mangled_name = format!("__relib__{name}");
-  let mangled_post_fn_name = format!("__post{}", mangled_name);
+  let mangled_post_fn_name = format!("__post{mangled_name}");
 
   type PostFn<R> = extern "C" fn(*mut R);
   let post_fn = unsafe { get_library_export::<PostFn<R>>(library, &mangled_post_fn_name) };
