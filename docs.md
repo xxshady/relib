@@ -153,7 +153,6 @@ pub trait Imports {}
 ```rust
 // host/build.rs
 fn main() {
-  // this code assumes that directory and package name of the shared crate are the same
   relib_interface::host::generate(
     shared::EXPORTS,
     "shared::exports::Exports", 
@@ -167,7 +166,6 @@ fn main() {
 ```rust
 // module/build.rs
 fn main() {
-  // this code assumes that directory and package name of the shared crate are the same
   relib_interface::module::generate(
     shared::EXPORTS,
     "shared::exports::Exports",
