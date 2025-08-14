@@ -68,16 +68,16 @@ jobs:
         run: |
           cargo release ${{ steps.extract_version.outputs.VERSION }} --no-confirm --no-push --execute
 
-      - name: update Cargo.lock of examples
-        run: |
-          cd examples/abi_stable_usage
-          cargo check
-          cd ../custom_global_alloc
-          cargo check
-          cd ../live_reload
-          cargo check
-          cd ../export_main_macro
-          cargo check
+      # - name: update Cargo.lock of examples
+      #   run: |
+      #     cd examples/abi_stable_usage
+      #     cargo check
+      #     cd ../custom_global_alloc
+      #     cargo check
+      #     cd ../live_reload
+      #     cargo check
+      #     cd ../export_main_macro
+      #     cargo check
 
       # reset two commits: by cargo-release and "relib files" one and after that merge them in new one
       - name: patch release commit
