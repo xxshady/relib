@@ -8,9 +8,7 @@ on:
 jobs:
   release:
     runs-on: ubuntu-22.04
-    permissions:
-      id-token: write # Required for OIDC token exchange
-      actions: write
+    # permissions: write-all
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -42,27 +40,27 @@ jobs:
       - name: switch to branch
         run: git switch ${{ steps.extract_branch.outputs.BRANCH }}
 
-      - name: prepare relib crate
-        run: |
-          chmod +x ./scripts/build_relib_crate.sh
-          ./scripts/build_relib_crate.sh
-          git add .
-          git commit --allow-empty -m "relib files"
+      # - name: prepare relib crate
+      #   run: |
+      #     chmod +x ./scripts/build_relib_crate.sh
+      #     ./scripts/build_relib_crate.sh
+      #     git add .
+      #     git commit --allow-empty -m "relib files"
 
-      - name: extract version from tag
-        id: extract_version
-        run: |
-          VERSION=$( echo ${{ github.ref_name }} | grep -oP 'v\K.*' )
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-      - name: print version
-        run: echo ${{ steps.extract_version.outputs.VERSION }}
+      # - name: extract version from tag
+      #   id: extract_version
+      #   run: |
+      #     VERSION=$( echo ${{ github.ref_name }} | grep -oP 'v\K.*' )
+      #     echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+      # - name: print version
+      #   run: echo ${{ steps.extract_version.outputs.VERSION }}
 
-      - name: install cargo-binstall
-        uses: cargo-bins/cargo-binstall@v1.10.12
+      # - name: install cargo-binstall
+      #   uses: cargo-bins/cargo-binstall@v1.10.12
 
-      - name: install cargo-release
-        run: |
-          cargo binstall cargo-release@=0.25.13 --no-confirm
+      # - name: install cargo-release
+      #   run: |
+      #     cargo binstall cargo-release@=0.25.13 --no-confirm
 
       # - name: cargo release
       #   env:
