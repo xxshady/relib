@@ -26,8 +26,8 @@ mod windows;
 /// Loads a module (dynamic library) by specified path.
 ///
 /// # Safety
-/// This function is unsafe due to special patches related to backtraces on Windows,
-/// if you are on Linux ignore this safety condition:
+/// This function is unsafe due to special patches related to backtraces and threads on Windows,
+/// if you are on Linux ignore these safety conditions:
 /// - Make sure you don't create backtraces
 ///   (for example, by panic or using `std::backtrace`)
 ///   in one thread and call this function **for the first time** from another one.

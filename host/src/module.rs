@@ -1,7 +1,7 @@
-use std::{fmt::Debug, marker::PhantomData};
+use std::fmt::Debug;
 
 #[cfg(feature = "unloading")]
-use std::path::PathBuf;
+use std::{marker::PhantomData, path::PathBuf};
 
 use relib_internal_shared::ModuleId;
 use libloading::Library;
@@ -33,6 +33,7 @@ pub struct Module<E: ModuleExportsForHost> {
 
   pub_exports: E,
 
+  #[cfg(feature = "unloading")]
   /// Module must be loaded and unloaded from the same thread
   /// for thread locals destructors to work correctly.
   _not_thread_safe: PhantomData<*const ()>,
@@ -56,6 +57,8 @@ impl<E: ModuleExportsForHost> Module<E> {
       id,
       library: LeakLibrary::new(library),
       pub_exports,
+
+      #[cfg(feature = "unloading")]
       _not_thread_safe: PhantomData,
 
       #[cfg(feature = "unloading")]
@@ -114,5 +117,14 @@ impl<E: ModuleExportsForHost> Debug for Module<E> {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     let id = self.id;
     write!(f, "Module {{ id: {id} }}")
+  }
+}
+
+#[cfg(not(feature = "unloading"))]
+fn _test_for_send_sync() {
+  let _: &(dyn Sync + Send) = &module();
+
+  fn module() -> Module<()> {
+    unreachable!()
   }
 }
