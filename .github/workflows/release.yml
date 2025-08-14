@@ -8,14 +8,19 @@ on:
 jobs:
   release:
     runs-on: ubuntu-22.04
+    permissions: write-all
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
 
-      - name: auth
+      - name: crates.io auth
+        uses: rust-lang/crates-io-auth-action@v1
+        id: crates_io_auth
+
+      - name: git auth
         run: |
           git config --global user.name "release"
           git config --global user.email "release@release.release"
@@ -42,9 +47,6 @@ jobs:
           git add .
           git commit --allow-empty -m "relib files"
 
-      - name: cargo login
-        run: cargo login ${{ secrets.CRATES_IO_TOKEN }}
-
       - name: extract version from tag
         id: extract_version
         run: |
@@ -61,6 +63,8 @@ jobs:
           cargo binstall cargo-release@=0.25.13 --no-confirm
 
       - name: cargo release
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.crates_io_auth.outputs.token }}
         run: |
           cargo release ${{ steps.extract_version.outputs.VERSION }} --no-confirm --no-push --execute
 
