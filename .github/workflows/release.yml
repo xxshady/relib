@@ -64,11 +64,11 @@ jobs:
         run: |
           cargo binstall cargo-release@=0.25.13 --no-confirm
 
-      - name: cargo release
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ steps.crates_io_auth.outputs.token }}
-        run: |
-          cargo release ${{ steps.extract_version.outputs.VERSION }} --no-confirm --no-push --execute
+      # - name: cargo release
+      #   env:
+      #     CARGO_REGISTRY_TOKEN: ${{ steps.crates_io_auth.outputs.token }}
+      #   run: |
+      #     cargo release ${{ steps.extract_version.outputs.VERSION }} --no-confirm --no-push --execute
 
       - name: update Cargo.lock of examples
         run: |
