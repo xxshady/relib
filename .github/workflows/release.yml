@@ -8,7 +8,7 @@ on:
 jobs:
   release:
     runs-on: ubuntu-22.04
-    # permissions: write-all
+    permissions: write-all
     steps:
       - name: checkout
         uses: actions/checkout@v4
