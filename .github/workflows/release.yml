@@ -40,12 +40,12 @@ jobs:
       - name: switch to branch
         run: git switch ${{ steps.extract_branch.outputs.BRANCH }}
 
-      - name: prepare relib crate
-        run: |
-          chmod +x ./scripts/build_relib_crate.sh
-          ./scripts/build_relib_crate.sh
-          git add .
-          git commit --allow-empty -m "relib files"
+      # - name: prepare relib crate
+      #   run: |
+      #     chmod +x ./scripts/build_relib_crate.sh
+      #     ./scripts/build_relib_crate.sh
+      #     git add .
+      #     git commit --allow-empty -m "relib files"
 
       - name: extract version from tag
         id: extract_version
