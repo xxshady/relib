@@ -81,8 +81,10 @@ jobs:
 
       # reset two commits: by cargo-release and "relib files" one and after that merge them in new one
       - name: patch release commit
+
+        # git reset HEAD~2
         run: |
-          git reset HEAD~2
+          git reset HEAD~1
           git add .
           git commit -m "v${{ steps.extract_version.outputs.VERSION }}"
           git push
