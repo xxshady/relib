@@ -6,14 +6,16 @@ use relib_host::{Module, ModuleExportsForHost};
 use crate::shared::{self, init_module_imports};
 
 pub fn main() {
-  thread::scope(|s| {
-    for idx in 0..10 {
-      s.spawn(move || {
-        let module = load_module(&format!("test_module_{idx}"));
-        unload_module(module);
-      });
-    }
-  });
+  for i in 0..10 {
+    thread::scope(|s| {
+      for idx in 0..5 {
+        s.spawn(move || {
+          let module = load_module(&format!("test_module_{idx}"));
+          unload_module(module);
+        });
+      }
+    });
+  }
 }
 
 fn unload_module<E: ModuleExportsForHost>(module: Module<E>) {
@@ -22,6 +24,7 @@ fn unload_module<E: ModuleExportsForHost>(module: Module<E>) {
       let id = module.id;
       module.unload().unwrap();
       println!("{:?} unloaded: {id}", std::thread::current().id());
+      dbg!(format!("{:?} unloaded: {id}", std::thread::current().id()));
     } else {
       drop(module);
       panic!("this branch must not be called");

@@ -81,6 +81,7 @@ pub unsafe fn load_module<E: ModuleExportsForHost>(
   #[cfg(target_os = "windows")]
   {
     windows::dbghelp::try_init_from_load_module();
+    windows::stdout_stderr::try_init();
     unsafe {
       #[cfg(feature = "unloading")]
       unloading::windows_thread_spawn_hook::init();
@@ -164,6 +165,7 @@ pub unsafe fn init() {
   #[cfg(target_os = "windows")]
   {
     windows::dbghelp::try_init_standalone();
+    windows::stdout_stderr::try_init();
     unsafe {
       #[cfg(feature = "unloading")]
       unloading::windows_thread_spawn_hook::init();

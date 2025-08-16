@@ -9,6 +9,7 @@ use minhook::MinHook;
 // TODO: load dbghelp.dll lazily when std or backtrace crate calls LoadLibrary?
 // TODO: crate feature to disable dbghelp stuff if backtraces are not needed
 pub mod dbghelp;
+pub mod stdout_stderr;
 
 #[allow(clippy::upper_case_acronyms)]
 pub mod imports {
@@ -25,12 +26,27 @@ pub mod imports {
   pub const GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT: u32 = 0x00000002;
   pub const GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS: u32 = 0x00000004;
   pub const ERROR_INSUFFICIENT_BUFFER: u32 = 122;
+  pub const STD_OUTPUT_HANDLE: u32 = 0xFFFFFFF5;
+  pub const STD_ERROR_HANDLE: u32 = 0xFFFFFFF4;
+
+  #[repr(C)]
+  pub struct SECURITY_ATTRIBUTES {
+    pub nLength: DWORD,
+    pub lpSecurityDescriptor: *mut c_void,
+    pub bInheritHandle: BOOL,
+  }
 
   windows_targets::link!("kernel32.dll" "system" fn GetModuleHandleExW(flags: u32, module_name: *const u16, module: *mut *mut isize) -> BOOL);
   windows_targets::link!("kernel32.dll" "system" fn GetModuleFileNameW(module: *const isize, file_name: PWSTR, size: DWORD) -> DWORD);
 
   windows_targets::link!("kernel32.dll" "system" fn GetCurrentProcess() -> HANDLE);
   windows_targets::link!("kernel32.dll" "system" fn GetLastError() -> DWORD);
+  windows_targets::link!("kernel32.dll" "system" fn CreatePipe(hreadpipe: *mut HANDLE, hwritepipe: *mut HANDLE, lppipeattributes: *mut SECURITY_ATTRIBUTES, nsize: u32) -> BOOL);
+  windows_targets::link!("kernel32.dll" "system" fn GetStdHandle(nstdhandle: u32) -> HANDLE);
+  windows_targets::link!("kernel32.dll" "system" fn SetStdHandle(nstdhandle: u32, hhandle: HANDLE) -> BOOL);
+  windows_targets::link!("kernel32.dll" "system" fn CloseHandle(hobject: HANDLE) -> BOOL);
+  windows_targets::link!("kernel32.dll" "system" fn ReadFile(hfile: HANDLE, lpbuffer: *mut c_void, nnumberofbytestoread: u32, lpnumberofbytesread: *mut u32, lpoverlapped: *mut c_void) -> BOOL);
+  windows_targets::link!("kernel32.dll" "system" fn WriteFile(hfile: HANDLE, lpbuffer: *const c_void, nnumberofbytestowrite: u32, lpnumberofbyteswritten: *mut u32, lpoverlapped: *mut c_void) -> BOOL);
 
   #[cfg(feature = "unloading")]
   windows_targets::link!("kernel32.dll" "system" fn CreateThread(lpthreadattributes : *const c_void, dwstacksize : usize, lpstartaddress : unsafe extern "system" fn(main: *mut c_void) -> u32, lpparameter : *mut c_void, dwcreationflags : u32, lpthreadid : *mut u32) -> HANDLE);

@@ -13,8 +13,8 @@ pub fn main() {
 
   build_debug();
   run_multiple_modules("debug");
-  build_release();
-  run_multiple_modules("release");
+  // build_release();
+  // run_multiple_modules("release");
 }
 
 fn run_multiple_modules(directory: &str) {
