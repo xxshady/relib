@@ -1,7 +1,10 @@
 use std::{
   mem::{needs_drop, MaybeUninit},
   path::Path,
-  sync::atomic::{AtomicU64, Ordering},
+  sync::{
+    atomic::{AtomicU64, Ordering},
+    Mutex,
+  },
 };
 
 use relib_internal_shared::ModuleId;
@@ -181,3 +184,6 @@ fn warn_if_type_needs_drop_without_post<R>(export_name: &str, export_has_post_fn
 pub fn path_to_str(path: &Path) -> &str {
   path.to_str().expect("library path must be UTF-8 string")
 }
+
+pub static LIBRARY_LOADING_GUARD: Mutex<LibraryLoadingGuard> = Mutex::new(LibraryLoadingGuard);
+pub struct LibraryLoadingGuard;

@@ -16,6 +16,7 @@ mod dbghelp_is_already_loaded_panic;
 mod dbghelp_is_already_loaded_init;
 mod windows_background_threads;
 mod windows_background_threads_fail;
+mod parallel_module_loading;
 
 fn main() {
   if cfg!(feature = "unloading") {
@@ -53,6 +54,8 @@ fn main() {
     windows_background_threads::main();
   } else if cfg!(feature = "windows_background_threads_fail") {
     windows_background_threads_fail::main();
+  } else if cfg!(feature = "parallel_module_loading") {
+    parallel_module_loading::main();
   } else {
     panic!();
   }
