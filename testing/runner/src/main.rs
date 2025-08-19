@@ -8,6 +8,7 @@ mod backtrace_unloading_host_as_dylib;
 mod windows_background_threads;
 
 const TEST_FEATURES: &[&str] = &[
+  "parallel_module_loading",
   #[cfg(target_os = "windows")]
   "dbghelp_is_already_loaded_init",
   #[cfg(target_os = "windows")]

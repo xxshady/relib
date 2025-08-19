@@ -15,7 +15,7 @@ pub use unloading::*;
 mod module;
 pub use module::Module;
 mod helpers;
-use helpers::{is_library_loaded, next_module_id, open_library, path_to_str};
+use helpers::{is_library_loaded, next_module_id, open_library, path_to_str, LIBRARY_LOADING_GUARD};
 mod leak_library;
 pub mod exports_types;
 pub use exports_types::{ModuleExportsForHost, InitImports};
@@ -72,6 +72,12 @@ pub unsafe fn load_module<E: ModuleExportsForHost>(
   path: impl AsRef<OsStr>,
   init_imports: impl InitImports,
 ) -> Result<Module<E>, crate::LoadError> {
+  // prevent parallel loading of the same dynamic library
+  // to guarantee that LoadError::ModuleAlreadyLoaded is returned
+  let _loading_guard = LIBRARY_LOADING_GUARD
+    .lock()
+    .expect("Failed to lock library loading guard");
+
   #[cfg(target_os = "windows")]
   {
     windows::dbghelp::try_init_from_load_module();
@@ -85,7 +91,6 @@ pub unsafe fn load_module<E: ModuleExportsForHost>(
   let path = Path::new(path.as_ref());
   let path_str = path_to_str(path);
 
-  // TODO: test if multiple threads may load same module in parallel
   if is_library_loaded(path_str) {
     return Err(LoadError::ModuleAlreadyLoaded);
   }

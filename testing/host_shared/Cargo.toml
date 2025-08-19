@@ -12,23 +12,23 @@ publish = false
 libloading.workspace = true
 
 [dependencies.relib_host]
-version = "0.6.1"
+version = "=0.6.1"
 path = "../../host"
 
 [dependencies.test_shared]
-version = "=0.6.0"
+version = "=0.6.1"
 path = "../shared"
 
 [dependencies.relib_interface]
-version = "0.6.1"
+version = "=0.6.1"
 path = "../../interface"
 features = ["include"]
 
 [build-dependencies.relib_interface]
-version = "0.6.1"
+version = "=0.6.1"
 path = "../../interface"
 features = ["build"]
 
 [build-dependencies.test_shared]
-version = "=0.6.0"
+version = "=0.6.1"
 path = "../shared"

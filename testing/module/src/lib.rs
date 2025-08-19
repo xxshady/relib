@@ -40,3 +40,6 @@ mod backtrace_unloading_host_as_dylib;
 
 #[cfg(feature = "windows_background_threads")]
 mod windows_background_threads;
+
+#[cfg(feature = "parallel_module_loading")]
+mod parallel_module_loading;
