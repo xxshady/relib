@@ -84,6 +84,10 @@ jobs:
           cargo build --workspace
           cargo clippy --workspace
 
+          cd ../live_reload_extended
+          cargo build --workspace
+          cargo clippy --workspace
+
           cd ../export_main_macro
           cargo build --workspace
           cargo clippy --workspace

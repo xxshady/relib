@@ -28,7 +28,7 @@ See [`docs`](https://docs.rs/relib/latest/relib/docs/index.html) of `relib` crat
 
 ### Imports/exports runtime validation
 
-*Currently*, `relib` doesn't check in runtime that function signatures (arguments, return types) specified in imports and exports traits (`main` and [`before_unload`](https://docs.rs/relib/latest/relib/docs/index.html#before_unload) as well) are exactly the same for host and module.
+*Currently*, `relib` doesn't check at runtime that function signatures (arguments, return types) specified in imports and exports traits (`main` and [`before_unload`](https://docs.rs/relib/latest/relib/docs/index.html#before_unload) as well) are exactly the same for host and module. But it can be easily solved on your side, see `live_reload_extended` [example](https://github.com/xxshady/relib/tree/main/examples/README.md#live-reload-extended).
 
 ### ABI stability
 

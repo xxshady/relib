@@ -76,6 +76,8 @@ jobs:
           cargo check
           cd ../live_reload
           cargo check
+          cd ../live_reload_extended
+          cargo check
           cd ../export_main_macro
           cargo check
 

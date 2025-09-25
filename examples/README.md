@@ -10,6 +10,22 @@ Automatically reload module on code changes.
 
 Use `cargo run` in live_reload directory and then change something in live_reload/module/src.
 
+## [Live reload extended](./live_reload_extended)
+
+Adds compatibility check between host and module.
+When module is reloaded host checks if it's still on the same "snapshot" of shared crate (which contains interface of imports and exports).
+
+**note:** this is not needed if it's known that the shared crate will never be modified between reloads. For example, when shared crate is external dependency.
+
+<details>
+<summary>How it works</summary>
+
+shared crate defines build id (which is just a timestamp of when the crate was built) and it's used to check if host and module are using the same "snapshot" of the shared crate.
+
+</details>
+
+Use `cargo run` in live_reload_extended directory and then change something in live_reload_extended/module/src or live_reload_extended/shared/src.
+
 ## [Usage with `abi_stable` crate](./abi_stable_usage)
 
 Use `cargo run` to compile host, module crates and run host binary.
