@@ -2,8 +2,10 @@
 
 `relib` uses similar to WASM terminology:
 
-- Host: Rust program (it can be executable or dynamic library) which controls modules.
+- Host: Rust program which controls modules.
 - Module: Rust dynamic library, which can import and export functions to host.
+
+> **note:** host can be an executable or dynamic library, but if dynamic library is already a module it can't be a host.
 
 ## Getting started
 
