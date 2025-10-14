@@ -87,7 +87,7 @@ fn generate_exports(
   pub_exports: bool,
   prefix: &str,
 ) {
-  pass_out_dir_file_name_to_crate_code(prefix, &mut "exports".to_owned());
+  pass_out_dir_file_name_to_crate_code(prefix, "exports");
 
   let trait_name = extract_trait_name_from_path(exports_trait_path);
 
@@ -211,7 +211,7 @@ fn generate_imports(
   pub_imports: bool,
   prefix: &str,
 ) {
-  pass_out_dir_file_name_to_crate_code(prefix, &mut "imports".to_owned());
+  pass_out_dir_file_name_to_crate_code(prefix, "imports");
 
   let trait_name = extract_trait_name_from_path(imports_trait_path);
   let (imports_trait, module_use_items) =
