@@ -11,6 +11,9 @@ macro_rules! include_exports {
   () => {
     $crate::include_exports!(gen_exports, "generated_module");
   };
+  ($mod_name:ident) => {
+    $crate::include_exports!($mod_name, "generated_module");
+  };
   ($mod_name:ident, $prefix:literal) => {
     mod $mod_name {
       include!(concat!(
@@ -26,6 +29,9 @@ macro_rules! include_exports {
 macro_rules! include_imports {
   () => {
     $crate::include_imports!(gen_imports, "generated_module");
+  };
+  ($mod_name:ident) => {
+    $crate::include_imports!($mod_name, "generated_module");
   };
   ($mod_name:ident, $prefix:literal) => {
     mod $mod_name {
