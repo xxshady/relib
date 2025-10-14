@@ -48,3 +48,13 @@ How to run:<br>
 > replace `<path>` with `examples/custom_global_alloc/target/debug/libcustom_global_alloc.so` on linux and `examples/custom_global_alloc/target/debug/custom_global_alloc.dll` on windows
 
 **note:** you can also build it without `--features unloading` (see ["Usage without unloading"](https://docs.rs/relib/latest/relib/docs/index.html#usage-without-unloading)).
+
+## [Different interfaces](./different_interfaces)
+
+That's when if you want to load modules with different exports and imports.
+
+How to run:<br>
+`cargo build --features unloading`<br>
+`cargo run --features unloading`
+
+**note:** you can also build it without `--features unloading` (see ["Usage without unloading"](https://docs.rs/relib/latest/relib/docs/index.html#usage-without-unloading)).

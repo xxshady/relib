@@ -224,3 +224,17 @@ pub const SAFETY_DOC: &str = "# Safety\n\
 pub fn type_needs_box(type_: &TokenStream2) -> bool {
   relib_internal_shared::type_needs_box(&type_.to_string())
 }
+
+pub fn pass_out_dir_file_name_to_crate_code(prefix: &str, name: &str) {
+  // prefix is not converted to uppercase because it's part of public api and
+  // needs to be passed by library user to include_exports/imports macro
+  // name is also not converted to uppercase for consistency
+  let key = format!("__RELIB_OUT_DIR_{}_{}__", prefix, name);
+  let file_name = out_dir_file_name(prefix, name);
+  let value = format!("/{file_name}");
+  println!("cargo:rustc-env={key}={value}");
+}
+
+pub fn out_dir_file_name(prefix: &str, name: &str) -> String {
+  format!("{prefix}_{name}.rs")
+}

@@ -4,17 +4,10 @@ use quote::quote;
 use relib_internal_shared::output_to_return_type;
 
 use crate::shared::{
-  extract_trait_name_from_path, for_each_trait_item, parse_trait_file, type_needs_box,
-  write_code_to_file, TraitFn, SAFETY_DOC,
+  SAFETY_DOC, TraitFn, extract_trait_name_from_path, for_each_trait_item, out_dir_file_name,
+  parse_trait_file, pass_out_dir_file_name_to_crate_code, type_needs_box, write_code_to_file,
 };
 
-/// Will generate `generated_module_exports.rs` and `generated_module_imports.rs` in the OUT_DIR which you can include
-/// using `include!(concat!(env!("OUT_DIR"), "/<file>"));` in your `lib.rs` or `main.rs`
-/// and then use `ModuleExports` struct:
-/// ```
-/// let exports = ModuleExports::new(library);
-/// exports.something();
-/// ```
 #[cfg(feature = "internal")]
 pub fn generate_internal(
   exports_file_content: &'static str,
@@ -22,13 +15,24 @@ pub fn generate_internal(
   imports_file_content: &'static str,
   imports_trait_path: &str,
 ) {
-  generate_exports(exports_file_content, exports_trait_path, false);
-  generate_imports(imports_file_content, imports_trait_path, false);
+  generate_exports(
+    exports_file_content,
+    exports_trait_path,
+    false,
+    "internal_generated_module",
+  );
+  generate_imports(
+    imports_file_content,
+    imports_trait_path,
+    false,
+    "internal_generated_module",
+  );
 }
 
-/// Will generate `generated_module_exports.rs` and `generated_module_imports.rs` in the OUT_DIR which you can include
-/// using `include!(concat!(env!("OUT_DIR"), "/<file>"));` in your `lib.rs` or `main.rs`
-/// and then use `ModuleExports` struct:
+/// Will generate `generated_module_exports.rs` and `generated_module_imports.rs`
+/// in the OUT_DIR which you can include using
+/// `relib_interface::include_exports!();` and `relib_interface::include_exports!();`
+/// in your `lib.rs` or `main.rs` and then use `ModuleExports` struct:
 /// ```
 /// let exports = ModuleExports::new(library);
 /// exports.something();
@@ -40,15 +44,47 @@ pub fn generate(
   imports_file_content: &'static str,
   imports_trait_path: &str,
 ) {
-  generate_exports(exports_file_content, exports_trait_path, true);
-  generate_imports(imports_file_content, imports_trait_path, true);
+  generate_exports(
+    exports_file_content,
+    exports_trait_path,
+    true,
+    "generated_module",
+  );
+  generate_imports(
+    imports_file_content,
+    imports_trait_path,
+    true,
+    "generated_module",
+  );
+}
+
+/// Will generate `{prefix}_exports.rs` and `{prefix}_imports.rs` in the OUT_DIR which you can include
+/// using `relib_interface::include_exports!(gen_exports, <prefix>);` and `relib_interface::include_imports!(gen_imports, <prefix>);`
+/// in your `lib.rs` or `main.rs` and then use `ModuleExports` struct:
+/// ```
+/// let exports = ModuleExports::new(library);
+/// exports.something();
+/// ```
+#[cfg(feature = "public")]
+pub fn generate_with_prefix(
+  prefix: &str,
+  exports_file_content: &'static str,
+  exports_trait_path: &str,
+  imports_file_content: &'static str,
+  imports_trait_path: &str,
+) {
+  generate_exports(exports_file_content, exports_trait_path, true, prefix);
+  generate_imports(imports_file_content, imports_trait_path, true, prefix);
 }
 
 fn generate_exports(
   exports_file_content: &'static str,
   exports_trait_path: &str,
   pub_exports: bool,
+  prefix: &str,
 ) {
+  pass_out_dir_file_name_to_crate_code(prefix, "exports");
+
   let trait_name = extract_trait_name_from_path(exports_trait_path);
   let (exports_trait, module_use_items) =
     parse_trait_file(trait_name, exports_file_content, exports_trait_path);
@@ -205,7 +241,7 @@ fn generate_exports(
   };
 
   write_code_to_file(
-    "generated_module_exports.rs",
+    &out_dir_file_name(prefix, "exports"),
     quote! {
       #module_use_items
 
@@ -239,7 +275,10 @@ fn generate_imports(
   imports_file_content: &'static str,
   imports_trait_path: &str,
   pub_imports: bool,
+  prefix: &str,
 ) {
+  pass_out_dir_file_name_to_crate_code(prefix, "imports");
+
   let trait_name = extract_trait_name_from_path(imports_trait_path);
   let (imports_trait, module_use_items) =
     parse_trait_file(trait_name, imports_file_content, imports_trait_path);
@@ -368,7 +407,7 @@ fn generate_imports(
   }
 
   write_code_to_file(
-    "generated_module_imports.rs",
+    &out_dir_file_name(prefix, "imports"),
     quote! {
       #module_use_items
 

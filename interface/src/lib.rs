@@ -9,11 +9,14 @@ mod shared;
 #[macro_export]
 macro_rules! include_exports {
   () => {
-    $crate::include_exports!(gen_exports);
+    $crate::include_exports!(gen_exports, "generated_module");
   };
-  ($mod_name:ident) => {
+  ($mod_name:ident, $prefix:literal) => {
     mod $mod_name {
-      include!(concat!(env!("OUT_DIR"), "/generated_module_exports.rs"));
+      include!(concat!(
+        env!("OUT_DIR"),
+        env!(concat!("__RELIB_OUT_DIR_", $prefix, "_exports__"))
+      ));
     }
   };
 }
@@ -22,11 +25,14 @@ macro_rules! include_exports {
 #[macro_export]
 macro_rules! include_imports {
   () => {
-    $crate::include_imports!(gen_imports);
+    $crate::include_imports!(gen_imports, "generated_module");
   };
-  ($mod_name:ident) => {
+  ($mod_name:ident, $prefix:literal) => {
     mod $mod_name {
-      include!(concat!(env!("OUT_DIR"), "/generated_module_imports.rs"));
+      include!(concat!(
+        env!("OUT_DIR"),
+        env!(concat!("__RELIB_OUT_DIR_", $prefix, "_imports__"))
+      ));
     }
   };
 }
