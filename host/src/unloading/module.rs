@@ -73,7 +73,6 @@ impl<E: ModuleExportsForHost> Module<E> {
 
       dbghelp::remove_module(handle, &library_path);
 
-      // let library = unsafe { WindowsLibrary::from_raw(handle) };
       library.close()?;
 
       assert!(
