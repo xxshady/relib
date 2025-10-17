@@ -1,8 +1,8 @@
 fn main() {
   relib_interface::module::generate(
-    shared::EXPORTS,
-    "shared::exports::Exports",
-    shared::IMPORTS,
-    "shared::imports::Imports",
+    main_contract::EXPORTS,
+    "main_contract::exports::Exports",
+    main_contract::IMPORTS,
+    "main_contract::imports::Imports",
   );
 }
