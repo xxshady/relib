@@ -81,7 +81,10 @@ fn set_alloc_and_dealloc(module: Rc<RefCell<Option<Module<ModuleExports>>>>) {
 
 fn main() {
   if let Err(e) = main_fallible() {
-    eprintln!("{e:?}");
+    eprintln!(
+      "main exited with error:\n\
+      {e:?}"
+    );
   }
 }
 

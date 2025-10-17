@@ -18,6 +18,6 @@ pub struct StableLayout {
 }
 
 pub struct Kek {
-  state: state::State,
+  _state: state::State,
   // foo: u32,
 }

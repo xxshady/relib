@@ -3,6 +3,8 @@ use std::{env, path::Path, time::SystemTime};
 use cargo_metadata::{CargoOpt, MetadataCommand};
 
 fn main() {
+  dbg!();
+
   let key = "MAIN_CONTRACT_CRATE_BUILD_ID";
   let value = SystemTime::now()
     .duration_since(SystemTime::UNIX_EPOCH)
@@ -11,16 +13,17 @@ fn main() {
 
   println!("cargo:rustc-env={key}={value}");
 
-  // // re run if state crate is modified
-  // println!("cargo:rerun-if-changed=../state");
+  rerun_if_local_dependencies_change();
+}
 
+fn rerun_if_local_dependencies_change() {
   // Get metadata for the current workspace
   let metadata = MetadataCommand::new()
     .features(CargoOpt::AllFeatures)
     .exec()
     .expect("Failed to execute cargo metadata");
 
-  // 3. Find the current package in the workspace
+  // Find the current package in the workspace
   let pkg_name = env::var("CARGO_PKG_NAME").unwrap();
   let current_pkg = metadata
     .workspace_packages()
@@ -28,7 +31,7 @@ fn main() {
     .find(|p| p.name == pkg_name)
     .unwrap();
 
-  // 4. Resolve the dependency graph for the current package
+  // Resolve the dependency graph for the current package
   let pkg_graph = metadata
     .resolve
     .as_ref()
