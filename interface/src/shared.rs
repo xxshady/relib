@@ -103,6 +103,8 @@ pub struct TraitFn<'a> {
 
   pub lifetimes_for: TokenStream2,
   pub lifetimes_full: TokenStream2,
+  pub lifetimes_where_module: TokenStream2,
+  pub lifetimes_module: TokenStream2,
 }
 
 pub fn for_each_trait_item<'trait_>(
@@ -148,12 +150,27 @@ pub fn for_each_trait_item<'trait_>(
     );
   }
 
-  let (lifetimes_for, lifetimes_full) = if !lifetimes.is_empty() {
-    let lifetimes = quote! { #( #lifetimes, )* };
-    (quote! { for<#lifetimes> }, quote! { <#lifetimes> })
-  } else {
-    (quote! {}, quote! {})
-  };
+  let (lifetimes_for, lifetimes_full, lifetimes_where_module, lifetimes_module) =
+    if !lifetimes.is_empty() {
+      let lifetimes_where_module = if lifetimes.is_empty() {
+        quote! {}
+      } else {
+        quote! {
+          where #( 'module: #lifetimes, )*
+        }
+      };
+
+      let lifetimes = quote! { #( #lifetimes, )* };
+
+      (
+        quote! { for<#lifetimes> },
+        quote! { <#lifetimes> },
+        quote! { #lifetimes_where_module },
+        quote! { #lifetimes },
+      )
+    } else {
+      (quote! {}, quote! {}, quote! {}, quote! {})
+    };
 
   let ident = &fn_.ident;
   let inputs_without_types = fn_inputs_without_types!(fn_.inputs);
@@ -176,6 +193,8 @@ pub fn for_each_trait_item<'trait_>(
     post_mangled_ident,
     lifetimes_for,
     lifetimes_full,
+    lifetimes_where_module,
+    lifetimes_module,
   }
 }
 
