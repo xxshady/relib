@@ -121,7 +121,7 @@ pub fn for_each_trait_item<'trait_>(
   let lifetimes = fn_.generics.params.iter().map(|p| {
     let GenericParam::Lifetime(lt) = p else {
       panic!(
-        "Functions in {trait_name} trait must not have generic types and const generics since they are not FFI-safe,\
+        "Functions in {trait_name} trait must not have generic types and const generics since they are not ABI-stable,\
         it's only possible to use lifetime generics\n\
         found in \"{}\" function",
         fn_.ident
@@ -217,9 +217,9 @@ fn patch_item_use_if_needed(item_use: &ItemUse, crate_name: &Ident) -> TokenStre
 
 pub const SAFETY_DOC: &str = "# Safety\n\
   Behavior is undefined if any of the following conditions are violated:\n\
-  1. Types of arguments and return value must be FFI-safe.\n\
+  1. Types of arguments and return value must be ABI-stable.\n\
   2. Host and module crates must be compiled with same shared crate code (which contains exports and imports traits).\n\
-  3. Returned value must not be a reference-counting pointer (see [caveats](https://docs.rs/relib/latest/relib/#moving-non-copy-types-between-host-and-module)).";
+  3. Returned value must not be a reference-counting pointer or &'static T (see [caveats](https://docs.rs/relib/latest/relib/#moving-non-copy-types-between-host-and-module)).";
 
 pub fn type_needs_box(type_: &TokenStream2) -> bool {
   relib_internal_shared::type_needs_box(&type_.to_string())

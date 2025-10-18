@@ -8,7 +8,7 @@ relib_interface::include_imports!();
 
 impl Exports for ModuleExportsImpl {
   fn bar() -> RString {
-    "FFI-safe string!".into()
+    "ABI-stable string!".into()
   }
 }
 

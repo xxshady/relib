@@ -42,7 +42,7 @@ pub enum AllocatorOp {
 pub type SliceAllocatorOp = RawSlice<AllocatorOp>;
 pub type SliceAllocation = RawSlice<Allocation>;
 
-/// FFI-safe `&[T]`
+/// ABI-stable `&[T]`
 #[repr(C)]
 pub struct RawSlice<T> {
   pub ptr: *const T,
@@ -75,7 +75,7 @@ impl<T> From<&[T]> for RawSlice<T> {
   }
 }
 
-/// FFI-safe `&str`
+/// ABI-stable `&str`
 #[repr(C)]
 pub struct Str(RawSlice<u8>);
 
