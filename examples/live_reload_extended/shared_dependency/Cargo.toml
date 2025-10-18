@@ -1,0 +1,6 @@
+[package]
+name = "shared_dependency"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
