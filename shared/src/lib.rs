@@ -147,7 +147,8 @@ macro_rules! fn_inputs_without_types {
 
 pub fn type_needs_box(type_: &str) -> bool {
   let stable_copy_type = [
-    "()", "bool", "u8", "i8", "u16", "i16", "u32", "i32", "u64", "i64", "usize", "isize",
+    "()", "bool", "u8", "i8", "u16", "i16", "u32", "i32", "u64", "i64", "usize", "isize", "f32",
+    "f64", "char", "u128", "i128",
   ]
   .contains(&type_)
     || type_.starts_with(['*', '&']); // a pointer or a reference
