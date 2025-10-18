@@ -1,5 +1,5 @@
-use std::{env, path::Path, time::SystemTime};
-use cargo_metadata::{CargoOpt, MetadataCommand};
+use std::{collections::HashSet, env, path::Path, time::SystemTime};
+use cargo_metadata::{CargoOpt, Metadata, MetadataCommand, PackageId};
 
 fn main() {
   let key = "MAIN_CONTRACT_CRATE_BUILD_ID";
@@ -10,6 +10,7 @@ fn main() {
 
   println!("cargo:rustc-env={key}={value}");
 
+  // see live_reload_extended example for explanations
   rerun_if_local_dependencies_change();
   println!("cargo:rerun-if-changed=");
 }
@@ -40,17 +41,46 @@ fn rerun_if_local_dependencies_change() {
     .unwrap();
 
   // Iterate over dependencies, find local ones, and add rerun-if-changed
-  for dep_id in dbg!(&pkg_graph.dependencies) {
-    let Some(dep_pkg) = metadata.packages.iter().find(|p| p.id == *dep_id) else {
-      continue;
-    };
-    // We only need local dependencies
-    if dep_pkg.source.is_some() {
-      continue;
-    }
+  let mut visited_deps = HashSet::new();
+  for dep_id in &pkg_graph.dependencies {
+    add_rerun_if_changed_for_deps(dep_id, &metadata, &mut visited_deps);
+  }
+}
 
-    // The manifest_path is the path to Cargo.toml, so we get its parent directory.
-    let dep_dir = Path::new(&dep_pkg.manifest_path).parent().unwrap();
-    println!("cargo:rerun-if-changed={}", dep_dir.to_str().unwrap());
+fn add_rerun_if_changed_for_deps(
+  dep_id: &PackageId,
+  metadata: &Metadata,
+  visited_deps: &mut HashSet<PackageId>,
+) {
+  if !visited_deps.insert(dep_id.clone()) {
+    // Already visited
+    return;
+  }
+
+  let Some(dep_pkg) = metadata.packages.iter().find(|p| p.id == *dep_id) else {
+    return;
+  };
+
+  // We only need local dependencies
+  if dep_pkg.source.is_some() {
+    return;
+  }
+
+  // The manifest_path is the path to Cargo.toml, so we get its parent directory.
+  let dep_dir = Path::new(&dep_pkg.manifest_path).parent().unwrap();
+  println!("cargo:rerun-if-changed={}", dep_dir.to_str().unwrap());
+
+  // Recursively check dependencies of this local dependency
+  if let Some(resolved_node) = metadata
+    .resolve
+    .as_ref()
+    .unwrap()
+    .nodes
+    .iter()
+    .find(|n| n.id == *dep_id)
+  {
+    for transitive_dep_id in &resolved_node.dependencies {
+      add_rerun_if_changed_for_deps(transitive_dep_id, metadata, visited_deps);
+    }
   }
 }

@@ -5,7 +5,6 @@ edition.workspace = true
 
 [dependencies]
 state = { version = "0.1.0", path = "../state" }
-rand = "0.9.2"
 
 [build-dependencies]
 cargo_metadata = "0.23.0"

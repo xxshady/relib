@@ -26,6 +26,3 @@ edition = "2024"  # or set a later one
 # opt-level = 3
 # debug = 0
 # strip = "debuginfo"
-
-[patch.crates-io]
-rand = { path = "awdkawd" }

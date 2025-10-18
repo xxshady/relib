@@ -88,6 +88,10 @@ jobs:
           cargo build --workspace
           cargo clippy --workspace
 
+          cd ../hot_reload
+          cargo build --workspace
+          cargo clippy --workspace
+
           cd ../export_main_macro
           cargo build --workspace
           cargo clippy --workspace
