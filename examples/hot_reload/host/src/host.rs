@@ -42,6 +42,7 @@ impl Imports for MainModuleImportsImpl {
   }
 }
 
+// TODO: this shit is ugly as hell
 thread_local! {
   static CALL_MAIN_MODULE_ALLOC: RefCell<Box<dyn Fn(StableLayout) -> *mut u8>> = {
     let f = |_| { panic!("call_main_module_alloc not initialized") };
