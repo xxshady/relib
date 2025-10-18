@@ -1,0 +1,28 @@
+[package]
+name = "module"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+path = "src/module.rs"
+
+[dependencies]
+relib_interface = { version = "0", path = "../../../interface", features = [
+  "include",
+] }
+main_contract = { version = "0.1.0", path = "../main_contract" }
+state = { version = "0.1.0", path = "../state" }
+
+[dependencies.relib_module]
+version = "0"
+path = "../../../module"
+
+# workaround for cargo feature unification
+features = ["unloading_core"]
+
+[build-dependencies]
+relib_interface = { version = "0", path = "../../../interface", features = [
+  "build",
+] }
+main_contract = { version = "0.1.0", path = "../main_contract" }
