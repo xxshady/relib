@@ -92,5 +92,11 @@ jobs:
           cargo build --workspace
           cargo clippy --workspace
 
+          cd ../different_interfaces
+          cargo build --workspace
+          cargo clippy --workspace
+          cargo build --workspace --features unloading
+          cargo clippy --workspace --features unloading
+
       - name: test runner
         run: cargo run --bin test_runner

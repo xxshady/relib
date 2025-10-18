@@ -28,9 +28,10 @@ impl<E: ModuleExportsForHost> Module<E> {
       }
     }
 
+    // running threads check
+
     #[cfg(target_os = "linux")]
     {
-      // running threads check (currently its only implemented on linux)
       let spawned_threads = unsafe { self.internal_exports.spawned_threads_count() };
       if spawned_threads > 0 {
         return Err(UnloadError::ThreadsStillRunning(library_path));
@@ -72,7 +73,6 @@ impl<E: ModuleExportsForHost> Module<E> {
 
       dbghelp::remove_module(handle, &library_path);
 
-      // let library = unsafe { WindowsLibrary::from_raw(handle) };
       library.close()?;
 
       assert!(

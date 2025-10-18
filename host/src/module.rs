@@ -96,8 +96,8 @@ impl<E: ModuleExportsForHost> Module<E> {
   /// # Safety
   /// Behavior is undefined if any of the following conditions are violated:
   /// 1. Returned value must be actually `R` at runtime. For example if you called this function with type `bool` but module returns `i32`, UB will occur.
-  /// 2. Type of return value must be FFI-safe.
-  /// 3. Returned value must not be a reference-counting pointer (see [caveats](https://docs.rs/relib/latest/relib/#moving-non-copy-types-between-host-and-module)).
+  /// 2. Type of return value must be ABI-stable.
+  /// 3. Returned value must not be a reference-counting pointer or &'static T (see [caveats](https://docs.rs/relib/latest/relib/#moving-non-copy-types-between-host-and-module)).
   ///
   /// # Panics
   /// If main function is not exported from the module.

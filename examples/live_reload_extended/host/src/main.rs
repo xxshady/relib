@@ -1,4 +1,4 @@
-use std::{error::Error, process::Command, thread, time::Duration};
+use std::{error::Error, fs, process::Command, thread, time::Duration};
 
 type AnyErrorResult<T = ()> = Result<T, Box<dyn Error>>;
 
@@ -54,7 +54,10 @@ fn run_module() -> AnyErrorResult {
   } else {
     "libmodule.so"
   };
-  let path_to_dylib = "target/debug/".to_owned() + file_name;
+  let path_to_dylib = format!("target/debug/{file_name}");
+  let copy_path_to_dylib = format!("target/debug/copy_{file_name}");
+
+  fs::copy(&path_to_dylib, &copy_path_to_dylib)?;
 
   let module = unsafe { relib_host::load_module::<ModuleExports>(path_to_dylib, init_imports) }?;
 
@@ -68,9 +71,8 @@ fn run_module() -> AnyErrorResult {
       format!(
         "shared crate was modified, module potentially contains incompatible code\n\
         shared build id of:\n\
-        host:   {}\n\
-        module: {}",
-        host_shared_build_id, module_shared_build_id
+        host:   {host_shared_build_id}\n\
+        module: {module_shared_build_id}",
       )
       .into(),
     );
@@ -90,9 +92,7 @@ fn run_module() -> AnyErrorResult {
 }
 
 fn build_module() -> AnyErrorResult<BuildResult> {
-  let output = Command::new("cargo")
-    .args(["build", "--package", "module"])
-    .output()?;
+  let output = Command::new("cargo").args(["build"]).output()?;
   let stderr = String::from_utf8(output.stderr)?;
 
   if !output.status.success() {
