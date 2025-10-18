@@ -6,4 +6,7 @@ pub fn why() {
   //
   // this is important because by default cargo won't re-run build.rs
   // when non-build dependency is modified
+
+  // it also should work recursively:
+  shared_dependency_of_dependency::why();
 }

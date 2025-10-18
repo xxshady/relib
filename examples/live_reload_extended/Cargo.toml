@@ -5,6 +5,7 @@ members = [
   "module",
   "shared",
   "shared_dependency",
+  "shared_dependency_of_dependency",
 ]
 
 [workspace.package]

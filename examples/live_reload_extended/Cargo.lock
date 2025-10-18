@@ -285,6 +285,13 @@ dependencies = [
 [[package]]
 name = "shared_dependency"
 version = "0.1.0"
+dependencies = [
+ "shared_dependency_of_dependency",
+]
+
+[[package]]
+name = "shared_dependency_of_dependency"
+version = "0.1.0"
 
 [[package]]
 name = "shlex"
