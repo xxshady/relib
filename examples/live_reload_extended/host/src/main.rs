@@ -71,9 +71,8 @@ fn run_module() -> AnyErrorResult {
       format!(
         "shared crate was modified, module potentially contains incompatible code\n\
         shared build id of:\n\
-        host:   {}\n\
-        module: {}",
-        host_shared_build_id, module_shared_build_id
+        host:   {host_shared_build_id}\n\
+        module: {module_shared_build_id}",
       )
       .into(),
     );
