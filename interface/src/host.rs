@@ -125,6 +125,10 @@ fn generate_exports(
       },
     };
 
+    let ignore_code_style_warns = quote! {
+      #[allow(clippy::needless_lifetimes)]
+    };
+
     // !!! keep in sync with main and before_unload calls in relib_host crate !!!
     let (decl, init, impl_) = if pub_exports {
       let needs_box = type_needs_box(&pub_return_type);
@@ -187,6 +191,7 @@ fn generate_exports(
           /// ```
           #[doc = #SAFETY_DOC]
           #[must_use = "returns None if module panics, consider unloading module if it panicked, as it is unsafe to call it again"]
+          #ignore_code_style_warns
           pub unsafe fn #ident <'module, #lifetimes_module> (
             &'module self,
             #inputs
@@ -223,6 +228,7 @@ fn generate_exports(
         import_init,
         quote! {
           #[doc = #SAFETY_DOC]
+          #ignore_code_style_warns
           pub unsafe fn #ident #lifetimes_module ( &self, #inputs ) -> #pub_return_type
           #lifetimes_where_module
           {
