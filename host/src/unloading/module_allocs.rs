@@ -60,11 +60,13 @@ pub fn remove_module(
   }
 }
 
-pub extern "C" fn on_cached_allocs(module_id: ModuleId, ops: SliceAllocatorOp) {
+pub fn on_cached_allocs(module_id: ModuleId, ops: SliceAllocatorOp) {
   let ops = unsafe { ops.into_slice() };
 
   let mut allocs = lock_allocs();
-  let allocs = allocs.get_mut(&module_id).unwrap_or_else(|| unreachable!());
+  let allocs = allocs
+    .get_mut(&module_id)
+    .unwrap_or_else(|| unrecoverable("on_cached_allocs unreachable"));
 
   for op in ops {
     match op {
@@ -80,7 +82,7 @@ pub extern "C" fn on_cached_allocs(module_id: ModuleId, ops: SliceAllocatorOp) {
   }
 }
 
-pub extern "C" fn on_alloc(module_id: ModuleId, ptr: *mut u8, layout: StableLayout) {
+pub fn on_alloc(module_id: ModuleId, ptr: *mut u8, layout: StableLayout) {
   let mut allocs = lock_allocs();
   let allocs = allocs
     .get_mut(&module_id)
@@ -88,4 +90,13 @@ pub extern "C" fn on_alloc(module_id: ModuleId, ptr: *mut u8, layout: StableLayo
 
   let ptr = AllocatorPtr(ptr);
   allocs.insert(ptr, Allocation(ptr, layout));
+}
+
+pub fn is_ptr_allocated(module_id: ModuleId, ptr: *mut u8) -> bool {
+  let allocs = lock_allocs();
+  let allocs = allocs
+    .get(&module_id)
+    .unwrap_or_else(|| unrecoverable("is_ptr_allocated unreachable"));
+
+  allocs.contains_key(&AllocatorPtr(ptr))
 }
