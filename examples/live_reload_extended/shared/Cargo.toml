@@ -1,0 +1,10 @@
+[package]
+name = "shared"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+shared_dependency = { version = "0.1.0", path = "../shared_dependency" }
+
+[build-dependencies]
+cargo_metadata = "0.23.0"
