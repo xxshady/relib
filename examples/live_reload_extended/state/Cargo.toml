@@ -1,9 +1,0 @@
-[package]
-name = "state"
-version.workspace = true
-edition.workspace = true
-
-[lib]
-path = "src/state.rs"
-
-[dependencies]

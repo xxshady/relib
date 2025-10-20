@@ -1,6 +1,0 @@
-[package]
-name = "shared_dependency_of_dependency"
-version.workspace = true
-edition.workspace = true
-
-[dependencies]
