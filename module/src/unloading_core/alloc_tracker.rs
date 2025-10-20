@@ -56,7 +56,7 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for AllocTracker<A> {
 
     #[cfg(feature = "dealloc_validation")]
     if !is_ptr_valid(ptr) {
-      return;
+      unrecoverable("invalid pointer was passed to dealloc of global allocator");
     }
 
     // TODO: SAFETY

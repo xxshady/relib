@@ -12,9 +12,9 @@ impl Imports for ModuleImportsImpl {
     module_allocs::on_cached_allocs(module, ops);
   }
 
-  fn unrecoverable(message: Str) -> ! {
+  fn unrecoverable(module: ModuleId, message: Str) -> ! {
     let message = unsafe { message.into_str() };
-    helpers::unrecoverable_with_prefix(message, "module");
+    helpers::unrecoverable_with_prefix(message, &format!("module id: {module}"));
   }
 
   fn is_ptr_allocated(module: ModuleId, ptr: *mut u8) -> bool {
