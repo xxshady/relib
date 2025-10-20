@@ -5,9 +5,3 @@ edition.workspace = true
 
 [lib]
 path = "src/state.rs"
-
-[dependencies]
-shared_dependency = { version = "0.1.0", path = "../shared_dependency" }
-
-[build-dependencies]
-cargo_metadata = "0.23.0"

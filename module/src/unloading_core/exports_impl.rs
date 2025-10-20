@@ -1,4 +1,4 @@
-use std::{ffi::c_void, sync::atomic::Ordering};
+use std::{alloc::Layout, ffi::c_void, sync::atomic::Ordering};
 
 use relib_internal_shared::{exports::___Internal___Exports___ as Exports, ModuleId};
 use super::{
@@ -11,7 +11,9 @@ impl Exports for ModuleExportsImpl {
       HOST_OWNER_THREAD = host_owner_thread;
       MODULE_ID = module;
 
-      alloc_tracker::init();
+      if alloc_tracker::is_global_tracker_set() {
+        alloc_tracker::init();
+      }
     }
   }
 

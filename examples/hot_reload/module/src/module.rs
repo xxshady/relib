@@ -1,7 +1,7 @@
 use std::alloc::{Layout, System, alloc, dealloc};
 use main_contract::{StableLayout, exports::Exports};
-use relib_module::AllocTracker;
 use state::State;
+use relib_module::AllocTracker;
 
 relib_interface::include_exports!();
 use gen_exports::ModuleExportsImpl;

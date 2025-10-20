@@ -182,9 +182,24 @@ pub unsafe fn dealloc(allocs: &[Allocation]) {
 /// is this pointer allocated by this allocator and is still alive?
 fn is_ptr_valid(ptr: *mut u8) -> bool {
   let cache_contains_ptr = {
-    let cache = &mut lock_allocs_cache();
+    let cache = lock_allocs_cache();
     cache.contains_key(&AllocatorPtr(ptr))
   };
 
   cache_contains_ptr || unsafe { gen_imports::is_ptr_allocated(MODULE_ID, ptr) }
+}
+
+pub unsafe fn is_global_tracker_set() -> bool {
+  unsafe {
+    let ptr = std::alloc::alloc(Layout::new::<u8>());
+
+    let cache_contains_ptr = {
+      let cache = lock_allocs_cache();
+      cache.contains_key(&AllocatorPtr(ptr))
+    };
+
+    std::alloc::dealloc(ptr, Layout::new::<u8>());
+
+    cache_contains_ptr
+  }
 }

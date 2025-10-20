@@ -18,8 +18,12 @@ state = { version = "0.1.0", path = "../state" }
 version = "0"
 path = "../../../module"
 
-# workaround for cargo feature unification
-features = ["unloading_core"]
+features = [
+  # workaround for cargo feature unification
+  "unloading_core",
+
+  "dealloc_validation",
+]
 
 [build-dependencies]
 relib_interface = { version = "0", path = "../../../interface", features = [
