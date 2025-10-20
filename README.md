@@ -86,7 +86,7 @@ let chunk: MemoryChunk = unsafe { gen_imports::example() }; // gen_imports is de
 
 #### Returning shallow-clone types
 
-In order to safely move a type something between host and module we also need to move it's data because everything will be gone after unloading. With deep-clone types like `Vec<T>` it's simple: we just clone the vector with it's data and now we can do anything with it. But in case with `&'static str` Clone trait does not clone the data. Same with `Rc<T>` and other types that are reference-counting pointers.
+In order to safely move a type between host and module we also need to move it's data because everything will be gone after unloading. With deep-clone types like `Vec<T>` it's simple: we just clone the vector with it's data and now we can do anything with it. But in case with `&'static str` Clone trait does not clone the data. Same with `Rc<T>` and other types that are reference-counting pointers.
 
 **note:** imagine that `Vec<T>`, `&'static str`, etc. are ABI-stable for these examples.
 
