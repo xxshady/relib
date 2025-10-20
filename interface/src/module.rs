@@ -112,6 +112,8 @@ fn generate_exports(
       post_mangled_ident,
       lifetimes_for: _,
       lifetimes_full,
+      lifetimes_where_module: _,
+      lifetimes_module: _,
     } = for_each_trait_item(trait_name, &item);
 
     // !!! keep in sync with main and before_unload calls in relib_host crate !!!
@@ -232,6 +234,8 @@ fn generate_imports(
       post_mangled_ident,
       lifetimes_for,
       lifetimes_full,
+      lifetimes_where_module: _,
+      lifetimes_module: _,
     } = for_each_trait_item(trait_name, &item);
 
     let placeholder_inputs: TokenStream2 = inputs

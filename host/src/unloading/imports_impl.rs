@@ -16,4 +16,8 @@ impl Imports for ModuleImportsImpl {
     let message = unsafe { message.into_str() };
     helpers::unrecoverable_with_prefix(message, "module");
   }
+
+  fn is_ptr_allocated(module: ModuleId, ptr: *mut u8) -> bool {
+    module_allocs::is_ptr_allocated(module, ptr)
+  }
 }

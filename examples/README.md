@@ -20,11 +20,22 @@ When module is reloaded host checks if it's still on the same "snapshot" of shar
 <details>
 <summary>How it works</summary>
 
+---
+
 shared crate defines build id (which is just a timestamp of when the crate was built) and it's used to check if host and module are using the same "snapshot" of the shared crate.
+
+Why `./run.sh`? host and module crates needs to be built with the same `cargo build` command, from the same root directory,
+so that build.rs in shared crate is working correctly, also host binary needs to be copied to avoid conflicts with `cargo build`
+runner in the host binary.
+
+Instead of timestamp approach we could, for example, hash shared directory + root Cargo.lock + directories of local dependencies
+but it would be more complex to implement.
+
+---
 
 </details>
 
-Use `cargo run` in live_reload_extended directory and then change something in live_reload_extended/module/src or live_reload_extended/shared/src.
+Use `./run.sh` (you need bash for that if you are on Windows) in live_reload_extended directory and then change something in live_reload_extended/module/src or live_reload_extended/shared/src.
 
 ## [Usage with `abi_stable` crate](./abi_stable_usage)
 

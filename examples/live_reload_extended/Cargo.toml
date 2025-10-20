@@ -3,10 +3,9 @@ resolver = "3" # edition "2024" implies resolver "3"
 members = [
   "host",
   "module",
-  "main_contract",
-  "update",
-  "update_contract",
-  "state",
+  "shared",
+  "shared_dependency",
+  "shared_dependency_of_dependency",
 ]
 
 [workspace.package]

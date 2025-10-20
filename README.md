@@ -36,7 +36,7 @@ See [`docs`](https://docs.rs/relib/latest/relib/docs/index.html) of `relib` crat
 
 To ensure at least something about ABI `relib` **checks and requires that host and module are compiled with the same rustc and `relib` version**.
 
-For ABI stable types, you can use abi_stable or stabby crate for it, see `abi_stable` usage [example](https://github.com/xxshady/relib/tree/main/examples/README.md#usage-with-abi_stable-crate).
+For ABI-stable types, you can use abi_stable or stabby crate for it, see `abi_stable` usage [example](https://github.com/xxshady/relib/tree/main/examples/README.md#usage-with-abi_stable-crate).
 
 ### File descriptors and network sockets
 
@@ -82,11 +82,15 @@ impl Imports for ModuleImportsImpl {
 let chunk: MemoryChunk = unsafe { gen_imports::example() }; // gen_imports is defined by relib_interface::include_imports!()
 ```
 
-##### Some notes
+**note:** it's still possible to use raw pointers to avoid cloning if you're sure of what you're doing.
 
-- Reference-counting pointers don't allocate new memory when cloned, but reuse old one, so they **must not be** moved through module-host boundary (Rc or Arc in std, but keep in mind that these std types don't have [stable ABI](#abi-stability)).
+#### Returning shallow-clone types
 
-- It's still possible to use raw pointers to avoid cloning if you're sure of what you're doing.
+In order to safely move a type between host and module we also need to move it's data because everything will be gone after unloading. With deep-clone types like `Vec<T>` it's simple: we just clone the vector with it's data and now we can do anything with it. But in case with `&'static str` Clone trait does not clone the data. Same with `Rc<T>` and other types that are reference-counting pointers.
+
+**note:** imagine that `Vec<T>`, `&'static str`, etc. are ABI-stable for these examples.
+
+**note:** you can still return shallow-clone types if their lifetime is linked to the input lifetime (see [Lifetime bounds in imports and exports](#lifetime-bounds-in-imports-and-exports)).
 
 #### Parameters
 
@@ -129,7 +133,7 @@ It is the same reason as with return values: host and module can use different g
 
 ### Lifetime elision in imports and exports
 
-Due to the code generation this code may not compile: (`RStr` is FFI-safe equivalent of `&str` from [abi_stable](https://docs.rs/abi_stable/latest/abi_stable/std_types/struct.RStr.html))
+Due to the code generation this code may not compile: (`RStr` is ABI-stable equivalent of `&str` from [abi_stable](https://docs.rs/abi_stable/latest/abi_stable/std_types/struct.RStr.html))
 
 ```rust
 // shared:
@@ -163,7 +167,7 @@ pub trait Exports {
 
 It's not possible specify lifetime bounds for imports and exports as it's too complex to implement (there is no `for<'a, 'b: 'a> fn(...)` syntax).
 
-Example: (`RStr` is FFI-safe equivalent of `&str` from [abi_stable](https://docs.rs/abi_stable/latest/abi_stable/std_types/struct.RStr.html))
+Example: (`RStr` is ABI-stable equivalent of `&str` from [abi_stable](https://docs.rs/abi_stable/latest/abi_stable/std_types/struct.RStr.html))
 
 ```rust
 pub trait Exports {

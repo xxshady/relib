@@ -54,6 +54,11 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for AllocTracker<A> {
   unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
     assert_allocator_is_still_accessible();
 
+    #[cfg(feature = "dealloc_validation")]
+    if !is_ptr_valid(ptr) {
+      return;
+    }
+
     // TODO: SAFETY
     unsafe {
       self.allocator.dealloc(ptr, layout);
@@ -171,4 +176,15 @@ pub unsafe fn dealloc(allocs: &[Allocation]) {
   }
 
   UNLOAD_DEALLOCATION.swap(false, Ordering::SeqCst);
+}
+
+#[cfg(feature = "dealloc_validation")]
+/// is this pointer allocated by this allocator and is still alive?
+fn is_ptr_valid(ptr: *mut u8) -> bool {
+  let cache_contains_ptr = {
+    let cache = &mut lock_allocs_cache();
+    cache.contains_key(&AllocatorPtr(ptr))
+  };
+
+  cache_contains_ptr || unsafe { gen_imports::is_ptr_allocated(MODULE_ID, ptr) }
 }

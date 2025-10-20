@@ -105,7 +105,9 @@ fn generate_exports(
       post_mangled_name,
       post_mangled_ident: _,
       lifetimes_for,
-      lifetimes_full,
+      lifetimes_full: _,
+      lifetimes_where_module,
+      lifetimes_module,
     } = for_each_trait_item(trait_name, item);
 
     let pub_return_type = output_to_return_type!(output);
@@ -121,6 +123,10 @@ fn generate_exports(
       #ident: unsafe {
         *library.get(concat!(#mangled_name, "\0").as_bytes()).expect(#panic_message)
       },
+    };
+
+    let ignore_code_style_warns = quote! {
+      #[allow(clippy::needless_lifetimes)]
     };
 
     // !!! keep in sync with main and before_unload calls in relib_host crate !!!
@@ -185,10 +191,12 @@ fn generate_exports(
           /// ```
           #[doc = #SAFETY_DOC]
           #[must_use = "returns None if module panics, consider unloading module if it panicked, as it is unsafe to call it again"]
-          pub unsafe fn #ident #lifetimes_full (
-            &self,
+          #ignore_code_style_warns
+          pub unsafe fn #ident <'module, #lifetimes_module> (
+            &'module self,
             #inputs
           ) -> Option<#pub_return_type>
+          #lifetimes_where_module
           {
             /// All parameters must be Copy, see relib caveats in the readme for more info.
             fn ____assert_type_is_copy____(_: impl Copy) {}
@@ -220,7 +228,10 @@ fn generate_exports(
         import_init,
         quote! {
           #[doc = #SAFETY_DOC]
-          pub unsafe fn #ident #lifetimes_full ( &self, #inputs ) -> #pub_return_type {
+          #ignore_code_style_warns
+          pub unsafe fn #ident #lifetimes_module ( &self, #inputs ) -> #pub_return_type
+          #lifetimes_where_module
+          {
             #[allow(clippy::let_unit_value)]
             let return_value = (self.#ident)( #( #inputs_without_types )* );
             return_value
@@ -301,6 +312,8 @@ fn generate_imports(
       post_mangled_ident: _,
       lifetimes_for,
       lifetimes_full,
+      lifetimes_where_module: _,
+      lifetimes_module: _,
     } = for_each_trait_item(trait_name, &item);
 
     let panic_message =

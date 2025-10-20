@@ -103,6 +103,8 @@ pub struct TraitFn<'a> {
 
   pub lifetimes_for: TokenStream2,
   pub lifetimes_full: TokenStream2,
+  pub lifetimes_where_module: TokenStream2,
+  pub lifetimes_module: TokenStream2,
 }
 
 pub fn for_each_trait_item<'trait_>(
@@ -121,7 +123,7 @@ pub fn for_each_trait_item<'trait_>(
   let lifetimes = fn_.generics.params.iter().map(|p| {
     let GenericParam::Lifetime(lt) = p else {
       panic!(
-        "Functions in {trait_name} trait must not have generic types and const generics since they are not FFI-safe,\
+        "Functions in {trait_name} trait must not have generic types and const generics since they are not ABI-stable,\
         it's only possible to use lifetime generics\n\
         found in \"{}\" function",
         fn_.ident
@@ -148,12 +150,27 @@ pub fn for_each_trait_item<'trait_>(
     );
   }
 
-  let (lifetimes_for, lifetimes_full) = if !lifetimes.is_empty() {
-    let lifetimes = quote! { #( #lifetimes, )* };
-    (quote! { for<#lifetimes> }, quote! { <#lifetimes> })
-  } else {
-    (quote! {}, quote! {})
-  };
+  let (lifetimes_for, lifetimes_full, lifetimes_where_module, lifetimes_module) =
+    if !lifetimes.is_empty() {
+      let lifetimes_where_module = if lifetimes.is_empty() {
+        quote! {}
+      } else {
+        quote! {
+          where #( 'module: #lifetimes, )*
+        }
+      };
+
+      let lifetimes = quote! { #( #lifetimes, )* };
+
+      (
+        quote! { for<#lifetimes> },
+        quote! { <#lifetimes> },
+        quote! { #lifetimes_where_module },
+        quote! { #lifetimes },
+      )
+    } else {
+      (quote! {}, quote! {}, quote! {}, quote! {})
+    };
 
   let ident = &fn_.ident;
   let inputs_without_types = fn_inputs_without_types!(fn_.inputs);
@@ -176,6 +193,8 @@ pub fn for_each_trait_item<'trait_>(
     post_mangled_ident,
     lifetimes_for,
     lifetimes_full,
+    lifetimes_where_module,
+    lifetimes_module,
   }
 }
 
@@ -217,9 +236,9 @@ fn patch_item_use_if_needed(item_use: &ItemUse, crate_name: &Ident) -> TokenStre
 
 pub const SAFETY_DOC: &str = "# Safety\n\
   Behavior is undefined if any of the following conditions are violated:\n\
-  1. Types of arguments and return value must be FFI-safe.\n\
+  1. Types of arguments and return value must be ABI-stable.\n\
   2. Host and module crates must be compiled with same shared crate code (which contains exports and imports traits).\n\
-  3. Returned value must not be a reference-counting pointer (see [caveats](https://docs.rs/relib/latest/relib/#moving-non-copy-types-between-host-and-module)).";
+  3. Returned value must not be a reference-counting pointer or &'static T (see [caveats](https://docs.rs/relib/latest/relib/#moving-non-copy-types-between-host-and-module)).";
 
 pub fn type_needs_box(type_: &TokenStream2) -> bool {
   relib_internal_shared::type_needs_box(&type_.to_string())
@@ -229,7 +248,7 @@ pub fn pass_out_dir_file_name_to_crate_code(prefix: &str, name: &str) {
   // prefix is not converted to uppercase because it's part of public api and
   // needs to be passed by library user to include_exports/imports macro
   // name is also not converted to uppercase for consistency
-  let key = format!("__RELIB_OUT_DIR_{}_{}__", prefix, name);
+  let key = format!("__RELIB_OUT_DIR_{prefix}_{name}__");
   let file_name = out_dir_file_name(prefix, name);
   let value = format!("/{file_name}");
   println!("cargo:rustc-env={key}={value}");

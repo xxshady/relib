@@ -54,8 +54,8 @@ fn load_module<E: ModuleExportsForHost>(
 
   // main function is unsafe to call (as well as any other module export) because these preconditions are not checked by relib:
   // 1. returned value must be actually `R` at runtime. For example if you called this function with type bool but module returns i32, UB will occur.
-  // 2. type of return value must be FFI-safe.
-  // 3. returned value must not be a reference-counting pointer (see caveats on main docs page/README).
+  // 2. type of return value must be ABI-stable.
+  // 3. returned value must not be a reference-counting pointer or &'static T (see caveats on main docs page/README).
   let returned_value = unsafe { module.call_main::<()>() };
 
   // if module panics while executing any export it returns None
