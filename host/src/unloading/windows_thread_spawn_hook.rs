@@ -45,11 +45,6 @@ pub fn add_module(module_handle: WindowsLibraryHandle) {
 pub fn remove_module(module_handle: WindowsLibraryHandle) -> Result<(), ()> {
   let mut module_threads = lock_module_threads();
   let Some(threads) = module_threads.remove(&module_handle) else {
-    // TEST
-    // TODO: use unrecoverable instead?
-
-    let backtrace = std::backtrace::Backtrace::force_capture();
-    eprintln!("backtrace: {backtrace:#}");
     panic!("Failed to remove module_threads of module with handle: {module_handle}");
   };
 
