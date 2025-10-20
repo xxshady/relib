@@ -42,7 +42,7 @@ impl UpdateModule {
   }
 
   fn load_() -> AnyErrorResult<Module<ModuleExports>> {
-    let module: Module<ModuleExports> = load_module("update", init_imports)?;
+    let module: Module<ModuleExports> = load_module("update", init_imports, false)?;
 
     let module_main_contract_build_id =
       unsafe { module.exports().main_contract_build_id().unwrap() };

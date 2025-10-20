@@ -4,7 +4,7 @@ use crate::{ModuleId, SliceAllocation};
 
 #[expect(non_camel_case_types)]
 pub trait ___Internal___Exports___ {
-  fn init(host_owner_thread: usize, module: ModuleId);
+  fn init(host_owner_thread: usize, module: ModuleId, enable_alloc_tracker: bool);
   fn exit(allocs: SliceAllocation);
   fn take_cached_allocs_before_exit();
   fn lock_module_allocator();

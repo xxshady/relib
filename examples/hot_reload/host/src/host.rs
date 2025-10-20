@@ -146,7 +146,7 @@ fn main_fallible() -> AnyErrorResult {
 }
 
 pub fn run_main_module() -> AnyErrorResult<(Module<ModuleExports>, *mut ())> {
-  let module: Module<ModuleExports> = load_module("module", init_imports)?;
+  let module: Module<ModuleExports> = load_module("module", init_imports, true)?;
 
   let module_main_contract_build_id = measure_time("getting main_contract build id", || {
     unsafe { module.exports().main_contract_build_id() }.unwrap()

@@ -23,9 +23,9 @@ impl Exports for ModuleExportsImpl {
     println!("foo call: {foo:?}");
 
     state.foo += 1;
-    for _ in 1..=(1024 * 1024 * 1) {
+    for _ in 1..=(1024 * 1024 * 10) {
       state.bar.push(1);
     }
-    state.bar = vec![];
+    // state.bar = vec![];
   }
 }
