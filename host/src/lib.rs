@@ -135,11 +135,9 @@ pub unsafe fn load_module_with_options<E: ModuleExportsForHost>(
     unloading::module_allocs::add_module(module_id);
 
     let internal_exports = unloading::InternalModuleExports::new(&library);
-    dbg!();
     unsafe {
       internal_exports.init(thread_id::get(), module_id, enable_alloc_tracker);
     }
-    dbg!();
     internal_exports
   };
 

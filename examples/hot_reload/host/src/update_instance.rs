@@ -10,7 +10,7 @@ use state::State;
 
 use crate::{
   CALL_MAIN_MODULE_ALLOC, CALL_MAIN_MODULE_DEALLOC, MainModuleImportsImpl,
-  shared::{AnyErrorResult, BuildResult, build_module, load_module},
+  shared::{AnyErrorResult, load_module},
 };
 
 impl Imports for ModuleImportsImpl {
@@ -29,7 +29,6 @@ impl Imports for ModuleImportsImpl {
 
 pub struct UpdateModule {
   module: Option<Module<ModuleExports>>,
-  build_failed_in_prev_iteration: bool,
 }
 
 impl UpdateModule {
@@ -37,7 +36,6 @@ impl UpdateModule {
     let module = Self::load_()?;
     Ok(Self {
       module: Some(module),
-      build_failed_in_prev_iteration: false,
     })
   }
 
@@ -68,33 +66,16 @@ impl UpdateModule {
     Ok(module)
   }
 
-  pub fn rebuild(&mut self) -> AnyErrorResult<()> {
-    let build_res = build_module("update")?;
-    match build_res {
-      BuildResult::Success => {
-        // when unloading fails it is not safe to load it again
-        self
-          .module
-          .take()
-          .unwrap()
-          .unload()
-          .map_err(|e| anyhow!("update module unloading failed: {e:#}"))?;
+  pub fn reload(&mut self) -> AnyErrorResult<()> {
+    // when unloading fails it is not safe to load it again
+    self
+      .module
+      .take()
+      .unwrap()
+      .unload()
+      .map_err(|e| anyhow!("update module unloading failed: {e:#}"))?;
 
-        println!("update module has been rebuilt");
-
-        self.module = Some(Self::load_()?);
-        self.build_failed_in_prev_iteration = false;
-      }
-      BuildResult::Failure(message) => {
-        if self.build_failed_in_prev_iteration {
-          return Ok(());
-        }
-        self.build_failed_in_prev_iteration = true;
-
-        println!("failed to build the update module:\n{message}");
-      }
-      BuildResult::NoChange => {}
-    }
+    self.module = Some(Self::load_()?);
 
     Ok(())
   }

@@ -1,4 +1,4 @@
-use std::{alloc::Layout, ffi::c_void, sync::atomic::Ordering};
+use std::{ffi::c_void, sync::atomic::Ordering};
 
 use relib_internal_shared::{exports::___Internal___Exports___ as Exports, ModuleId};
 use super::{

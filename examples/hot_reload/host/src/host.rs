@@ -12,7 +12,7 @@ use std::{
   time::{Duration, Instant},
 };
 use anyhow::anyhow;
-use shared::{build_module, measure_time, AnyErrorResult};
+use shared::AnyErrorResult;
 use relib_host::{Module};
 use main_contract::{imports::Imports, StableLayout};
 
@@ -23,10 +23,7 @@ relib_interface::include_imports!();
 use gen_imports::{init_imports, ModuleImportsImpl as MainModuleImportsImpl};
 use state::State;
 
-use crate::{
-  shared::{BuildResult, load_module},
-  update_instance::UpdateModule,
-};
+use crate::{shared::load_module, update_instance::UpdateModule};
 
 impl Imports for MainModuleImportsImpl {
   fn foo() -> i32 {
@@ -90,51 +87,55 @@ fn main() {
 }
 
 fn main_fallible() -> AnyErrorResult {
-  let (module, mut state) = run_main_module()?;
-  let mut module = Rc::new(RefCell::new(Some(module)));
-  set_alloc_and_dealloc(module.clone());
+  let (main_module, mut state) = run_main_module()?;
+  let mut main_module = Rc::new(RefCell::new(Some(main_module)));
+  set_alloc_and_dealloc(main_module.clone());
 
   let mut update_module = UpdateModule::load()?;
 
   let mut build_failed_in_prev_iteration = false;
   loop {
-    let build_res = measure_time("building", || build_module("module"))?;
+    let build_res = cargo_build(&["module", "update"])?;
     match build_res {
-      BuildResult::Success => {
-        let module_ = module.borrow_mut().take().unwrap();
-
-        // when unloading fails it is not safe to load it again
-        measure_time("unloading", || {
-          module_
-            .unload()
-            .map_err(|e| anyhow!("module unloading failed: {e:#}"))
-        })?;
-
-        println!("main module has been rebuilt");
-
-        // inserting new line for more clear output of module after compilation failures or previous runs of the module
-        println!();
-
-        let (module_, state_) = run_main_module()?;
-        module = Rc::new(RefCell::new(Some(module_)));
-        state = state_;
-        set_alloc_and_dealloc(module.clone());
-
+      BuildResult::Success(names) => {
         build_failed_in_prev_iteration = false;
+
+        if names.contains(&"module") {
+          let main_module_ = main_module.borrow_mut().take().unwrap();
+
+          // when unloading fails it is not safe to load it again
+          main_module_
+            .unload()
+            .map_err(|e| anyhow!("module unloading failed: {e:#}"))?;
+
+          println!("main module has been rebuilt");
+
+          // inserting new line for more clear output of module after compilation failures or previous runs of the module
+          println!();
+
+          let (main_module_, state_) = run_main_module()?;
+          main_module = Rc::new(RefCell::new(Some(main_module_)));
+          state = state_;
+          set_alloc_and_dealloc(main_module.clone());
+        }
+        if names.contains(&"update") {
+          update_module.reload()?;
+          println!("update module has been reloaded");
+        }
       }
-      BuildResult::Failure(message) => {
+      BuildResult::Failure(names) => {
         if build_failed_in_prev_iteration {
           continue;
         }
         build_failed_in_prev_iteration = true;
 
-        println!("failed to build the module:\n{message}");
+        println!("failed to build modules:\n{names:?}");
       }
       BuildResult::NoChange => {}
     }
 
     if !build_failed_in_prev_iteration {
-      update_module.rebuild()?;
+      update_module.reload()?;
       unsafe {
         let state = std::mem::transmute::<*mut (), *mut State>(state);
         update_module.update(state);
@@ -148,9 +149,7 @@ fn main_fallible() -> AnyErrorResult {
 pub fn run_main_module() -> AnyErrorResult<(Module<ModuleExports>, *mut ())> {
   let module: Module<ModuleExports> = load_module("module", init_imports, true)?;
 
-  let module_main_contract_build_id = measure_time("getting main_contract build id", || {
-    unsafe { module.exports().main_contract_build_id() }.unwrap()
-  });
+  let module_main_contract_build_id = unsafe { module.exports().main_contract_build_id() }.unwrap();
   let host_main_contract_build_id = main_contract::build_id();
 
   // when main_contract crate is modified it's no longer safe to load the module,
@@ -170,4 +169,41 @@ pub fn run_main_module() -> AnyErrorResult<(Module<ModuleExports>, *mut ())> {
   // (it will deallocate it at unloading) and host should not mutate it
   let state: *mut () = unsafe { module.call_main().unwrap() };
   Ok((module, state))
+}
+
+// TODO: use json format of cargo build?
+fn cargo_build<'a>(names: &'a [&'a str]) -> AnyErrorResult<BuildResult<'a>> {
+  let output = Command::new("cargo").arg("build").output()?;
+
+  let stderr = String::from_utf8(output.stderr)?;
+
+  if !output.status.success() {
+    let mut failed_names = Vec::new();
+    for name in names {
+      if stderr.contains(&format!("error: could not compile `{name}`")) {
+        failed_names.push(*name);
+      }
+    }
+
+    return Ok(BuildResult::Failure(failed_names));
+  }
+
+  if !stderr.contains("Compiling") {
+    return Ok(BuildResult::NoChange);
+  }
+
+  let mut success_names = Vec::new();
+  for name in names {
+    if stderr.contains(&format!("Compiling {name}")) {
+      success_names.push(*name);
+    }
+  }
+
+  Ok(BuildResult::Success(success_names))
+}
+
+enum BuildResult<'a> {
+  Success(Vec<&'a str>),
+  Failure(Vec<&'a str>),
+  NoChange,
 }
