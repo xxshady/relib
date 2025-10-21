@@ -14,18 +14,35 @@ impl Exports for ModuleExportsImpl {
     main_contract::build_id()
   }
 
-  fn update(state: *mut State) {
-    // TODO: SAFETY
-    let state = unsafe { &mut *state };
+  fn update(state: *mut ()) {
+    let state = unsafe {
+      // SAFETY: we receive state as *mut () because host should not know
+      // about actual type of state.
+      let state = std::mem::transmute::<*mut (), *mut State>(state);
+
+      // SAFETY: we logically receive state with exclusive access,
+      // can't actually pass it as &mut because relib requires parameters
+      // to be Copy to prevent module allocator touching foreign memory.
+      // here it's safe because this module shares global allocator with
+      // main module (see allocator_proxy.rs) and this state is only
+      // mutated in this module.
+      &mut *state
+    };
+
     println!("update {}", state.foo);
 
     let foo = unsafe { gen_imports::foo() };
     println!("foo call: {foo:?}");
 
     state.foo += 1;
-    for _ in 1..=(1024 * 1024 * 10) {
+    for _ in 1..=(1024 * 1024 * 1) {
       state.bar.push(1);
     }
     // state.bar = vec![];
   }
+}
+
+#[relib_module::export]
+fn before_unload() {
+  println!("[update] before unload");
 }

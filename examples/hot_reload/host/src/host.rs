@@ -5,13 +5,15 @@ mod update_instance;
 
 use std::{
   cell::{Cell, RefCell},
+  env,
   error::Error,
+  path::Path,
   process::Command,
   rc::Rc,
   thread,
   time::{Duration, Instant},
 };
-use anyhow::anyhow;
+use anyhow::{anyhow, bail};
 use shared::AnyErrorResult;
 use relib_host::{Module};
 use main_contract::{imports::Imports, StableLayout};
@@ -21,7 +23,6 @@ use gen_exports::ModuleExports;
 
 relib_interface::include_imports!();
 use gen_imports::{init_imports, ModuleImportsImpl as MainModuleImportsImpl};
-use state::State;
 
 use crate::{shared::load_module, update_instance::UpdateModule};
 
@@ -97,18 +98,18 @@ fn main_fallible() -> AnyErrorResult {
   loop {
     let build_res = cargo_build(&["module", "update"])?;
     match build_res {
-      BuildResult::Success(names) => {
+      BuildResult::Success(modules) => {
         build_failed_in_prev_iteration = false;
 
-        if names.contains(&"module") {
+        if modules.contains(&"module") {
+          println!("main module has been rebuilt");
+
           let main_module_ = main_module.borrow_mut().take().unwrap();
 
           // when unloading fails it is not safe to load it again
           main_module_
             .unload()
             .map_err(|e| anyhow!("module unloading failed: {e:#}"))?;
-
-          println!("main module has been rebuilt");
 
           // inserting new line for more clear output of module after compilation failures or previous runs of the module
           println!();
@@ -118,26 +119,27 @@ fn main_fallible() -> AnyErrorResult {
           state = state_;
           set_alloc_and_dealloc(main_module.clone());
         }
-        if names.contains(&"update") {
+        if modules.contains(&"update") {
+          println!("update module has been rebuilt");
           update_module.reload()?;
-          println!("update module has been reloaded");
         }
       }
-      BuildResult::Failure(names) => {
+      BuildResult::Failure(modules) => {
         if build_failed_in_prev_iteration {
           continue;
         }
         build_failed_in_prev_iteration = true;
 
-        println!("failed to build modules:\n{names:?}");
+        println!("failed to build modules:\n{modules:?}");
+        if modules.is_empty() {
+          println!("note: failed to compile dependency of host/module/update crate")
+        }
       }
       BuildResult::NoChange => {}
     }
 
     if !build_failed_in_prev_iteration {
-      update_module.reload()?;
       unsafe {
-        let state = std::mem::transmute::<*mut (), *mut State>(state);
         update_module.update(state);
       }
     }
@@ -172,34 +174,46 @@ pub fn run_main_module() -> AnyErrorResult<(Module<ModuleExports>, *mut ())> {
 }
 
 // TODO: use json format of cargo build?
-fn cargo_build<'a>(names: &'a [&'a str]) -> AnyErrorResult<BuildResult<'a>> {
-  let output = Command::new("cargo").arg("build").output()?;
+fn cargo_build<'a>(modules: &'a [&'a str]) -> AnyErrorResult<BuildResult<'a>> {
+  let mut command = Command::new("cargo");
+
+  command
+    .arg("build")
+    .env("CARGO_LOG", "cargo::core::compiler::fingerprint=info");
+
+  let output = command.output()?;
 
   let stderr = String::from_utf8(output.stderr)?;
 
+  if stderr.contains("Compiling host") {
+    bail!(
+      "host was recompiled, if contracts were modified it potentially contains old incompatible code"
+    );
+  }
+
   if !output.status.success() {
-    let mut failed_names = Vec::new();
-    for name in names {
+    let mut failed_modules = Vec::new();
+    for name in modules {
       if stderr.contains(&format!("error: could not compile `{name}`")) {
-        failed_names.push(*name);
+        failed_modules.push(*name);
       }
     }
 
-    return Ok(BuildResult::Failure(failed_names));
+    return Ok(BuildResult::Failure(failed_modules));
   }
 
   if !stderr.contains("Compiling") {
     return Ok(BuildResult::NoChange);
   }
 
-  let mut success_names = Vec::new();
-  for name in names {
+  let mut success_modules = Vec::new();
+  for name in modules {
     if stderr.contains(&format!("Compiling {name}")) {
-      success_names.push(*name);
+      success_modules.push(*name);
     }
   }
 
-  Ok(BuildResult::Success(success_names))
+  Ok(BuildResult::Success(success_modules))
 }
 
 enum BuildResult<'a> {

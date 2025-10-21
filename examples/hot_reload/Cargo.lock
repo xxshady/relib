@@ -140,7 +140,6 @@ name = "main_contract"
 version = "0.1.0"
 dependencies = [
  "cargo_metadata",
- "state",
 ]
 
 [[package]]
@@ -458,9 +457,6 @@ dependencies = [
 [[package]]
 name = "update_contract"
 version = "0.1.0"
-dependencies = [
- "state",
-]
 
 [[package]]
 name = "windows-link"

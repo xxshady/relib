@@ -6,7 +6,6 @@ relib_interface::include_imports!(gen_imports, "update");
 use gen_imports::{init_imports, ModuleImportsImpl};
 use main_contract::{StableLayout, imports::Imports};
 use relib_host::Module;
-use state::State;
 
 use crate::{
   CALL_MAIN_MODULE_ALLOC, CALL_MAIN_MODULE_DEALLOC, MainModuleImportsImpl,
@@ -59,10 +58,6 @@ impl UpdateModule {
       ));
     }
 
-    unsafe {
-      () = module.call_main().unwrap();
-    }
-
     Ok(module)
   }
 
@@ -80,7 +75,7 @@ impl UpdateModule {
     Ok(())
   }
 
-  pub unsafe fn update(&self, state: *mut State) {
+  pub unsafe fn update(&self, state: *mut ()) {
     unsafe {
       self
         .module

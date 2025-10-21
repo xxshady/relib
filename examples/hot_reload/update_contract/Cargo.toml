@@ -2,6 +2,3 @@
 name = "update_contract"
 version.workspace = true
 edition.workspace = true
-
-[dependencies]
-state = { version = "0.1.0", path = "../state" }

@@ -8,7 +8,9 @@ fn main() {
     .unwrap()
     .as_millis();
 
-  println!("cargo:rustc-env={key}={value}");
+  // TODO: it's probably not needed anymore
+  // println!("cargo:rustc-env={key}={value}");
+  println!("cargo:rustc-env={key}=1");
 
   // see live_reload_extended example for explanations
   rerun_if_local_dependencies_change();
