@@ -72,14 +72,23 @@ pub unsafe fn load_module<E: ModuleExportsForHost>(
   path: impl AsRef<OsStr>,
   init_imports: impl InitImports,
 ) -> Result<Module<E>, crate::LoadError> {
-  unsafe { load_module_with_options(path, init_imports, true) }
+  unsafe {
+    load_module_with_options(
+      path,
+      init_imports,
+      #[cfg(feature = "unloading")]
+      true,
+    )
+  }
 }
 
 /// See [`load_module`]
 pub unsafe fn load_module_with_options<E: ModuleExportsForHost>(
   path: impl AsRef<OsStr>,
   init_imports: impl InitImports,
-  enable_alloc_tracker: bool,
+
+  // needs to be passed at runtime because host can load different modules with enabled and disabled alloc tracker
+  #[cfg(feature = "unloading")] enable_alloc_tracker: bool,
 ) -> Result<Module<E>, crate::LoadError> {
   // prevent parallel loading of the same dynamic library
   // to guarantee that LoadError::ModuleAlreadyLoaded is returned

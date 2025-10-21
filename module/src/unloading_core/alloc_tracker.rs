@@ -55,7 +55,7 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for AllocTracker<A> {
     assert_allocator_is_still_accessible();
 
     #[cfg(feature = "dealloc_validation")]
-    if !is_ptr_valid(ptr) {
+    if !UNLOAD_DEALLOCATION.load(Ordering::SeqCst) && !is_ptr_valid(ptr) {
       unrecoverable("invalid pointer was passed to dealloc of global allocator");
     }
 
