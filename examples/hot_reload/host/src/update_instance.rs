@@ -40,24 +40,6 @@ impl UpdateModule {
 
   fn load_() -> AnyErrorResult<Module<ModuleExports>> {
     let module: Module<ModuleExports> = load_module("update", init_imports, false)?;
-
-    let module_main_contract_build_id =
-      unsafe { module.exports().main_contract_build_id().unwrap() };
-    let host_main_contract_build_id = main_contract::build_id();
-
-    // when main_contract crate is modified it's no longer safe to load the module,
-    // so we need to stop here
-    if module_main_contract_build_id != host_main_contract_build_id {
-      return Err(anyhow!(
-        "main_contract crate was modified, update module potentially contains incompatible code\n\
-        main_contract build id of:\n\
-        host:   {}\n\
-        module: {}",
-        host_main_contract_build_id,
-        module_main_contract_build_id
-      ));
-    }
-
     Ok(module)
   }
 

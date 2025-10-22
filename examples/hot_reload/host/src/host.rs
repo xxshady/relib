@@ -161,22 +161,6 @@ fn main_fallible() -> AnyErrorResult {
 pub fn run_main_module() -> AnyErrorResult<(Module<ModuleExports>, *mut ())> {
   let module: Module<ModuleExports> = load_module("module", init_imports, true)?;
 
-  let module_main_contract_build_id = unsafe { module.exports().main_contract_build_id() }.unwrap();
-  let host_main_contract_build_id = main_contract::build_id();
-
-  // when main_contract crate is modified it's no longer safe to load the module,
-  // so we need to stop here
-  if module_main_contract_build_id != host_main_contract_build_id {
-    return Err(anyhow!(
-      "main_contract crate was modified, module potentially contains incompatible code\n\
-        main_contract build id of:\n\
-        host:   {}\n\
-        module: {}",
-      host_main_contract_build_id,
-      module_main_contract_build_id
-    ));
-  }
-
   // state is opaque pointer here because it's owned by main module allocator
   // (it will deallocate it at unloading) and host should not mutate it.
   // also passing it as opaque pointer allows to change it's layout between live reloads (but not hot reloads ofc)

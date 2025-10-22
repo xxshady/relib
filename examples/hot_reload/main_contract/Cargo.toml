@@ -2,8 +2,3 @@
 name = "main_contract"
 version.workspace = true
 edition.workspace = true
-
-[dependencies]
-
-[build-dependencies]
-cargo_metadata = "0.23.0"

@@ -10,10 +10,6 @@ use gen_exports::ModuleExportsImpl;
 relib_interface::include_imports!(gen_imports, "update");
 
 impl Exports for ModuleExportsImpl {
-  fn main_contract_build_id() -> u128 {
-    main_contract::build_id()
-  }
-
   fn update(state: *mut ()) {
     let state = unsafe {
       // SAFETY: we logically receive state with exclusive access,

@@ -8,10 +8,6 @@ use gen_exports::ModuleExportsImpl;
 relib_interface::include_imports!();
 
 impl Exports for ModuleExportsImpl {
-  fn main_contract_build_id() -> u128 {
-    main_contract::build_id()
-  }
-
   fn call_alloc(layout: StableLayout) -> *mut u8 {
     unsafe { alloc(Layout::from_size_align(layout.size, layout.align).unwrap()) }
   }
