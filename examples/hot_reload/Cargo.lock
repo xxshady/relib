@@ -103,7 +103,6 @@ dependencies = [
  "main_contract",
  "relib_host",
  "relib_interface",
- "state",
  "update_contract",
 ]
 

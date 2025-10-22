@@ -178,7 +178,8 @@ pub fn run_main_module() -> AnyErrorResult<(Module<ModuleExports>, *mut ())> {
   }
 
   // state is opaque pointer here because it's owned by main module allocator
-  // (it will deallocate it at unloading) and host should not mutate it
+  // (it will deallocate it at unloading) and host should not mutate it.
+  // also passing it as opaque pointer allows to change it's layout between live reloads (but not hot reloads ofc)
   let state: *mut () = unsafe { module.call_main().unwrap() };
   Ok((module, state))
 }
