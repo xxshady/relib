@@ -101,7 +101,9 @@ fn main_fallible() -> AnyErrorResult {
       BuildResult::Success(modules) => {
         build_failed_in_prev_iteration = false;
 
-        if modules.contains(&"module") {
+        let main_module_reload = modules.contains(&"module");
+
+        if main_module_reload {
           println!("main module has been rebuilt");
 
           let main_module_ = main_module.borrow_mut().take().unwrap();
@@ -111,17 +113,25 @@ fn main_fallible() -> AnyErrorResult {
             .unload()
             .map_err(|e| anyhow!("module unloading failed: {e:#}"))?;
 
-          // inserting new line for more clear output of module after compilation failures or previous runs of the module
-          println!();
-
           let (main_module_, state_) = run_main_module()?;
           main_module = Rc::new(RefCell::new(Some(main_module_)));
           state = state_;
           set_alloc_and_dealloc(main_module.clone());
         }
-        if modules.contains(&"update") {
-          println!("update module has been rebuilt");
-          update_module.reload()?;
+
+        match (modules.contains(&"update"), main_module_reload) {
+          (true, _) => {
+            println!("update module has been rebuilt");
+            update_module.reload()?;
+          }
+          (_, true) => {
+            // since main module shares global allocator with update module,
+            // we need to reload it too since main module deallocated everything
+            // and update module now may have dangling pointers (it was really fun to debug)
+            println!("reloading update module due to main module reload");
+            update_module.reload()?;
+          }
+          _ => {}
         }
       }
       BuildResult::Failure(modules) => {

@@ -16,17 +16,13 @@ impl Exports for ModuleExportsImpl {
 
   fn update(state: *mut ()) {
     let state = unsafe {
-      // SAFETY: we receive state as *mut () because host should not know
-      // about actual type of state.
-      let state = std::mem::transmute::<*mut (), *mut State>(state);
-
       // SAFETY: we logically receive state with exclusive access,
       // can't actually pass it as &mut because relib requires parameters
       // to be Copy to prevent module allocator touching foreign memory.
       // here it's safe because this module shares global allocator with
       // main module (see allocator_proxy.rs) and this state is only
       // mutated in this module.
-      &mut *state
+      &mut *(state as *mut State)
     };
 
     println!("update {}", state.foo);
