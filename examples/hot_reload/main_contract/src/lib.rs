@@ -1,8 +1,8 @@
 pub mod exports;
-pub mod imports;
+pub mod shared_imports;
 
 pub const EXPORTS: &str = include_str!("exports.rs");
-pub const IMPORTS: &str = include_str!("imports.rs");
+pub const SHARED_IMPORTS: &str = include_str!("shared_imports.rs");
 
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Debug)]

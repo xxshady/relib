@@ -16,7 +16,7 @@ use std::{
 use anyhow::{anyhow, bail};
 use shared::AnyErrorResult;
 use relib_host::{Module};
-use main_contract::{imports::Imports, StableLayout};
+use main_contract::{shared_imports::SharedImports, StableLayout};
 
 relib_interface::include_exports!();
 use gen_exports::ModuleExports;
@@ -26,16 +26,16 @@ use gen_imports::{init_imports, ModuleImportsImpl as MainModuleImportsImpl};
 
 use crate::{shared::load_module, update_instance::UpdateModule};
 
-impl Imports for MainModuleImportsImpl {
+impl SharedImports for MainModuleImportsImpl {
   fn foo() -> i32 {
     123
   }
 
-  fn alloc(_layout: StableLayout) -> *mut u8 {
+  fn proxy_alloc(_layout: StableLayout) -> *mut u8 {
     unreachable!()
   }
 
-  fn dealloc(_ptr: *mut u8, _layout: StableLayout) {
+  fn proxy_dealloc(_ptr: *mut u8, _layout: StableLayout) {
     unreachable!()
   }
 }
@@ -170,14 +170,7 @@ pub fn run_main_module() -> AnyErrorResult<(Module<ModuleExports>, *mut ())> {
 
 // TODO: use json format of cargo build?
 fn cargo_build<'a>(modules: &'a [&'a str]) -> AnyErrorResult<BuildResult<'a>> {
-  let mut command = Command::new("cargo");
-
-  command
-    .arg("build")
-    .env("CARGO_LOG", "cargo::core::compiler::fingerprint=info");
-
-  let output = command.output()?;
-
+  let output = Command::new("cargo").arg("build").output()?;
   let stderr = String::from_utf8(output.stderr)?;
 
   if stderr.contains("Compiling host") {

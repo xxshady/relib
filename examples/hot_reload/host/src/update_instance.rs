@@ -4,7 +4,7 @@ use gen_exports::ModuleExports;
 
 relib_interface::include_imports!(gen_imports, "update");
 use gen_imports::{init_imports, ModuleImportsImpl};
-use main_contract::{StableLayout, imports::Imports};
+use main_contract::{StableLayout, shared_imports::SharedImports};
 use relib_host::Module;
 
 use crate::{
@@ -12,16 +12,16 @@ use crate::{
   shared::{AnyErrorResult, load_module},
 };
 
-impl Imports for ModuleImportsImpl {
+impl SharedImports for ModuleImportsImpl {
   fn foo() -> i32 {
     MainModuleImportsImpl::foo()
   }
 
-  fn alloc(layout: StableLayout) -> *mut u8 {
+  fn proxy_alloc(layout: StableLayout) -> *mut u8 {
     CALL_MAIN_MODULE_ALLOC.with_borrow(|f| f(layout))
   }
 
-  fn dealloc(ptr: *mut u8, layout: StableLayout) {
+  fn proxy_dealloc(ptr: *mut u8, layout: StableLayout) {
     CALL_MAIN_MODULE_DEALLOC.with_borrow(|f| f(ptr, layout))
   }
 }

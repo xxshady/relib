@@ -24,8 +24,8 @@ impl Exports for ModuleExportsImpl {
 
 #[expect(unreachable_code)]
 pub fn _suppress_unused_warnings() {
-  let _ = unsafe { gen_imports::alloc(unreachable!()) };
-  let _ = unsafe { gen_imports::dealloc(unreachable!(), unreachable!()) };
+  let _ = unsafe { gen_imports::proxy_alloc(unreachable!()) };
+  let _ = unsafe { gen_imports::proxy_dealloc(unreachable!(), unreachable!()) };
 }
 
 // workaround for cargo feature unification

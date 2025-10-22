@@ -7,7 +7,7 @@ struct Proxy;
 unsafe impl GlobalAlloc for Proxy {
   unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
     unsafe {
-      gen_imports::alloc(StableLayout {
+      gen_imports::proxy_alloc(StableLayout {
         size: layout.size(),
         align: layout.align(),
       })
@@ -16,7 +16,7 @@ unsafe impl GlobalAlloc for Proxy {
 
   unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
     unsafe {
-      gen_imports::dealloc(
+      gen_imports::proxy_dealloc(
         ptr,
         StableLayout {
           size: layout.size(),
