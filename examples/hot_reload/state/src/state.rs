@@ -1,10 +1,11 @@
+use perfect_api::ApiState;
+
 #[repr(C)]
 #[derive(Debug)]
 pub struct State {
-  pub foo: u32,
+  pub counter: u32,
+  pub api_state: ApiState,
 
-  // should be ABI stable but it's fine for prototype
-  pub bar: Vec<u8>,
-
-  pub baz: u8,
+  // TODO: should not be used here since it's not ABI-stable
+  pub vec: Vec<u8>,
 }

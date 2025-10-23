@@ -1,7 +1,10 @@
 [package]
-name = "update_contract"
+name = "perfect_api"
 version.workspace = true
 edition.workspace = true
 
+[lib]
+path = "src/perfect_api.rs"
+
+
 [dependencies]
-main_contract = { path = "../main_contract" }

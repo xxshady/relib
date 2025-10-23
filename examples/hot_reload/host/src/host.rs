@@ -16,10 +16,7 @@ use std::{
 use anyhow::{anyhow, bail};
 use shared::AnyErrorResult;
 use relib_host::{Module};
-use main_contract::{shared_imports::SharedImports, StableLayout};
-
-relib_interface::include_exports!();
-use gen_exports::ModuleExports;
+use main_contract::{shared_imports::SharedImports, MainModuleRet, StableLayout};
 
 relib_interface::include_imports!();
 use gen_imports::{init_imports, ModuleImportsImpl as MainModuleImportsImpl};
@@ -27,55 +24,15 @@ use gen_imports::{init_imports, ModuleImportsImpl as MainModuleImportsImpl};
 use crate::{shared::load_module, update_instance::UpdateModule};
 
 impl SharedImports for MainModuleImportsImpl {
-  fn foo() -> i32 {
-    123
+  fn spawn_entity_from_not_perfect_parallel_universe() -> u64 {
+    let entity = 123;
+    println!("spawning entity {entity} from unperfect universe");
+    entity
   }
 
-  fn proxy_alloc(_layout: StableLayout) -> *mut u8 {
-    unreachable!()
+  fn despawn_entity_from_not_perfect_parallel_universe(entity: u64) {
+    println!("despawning entity {entity} from unperfect universe");
   }
-
-  fn proxy_dealloc(_ptr: *mut u8, _layout: StableLayout) {
-    unreachable!()
-  }
-}
-
-// TODO: this shit is ugly as hell
-thread_local! {
-  static CALL_MAIN_MODULE_ALLOC: RefCell<Box<dyn Fn(StableLayout) -> *mut u8>> = {
-    let f = |_| { panic!("call_main_module_alloc not initialized") };
-
-    RefCell::new(Box::new(f))
-  };
-  static CALL_MAIN_MODULE_DEALLOC: RefCell<Box<dyn Fn(*mut u8, StableLayout)>> = {
-    let f = |_, _| { panic!("call_main_module_dealloc not initialized") };
-
-    RefCell::new(Box::new(f))
-  };
-}
-
-fn set_alloc_and_dealloc(module: Rc<RefCell<Option<Module<ModuleExports>>>>) {
-  CALL_MAIN_MODULE_ALLOC.set({
-    let module = module.clone();
-    let f = move |layout| {
-      let module = module.borrow();
-      let module = module.as_ref().unwrap();
-      unsafe { module.exports().call_alloc(layout) }.unwrap()
-    };
-
-    Box::new(f)
-  });
-
-  CALL_MAIN_MODULE_DEALLOC.set({
-    let module = module.clone();
-    let f = move |ptr, layout| {
-      let module = module.borrow();
-      let module = module.as_ref().unwrap();
-      unsafe { module.exports().call_dealloc(ptr, layout) }.unwrap()
-    };
-
-    Box::new(f)
-  });
 }
 
 fn main() {
@@ -88,11 +45,10 @@ fn main() {
 }
 
 fn main_fallible() -> AnyErrorResult {
-  let (main_module, mut state) = run_main_module()?;
-  let mut main_module = Rc::new(RefCell::new(Some(main_module)));
-  set_alloc_and_dealloc(main_module.clone());
+  let (main_module, mut ret) = run_main_module()?;
+  let mut main_module = Some(main_module);
 
-  let mut update_module = UpdateModule::load()?;
+  let mut update_module = UpdateModule::load(ret.alloc, ret.dealloc)?;
 
   let mut build_failed_in_prev_iteration = false;
   loop {
@@ -106,30 +62,28 @@ fn main_fallible() -> AnyErrorResult {
         if main_module_reload {
           println!("main module has been rebuilt");
 
-          let main_module_ = main_module.borrow_mut().take().unwrap();
-
+          let main_module_ = main_module.take().unwrap();
           // when unloading fails it is not safe to load it again
           main_module_
             .unload()
             .map_err(|e| anyhow!("module unloading failed: {e:#}"))?;
 
-          let (main_module_, state_) = run_main_module()?;
-          main_module = Rc::new(RefCell::new(Some(main_module_)));
-          state = state_;
-          set_alloc_and_dealloc(main_module.clone());
+          let (main_module_, ret_) = run_main_module()?;
+          ret = ret_;
+          main_module = Some(main_module_);
         }
 
         match (modules.contains(&"update"), main_module_reload) {
           (true, _) => {
             println!("update module has been rebuilt");
-            update_module.reload()?;
+            update_module.reload(ret.alloc, ret.dealloc)?;
           }
           (_, true) => {
             // since main module shares global allocator with update module,
-            // we need to reload it too since main module deallocated everything
+            // we need to reload it and call startup since main module deallocated everything
             // and update module now may have dangling pointers (it was really fun to debug)
             println!("reloading update module due to main module reload");
-            update_module.reload()?;
+            update_module.reload(ret.alloc, ret.dealloc)?;
           }
           _ => {}
         }
@@ -150,22 +104,18 @@ fn main_fallible() -> AnyErrorResult {
 
     if !build_failed_in_prev_iteration {
       unsafe {
-        update_module.update(state);
+        update_module.update(ret.state);
       }
     }
 
-    thread::sleep(Duration::from_millis(50));
+    thread::sleep(Duration::from_millis(350));
   }
 }
 
-pub fn run_main_module() -> AnyErrorResult<(Module<ModuleExports>, *mut ())> {
-  let module: Module<ModuleExports> = load_module("module", init_imports, true)?;
-
-  // state is opaque pointer here because it's owned by main module allocator
-  // (it will deallocate it at unloading) and host should not mutate it.
-  // also passing it as opaque pointer allows to change it's layout between live reloads (but not hot reloads ofc)
-  let state: *mut () = unsafe { module.call_main().unwrap() };
-  Ok((module, state))
+pub fn run_main_module() -> AnyErrorResult<(Module<()>, MainModuleRet)> {
+  let module: Module<()> = load_module("module", init_imports, true)?;
+  let ret: MainModuleRet = unsafe { module.call_main().unwrap() };
+  Ok((module, ret))
 }
 
 // TODO: use json format of cargo build?

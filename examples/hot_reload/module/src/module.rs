@@ -1,46 +1,41 @@
-use std::alloc::{Layout, System, alloc, dealloc};
-use main_contract::{StableLayout, exports::Exports};
+use std::alloc::System;
+use main_contract::{MainModuleRet, StableLayout};
+use perfect_api::ApiState;
 use state::State;
 use relib_module::AllocTracker;
 
-relib_interface::include_exports!();
-use gen_exports::ModuleExportsImpl;
 relib_interface::include_imports!();
 
-impl Exports for ModuleExportsImpl {
-  fn call_alloc(layout: StableLayout) -> *mut u8 {
-    unsafe { alloc(Layout::from_size_align(layout.size, layout.align).unwrap()) }
-  }
-
-  fn call_dealloc(ptr: *mut u8, layout: StableLayout) {
-    unsafe {
-      dealloc(
-        ptr,
-        Layout::from_size_align(layout.size, layout.align).unwrap(),
-      )
-    }
-  }
-}
-
-#[expect(unreachable_code)]
-pub fn _suppress_unused_warnings() {
-  let _ = unsafe { gen_imports::proxy_alloc(unreachable!()) };
-  let _ = unsafe { gen_imports::proxy_dealloc(unreachable!(), unreachable!()) };
-}
-
-// workaround for cargo feature unification
+// workaround for cargo feature unification (it should be registered by relib)
 #[global_allocator]
-static ALLOC: AllocTracker<System> = AllocTracker::new(System);
+static ALLOC_TRACKER: AllocTracker<System> = AllocTracker::new(System);
 
 #[relib_module::export]
-fn main() -> *mut () {
-  let foo_ = unsafe { gen_imports::foo() };
-  println!("change me! {foo_} but don't touch main_contract crate");
-
+unsafe fn main() -> MainModuleRet {
   let state = State {
-    foo: 0,
-    bar: vec![1, 2, 3],
-    baz: 2,
+    counter: 0,
+    api_state: ApiState::default(),
+
+    vec: vec![1, 2, 3],
   };
-  Box::into_raw(Box::new(state)) as *mut ()
+
+  // TODO: should this module use external libraries?
+  // unsafe {
+  //   let entity = gen_imports::spawn_entity_from_not_perfect_parallel_universe();
+  //   gen_imports::despawn_entity_from_not_perfect_parallel_universe(entity);
+  // }
+
+  MainModuleRet {
+    state: Box::into_raw(Box::new(state)) as *mut (),
+    alloc: alloc_tracker_alloc,
+    dealloc: alloc_tracker_dealloc,
+  }
+}
+
+unsafe extern "C" fn alloc_tracker_alloc(layout: StableLayout) -> *mut u8 {
+  unsafe { std::alloc::alloc(layout.into()) }
+}
+
+unsafe extern "C" fn alloc_tracker_dealloc(ptr: *mut u8, layout: StableLayout) {
+  unsafe { std::alloc::dealloc(ptr, layout.into()) }
 }

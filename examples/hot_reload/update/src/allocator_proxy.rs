@@ -1,31 +1,28 @@
-use std::alloc::{GlobalAlloc, Layout};
-use main_contract::StableLayout;
-use crate::gen_imports;
+use std::{
+  alloc::{GlobalAlloc, Layout},
+  sync::OnceLock,
+};
+use main_contract::{Alloc, Dealloc};
 
-struct Proxy;
+pub struct Proxy {
+  pub alloc: OnceLock<Alloc>,
+  pub dealloc: OnceLock<Dealloc>,
+}
 
 unsafe impl GlobalAlloc for Proxy {
   unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-    unsafe {
-      gen_imports::proxy_alloc(StableLayout {
-        size: layout.size(),
-        align: layout.align(),
-      })
-    }
+    let alloc = self.alloc.get().unwrap();
+    unsafe { alloc(layout.into()) }
   }
 
   unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-    unsafe {
-      gen_imports::proxy_dealloc(
-        ptr,
-        StableLayout {
-          size: layout.size(),
-          align: layout.align(),
-        },
-      )
-    }
+    let dealloc = self.dealloc.get().unwrap();
+    unsafe { dealloc(ptr, layout.into()) }
   }
 }
 
 #[global_allocator]
-static PROXY: Proxy = Proxy;
+pub static ALLOC_PROXY: Proxy = Proxy {
+  alloc: OnceLock::new(),
+  dealloc: OnceLock::new(),
+};

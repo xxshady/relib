@@ -14,6 +14,7 @@ relib_interface = { version = "0", path = "../../../interface", features = [
 update_contract = { version = "0.1.0", path = "../update_contract" }
 main_contract = { version = "0.1.0", path = "../main_contract" }
 state = { version = "0.1.0", path = "../state" }
+perfect_api = { version = "0.1.0", path = "../perfect_api" }
 
 [dependencies.relib_module]
 version = "0"
@@ -26,4 +27,4 @@ relib_interface = { version = "0", path = "../../../interface", features = [
 ] }
 update_contract = { version = "0.1.0", path = "../update_contract" }
 main_contract = { version = "0.1.0", path = "../main_contract" }
-state = { version = "0.1.0", path = "../state" }
+cargo_metadata = "0.23.0"
