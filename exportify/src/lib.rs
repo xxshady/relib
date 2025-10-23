@@ -45,6 +45,7 @@ pub fn exportify(input: TokenStream2) -> TokenStream2 {
   let output = sig.output;
   let inputs = sig.inputs;
   let ident = sig.ident;
+  let unsafety = sig.unsafety;
   let mangled_name = format!("__relib__{ident}");
   let mangled_name_ident = format_ident!("{mangled_name}");
   let post_mangled_name_ident = format_ident!("__post{mangled_name}");
@@ -66,7 +67,7 @@ pub fn exportify(input: TokenStream2) -> TokenStream2 {
       },
       quote! {
         #[unsafe(no_mangle)]
-        pub extern "C" fn #post_mangled_name_ident(
+        pub #unsafety extern "C" fn #post_mangled_name_ident(
           return_value_ptr: *mut #return_type
         ) {
           use std::boxed::Box;
