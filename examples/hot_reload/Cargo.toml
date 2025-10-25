@@ -6,7 +6,7 @@ members = [
   "main_contract",
   "update",
   "update_contract",
-  "state", "perfect_api",
+  "state", "perfect_api", "unperfect_api",
 ]
 
 [workspace.package]

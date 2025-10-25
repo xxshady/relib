@@ -5,6 +5,3 @@ edition.workspace = true
 
 [lib]
 path = "src/perfect_api.rs"
-
-
-[dependencies]

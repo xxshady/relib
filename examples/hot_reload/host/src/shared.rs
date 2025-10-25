@@ -1,13 +1,15 @@
-use std::{
-  cell::RefCell,
-  error::Error,
-  fs,
-  process::Command,
-  rc::Rc,
-  thread,
-  time::{Duration, Instant},
+use {
+  relib_host::{InitImports, Module, ModuleExportsForHost},
+  std::{
+    cell::RefCell,
+    error::Error,
+    fs,
+    process::Command,
+    rc::Rc,
+    thread,
+    time::{Duration, Instant},
+  },
 };
-use relib_host::{InitImports, Module, ModuleExportsForHost};
 
 pub type AnyErrorResult<T = ()> = anyhow::Result<T>;
 

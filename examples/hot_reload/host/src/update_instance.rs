@@ -2,25 +2,13 @@ relib_interface::include_exports!(gen_exports, "update");
 use anyhow::anyhow;
 use gen_exports::ModuleExports;
 
-relib_interface::include_imports!(gen_imports, "update");
-use gen_imports::{init_imports, ModuleImportsImpl};
-use main_contract::{Alloc, Dealloc, StableLayout, shared_imports::SharedImports};
+use main_contract::{Alloc, Dealloc, StableLayout};
 use relib_host::Module;
 
 use crate::{
-  MainModuleImportsImpl,
   shared::{AnyErrorResult, load_module},
+  unperfect_api_bindings::init_shared_imports,
 };
-
-impl SharedImports for ModuleImportsImpl {
-  fn spawn_entity_from_not_perfect_parallel_universe() -> u64 {
-    MainModuleImportsImpl::spawn_entity_from_not_perfect_parallel_universe()
-  }
-
-  fn despawn_entity_from_not_perfect_parallel_universe(entity: u64) {
-    MainModuleImportsImpl::despawn_entity_from_not_perfect_parallel_universe(entity)
-  }
-}
 
 pub struct UpdateModule {
   module: Option<Module<ModuleExports>>,
@@ -35,7 +23,7 @@ impl UpdateModule {
   }
 
   fn load_(alloc: Alloc, dealloc: Dealloc) -> AnyErrorResult<Module<ModuleExports>> {
-    let module: Module<ModuleExports> = load_module("update", init_imports, false)?;
+    let module: Module<ModuleExports> = load_module("update", init_shared_imports, false)?;
 
     unsafe {
       module

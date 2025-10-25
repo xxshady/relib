@@ -1,1 +1,1 @@
-pub trait Exports {}
+pub trait EmptyExports {}

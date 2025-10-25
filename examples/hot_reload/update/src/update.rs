@@ -30,11 +30,12 @@ impl Exports for ModuleExportsImpl {
     // demo of using library with only explicit state and ABI-stable types
     // from a perfect parallel universe:
     {
-      let _entity = perfect_api::spawn(&mut state.api_state);
+      let _entity = perfect_api::spawn(&mut state.perfect_api_state);
     } // despawned here
 
     // demo of using library with hidden state from real world:
     unsafe {
+      // TODO: use unperfect_api
       let entity = gen_imports::spawn_entity_from_not_perfect_parallel_universe();
 
       gen_imports::despawn_entity_from_not_perfect_parallel_universe(entity);
@@ -44,8 +45,6 @@ impl Exports for ModuleExportsImpl {
     // will not be deallocated when this module is unloaded
     // so, this is a temporary leak (until main_module is reloaded)
     // TODO: rename module crate to main_module
-    // TODO: or even better: state_module?
-    // TODO: and then this module should also be renamed if it will contain startup
     // for _ in 0..(1024 * 1024) {
     //   state.vec.push(1);
     // }

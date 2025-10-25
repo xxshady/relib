@@ -2,6 +2,7 @@
 
 mod shared;
 mod update_instance;
+mod unperfect_api_bindings;
 
 use std::{
   cell::{Cell, RefCell},
@@ -17,23 +18,9 @@ use anyhow::{anyhow, bail};
 use shared::AnyErrorResult;
 use relib_host::{Module};
 use main_contract::{shared_imports::SharedImports, MainModuleRet, StableLayout};
-
-relib_interface::include_imports!();
-use gen_imports::{init_imports, ModuleImportsImpl as MainModuleImportsImpl};
-
-use crate::{shared::load_module, update_instance::UpdateModule};
-
-impl SharedImports for MainModuleImportsImpl {
-  fn spawn_entity_from_not_perfect_parallel_universe() -> u64 {
-    let entity = 123;
-    println!("spawning entity {entity} from unperfect universe");
-    entity
-  }
-
-  fn despawn_entity_from_not_perfect_parallel_universe(entity: u64) {
-    println!("despawning entity {entity} from unperfect universe");
-  }
-}
+use crate::{
+  shared::load_module, update_instance::UpdateModule, unperfect_api_bindings::init_shared_imports,
+};
 
 fn main() {
   if let Err(e) = main_fallible() {
@@ -113,7 +100,7 @@ fn main_fallible() -> AnyErrorResult {
 }
 
 pub fn run_main_module() -> AnyErrorResult<(Module<()>, MainModuleRet)> {
-  let module: Module<()> = load_module("module", init_imports, true)?;
+  let module: Module<()> = load_module("module", init_shared_imports, true)?;
   let ret: MainModuleRet = unsafe { module.call_main().unwrap() };
   Ok((module, ret))
 }

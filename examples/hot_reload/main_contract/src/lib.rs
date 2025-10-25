@@ -4,7 +4,7 @@ pub use relib_internal_shared::StableLayout;
 pub mod exports;
 pub mod shared_imports;
 
-pub const EXPORTS: &str = include_str!("exports.rs");
+pub const EMPTY_EXPORTS: &str = include_str!("exports.rs");
 pub const SHARED_IMPORTS: &str = include_str!("shared_imports.rs");
 
 pub type Alloc = unsafe extern "C" fn(layout: StableLayout) -> *mut u8;

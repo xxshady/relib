@@ -1,0 +1,35 @@
+use {
+  main_contract::shared_imports::SharedImports,
+  std::{cell::Cell, collections::HashSet},
+};
+
+relib_interface::include_imports!();
+pub use gen_imports::init_imports as init_shared_imports;
+use gen_imports::ModuleImportsImpl;
+
+thread_local! {
+  static ENTITIES: RefCell<HashSet<u64>> = Default::default();
+  static ENTITY_ID_COUNTER: Cell<u64> = Cell::new(1);
+}
+
+impl SharedImports for ModuleImportsImpl {
+  fn spawn_entity_from_not_perfect_parallel_universe() -> u64 {
+    let id = ENTITY_ID_COUNTER.get();
+    ENTITY_ID_COUNTER.set(id + 1);
+
+    println!("spawning entity {id} from unperfect universe");
+
+    ENTITIES.with_borrow_mut(|entities| {
+      entities.insert(id);
+    });
+
+    id
+  }
+
+  fn despawn_entity_from_not_perfect_parallel_universe(id: u64) {
+    println!("despawning entity {id} from unperfect universe");
+    ENTITIES.with_borrow_mut(|entities| {
+      entities.remove(&id);
+    });
+  }
+}
