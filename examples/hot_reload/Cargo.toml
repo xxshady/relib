@@ -2,11 +2,13 @@
 resolver = "3" # edition "2024" implies resolver "3"
 members = [
   "host",
-  "module",
+  "main_module",
   "main_contract",
-  "update",
+  "update_module",
   "update_contract",
-  "state", "perfect_api", "unperfect_api",
+  "state",
+  "perfect_api",
+  "imperfect_api",
 ]
 
 [workspace.package]

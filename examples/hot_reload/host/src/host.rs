@@ -2,25 +2,29 @@
 
 mod shared;
 mod update_instance;
-mod unperfect_api_bindings;
+mod imperfect_api_impl;
 
-use std::{
-  cell::{Cell, RefCell},
-  env,
-  error::Error,
-  path::Path,
-  process::Command,
-  rc::Rc,
-  thread,
-  time::{Duration, Instant},
+use {
+  crate::{shared::load_module, update_instance::UpdateModule},
+  anyhow::{anyhow, bail},
+  imperfect_api_impl::init_shared_imports,
+  main_contract::{MainModuleRet, SharedImports, StableLayout},
+  relib_host::Module,
+  shared::AnyErrorResult,
+  std::{
+    cell::{Cell, RefCell},
+    env,
+    error::Error,
+    path::Path,
+    process::Command,
+    rc::Rc,
+    thread,
+    time::{Duration, Instant},
+  },
 };
-use anyhow::{anyhow, bail};
-use shared::AnyErrorResult;
-use relib_host::{Module};
-use main_contract::{shared_imports::SharedImports, MainModuleRet, StableLayout};
-use crate::{
-  shared::load_module, update_instance::UpdateModule, unperfect_api_bindings::init_shared_imports,
-};
+
+relib_interface::include_exports!();
+use gen_exports::ModuleExports;
 
 fn main() {
   if let Err(e) = main_fallible() {
@@ -32,47 +36,59 @@ fn main() {
 }
 
 fn main_fallible() -> AnyErrorResult {
-  let (main_module, mut ret) = run_main_module()?;
+  let (main_module, mut ret) = load_main_module()?;
   let mut main_module = Some(main_module);
 
   let mut update_module = UpdateModule::load(ret.alloc, ret.dealloc)?;
 
   let mut build_failed_in_prev_iteration = false;
   loop {
-    let build_res = cargo_build(&["module", "update"])?;
+    let build_res = cargo_build(&["main_module", "update_module"])?;
     match build_res {
       BuildResult::Success(modules) => {
         build_failed_in_prev_iteration = false;
 
-        let main_module_reload = modules.contains(&"module");
+        let main_module_reload = modules.contains(&"main_module");
 
         if main_module_reload {
           println!("main module has been rebuilt");
 
+          // leaks are safe in rust
+          imperfect_api_impl::despawn_leaked_entities();
+
           let main_module_ = main_module.take().unwrap();
+
+          unsafe {
+            main_module_.exports().drop_state(ret.state).unwrap();
+          }
+
           // when unloading fails it is not safe to load it again
           main_module_
             .unload()
-            .map_err(|e| anyhow!("module unloading failed: {e:#}"))?;
+            .map_err(|e| anyhow!("main module unloading failed: {e:#}"))?;
 
-          let (main_module_, ret_) = run_main_module()?;
+          let (main_module_, ret_) = load_main_module()?;
           ret = ret_;
           main_module = Some(main_module_);
         }
 
-        match (modules.contains(&"update"), main_module_reload) {
+        let update_module_reload = modules.contains(&"update_module");
+
+        match (update_module_reload, main_module_reload) {
           (true, _) => {
             println!("update module has been rebuilt");
-            update_module.reload(ret.alloc, ret.dealloc)?;
           }
           (_, true) => {
             // since main module shares global allocator with update module,
             // we need to reload it and call startup since main module deallocated everything
             // and update module now may have dangling pointers (it was really fun to debug)
             println!("reloading update module due to main module reload");
-            update_module.reload(ret.alloc, ret.dealloc)?;
           }
           _ => {}
+        }
+
+        if let (true, _) | (_, true) = (update_module_reload, main_module_reload) {
+          update_module.reload(ret.alloc, ret.dealloc)?;
         }
       }
       BuildResult::Failure(modules) => {
@@ -83,7 +99,7 @@ fn main_fallible() -> AnyErrorResult {
 
         println!("failed to build modules:\n{modules:?}");
         if modules.is_empty() {
-          println!("note: failed to compile dependency of host/module/update crate")
+          println!("note: failed to compile dependency of host/main_module/update_module crate")
         }
       }
       BuildResult::NoChange => {}
@@ -99,9 +115,11 @@ fn main_fallible() -> AnyErrorResult {
   }
 }
 
-pub fn run_main_module() -> AnyErrorResult<(Module<()>, MainModuleRet)> {
-  let module: Module<()> = load_module("module", init_shared_imports, true)?;
-  let ret: MainModuleRet = unsafe { module.call_main().unwrap() };
+pub fn load_main_module() -> AnyErrorResult<(Module<ModuleExports>, MainModuleRet)> {
+  println!("loading main module");
+
+  let module = load_module("main_module", init_shared_imports, true)?;
+  let ret = unsafe { module.call_main().unwrap() };
   Ok((module, ret))
 }
 

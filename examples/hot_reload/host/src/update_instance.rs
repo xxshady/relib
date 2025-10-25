@@ -1,14 +1,15 @@
-relib_interface::include_exports!(gen_exports, "update");
-use anyhow::anyhow;
-use gen_exports::ModuleExports;
-
-use main_contract::{Alloc, Dealloc, StableLayout};
-use relib_host::Module;
-
-use crate::{
-  shared::{AnyErrorResult, load_module},
-  unperfect_api_bindings::init_shared_imports,
+use {
+  crate::{
+    imperfect_api_impl::init_shared_imports,
+    shared::{AnyErrorResult, load_module},
+  },
+  anyhow::anyhow,
+  main_contract::{Alloc, Dealloc, StableLayout},
+  relib_host::Module,
 };
+
+relib_interface::include_exports!(gen_exports, "update_module");
+use gen_exports::ModuleExports;
 
 pub struct UpdateModule {
   module: Option<Module<ModuleExports>>,

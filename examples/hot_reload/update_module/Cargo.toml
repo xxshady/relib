@@ -1,11 +1,11 @@
 [package]
-name = "update"
+name = "update_module"
 version.workspace = true
 edition.workspace = true
 
 [lib]
 crate-type = ["cdylib"]
-path = "src/update.rs"
+path = "src/update_module.rs"
 
 [dependencies]
 relib_interface = { version = "0", path = "../../../interface", features = [
@@ -15,6 +15,7 @@ update_contract = { version = "0.1.0", path = "../update_contract" }
 main_contract = { version = "0.1.0", path = "../main_contract" }
 state = { version = "0.1.0", path = "../state" }
 perfect_api = { version = "0.1.0", path = "../perfect_api" }
+imperfect_api = { version = "0.1.0", path = "../imperfect_api" }
 
 [dependencies.relib_module]
 version = "0"

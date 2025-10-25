@@ -4,7 +4,7 @@ pub struct Entity(u64);
 
 impl Drop for Entity {
   fn drop(&mut self) {
-    println!("entity {} despawned", self.0);
+    println!("entity {} despawned (perfect_api)", self.0);
   }
 }
 
@@ -24,7 +24,7 @@ pub fn spawn(state: &mut ApiState) -> Entity {
   let id = state.id_counter;
   state.id_counter += 1;
 
-  println!("entity {} spawned", id);
+  println!("entity {} spawned (perfect_api)", id);
 
   Entity(id)
 }

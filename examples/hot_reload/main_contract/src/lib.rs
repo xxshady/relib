@@ -1,11 +1,20 @@
+mod shared_imports;
+mod exports;
+mod empty_imports;
+mod empty_exports;
+
+pub use {
+  empty_exports::EmptyExports, empty_imports::EmptyImports, exports::Exports,
+  shared_imports::SharedImports,
+};
+
+pub const SHARED_IMPORTS: &str = include_str!("shared_imports.rs");
+pub const EXPORTS: &str = include_str!("exports.rs");
+pub const EMPTY_EXPORTS: &str = include_str!("empty_exports.rs");
+pub const EMPTY_IMPORTS: &str = include_str!("empty_imports.rs");
+
 // perhaps hot reload will be implemented directly in relib in the future
 pub use relib_internal_shared::StableLayout;
-
-pub mod exports;
-pub mod shared_imports;
-
-pub const EMPTY_EXPORTS: &str = include_str!("exports.rs");
-pub const SHARED_IMPORTS: &str = include_str!("shared_imports.rs");
 
 pub type Alloc = unsafe extern "C" fn(layout: StableLayout) -> *mut u8;
 pub type Dealloc = unsafe extern "C" fn(ptr: *mut u8, layout: StableLayout);

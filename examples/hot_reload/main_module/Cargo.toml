@@ -1,17 +1,20 @@
 [package]
-name = "module"
+name = "main_module"
 version.workspace = true
 edition.workspace = true
 
 [lib]
 crate-type = ["cdylib"]
-path = "src/module.rs"
+path = "src/main_module.rs"
 
 [dependencies]
 main_contract = { version = "0.1.0", path = "../main_contract" }
 state = { version = "0.1.0", path = "../state" }
 perfect_api = { version = "0.1.0", path = "../perfect_api" }
-unperfect_api = { version = "0.1.0", path = "../unperfect_api" }
+imperfect_api = { version = "0.1.0", path = "../imperfect_api" }
+relib_interface = { version = "0", path = "../../../interface", features = [
+  "include",
+] }
 
 [dependencies.relib_module]
 version = "0"
@@ -23,3 +26,9 @@ features = [
 
   "dealloc_validation",
 ]
+
+[build-dependencies]
+relib_interface = { version = "0", path = "../../../interface", features = [
+  "build",
+] }
+main_contract = { version = "0.1.0", path = "../main_contract" }

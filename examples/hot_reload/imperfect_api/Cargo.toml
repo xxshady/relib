@@ -1,10 +1,10 @@
 [package]
-name = "unperfect_api"
+name = "imperfect_api"
 version.workspace = true
 edition.workspace = true
 
 [lib]
-path = "src/unperfect_api.rs"
+path = "src/imperfect_api.rs"
 
 [dependencies]
 relib_interface = { version = "0", path = "../../../interface", features = [

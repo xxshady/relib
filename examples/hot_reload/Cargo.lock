@@ -107,6 +107,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "imperfect_api"
+version = "0.1.0"
+dependencies = [
+ "main_contract",
+ "relib_interface",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -142,6 +150,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "main_module"
+version = "0.1.0"
+dependencies = [
+ "imperfect_api",
+ "main_contract",
+ "perfect_api",
+ "relib_interface",
+ "relib_module",
+ "state",
+]
+
+[[package]]
 name = "memchr"
 version = "2.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -164,17 +184,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1fa76a2c86f704bdb222d66965fb3d63269ce38518b83cb0575fca855ebb6316"
 dependencies = [
  "adler2",
-]
-
-[[package]]
-name = "module"
-version = "0.1.0"
-dependencies = [
- "main_contract",
- "perfect_api",
- "relib_module",
- "state",
- "unperfect_api",
 ]
 
 [[package]]
@@ -451,31 +460,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "adb9e6ca4f869e1180728b7950e35922a7fc6397f7b641499e8f3ef06e50dc83"
 
 [[package]]
-name = "unperfect_api"
+name = "update_contract"
 version = "0.1.0"
 dependencies = [
  "main_contract",
- "relib_interface",
 ]
 
 [[package]]
-name = "update"
+name = "update_module"
 version = "0.1.0"
 dependencies = [
  "cargo_metadata",
+ "imperfect_api",
  "main_contract",
  "perfect_api",
  "relib_interface",
  "relib_module",
  "state",
  "update_contract",
-]
-
-[[package]]
-name = "update_contract"
-version = "0.1.0"
-dependencies = [
- "main_contract",
 ]
 
 [[package]]
