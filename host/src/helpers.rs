@@ -1,14 +1,15 @@
-use std::{
-  mem::{needs_drop, MaybeUninit},
-  path::Path,
-  sync::{
-    atomic::{AtomicU64, Ordering},
-    Mutex,
+use {
+  libloading::{Library, Symbol},
+  relib_internal_shared::ModuleId,
+  std::{
+    mem::{MaybeUninit, needs_drop},
+    path::Path,
+    sync::{
+      Mutex,
+      atomic::{AtomicU64, Ordering},
+    },
   },
 };
-
-use relib_internal_shared::ModuleId;
-use libloading::{Library, Symbol};
 
 pub fn cstr_bytes(str: &str) -> Vec<u8> {
   [str.as_bytes(), &[0]].concat()
@@ -26,8 +27,10 @@ pub fn next_module_id() -> ModuleId {
 pub fn open_library(path: &Path) -> Result<libloading::Library, crate::LoadError> {
   #[cfg(target_os = "linux")]
   let library = {
-    use libloading::os::unix::Library;
-    use libc::{RTLD_DEEPBIND, RTLD_LAZY, RTLD_LOCAL};
+    use {
+      libc::{RTLD_DEEPBIND, RTLD_LAZY, RTLD_LOCAL},
+      libloading::os::unix::Library,
+    };
 
     // RTLD_DEEPBIND allows replacing __cxa_thread_atexit_impl (it's needed to call destructors of thread-locals)
     // as well as mmap functions (to unmap leaked mappings) and thread spawn function (to check detached threads)
@@ -73,7 +76,8 @@ where
 
   warn_if_type_needs_drop_without_post::<R>(name, post_fn.is_ok());
 
-  // if library has post function for this export return value is heap allocated
+  // if library has post function for this export return value
+  // may not be Copy and needs dropping
   let return_value = if let Ok(post_fn) = post_fn {
     let fn_ = unsafe { get_library_export(library, &mangled_name) }?;
     let fn_: Symbol<extern "C" fn(*mut bool) -> MaybeUninit<*mut R>> = fn_;
@@ -144,7 +148,7 @@ mod linux_impl {
 #[cfg(target_os = "windows")]
 mod windows_impl {
   use crate::windows::{
-    imports::{GetModuleHandleExW, GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT},
+    imports::{GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, GetModuleHandleExW},
     str_to_wide_cstring,
   };
 
@@ -166,17 +170,11 @@ pub use windows_impl::is_library_loaded;
 fn warn_if_type_needs_drop_without_post<R>(export_name: &str, export_has_post_fn: bool) {
   let return_type_needs_drop = needs_drop::<R>();
 
-  if return_type_needs_drop != export_has_post_fn {
-    let post_fn_message = if export_has_post_fn {
-      "has post fn exported"
-    } else {
-      "does not have post fn exported"
-    };
-
+  if return_type_needs_drop && !export_has_post_fn {
     eprintln!(
       "[relib] warning: \"{export_name}\" export return type (usually exported using `relib_module::export`) \
       may not match passed generic R type \
-      (std::mem::needs_drop::<R> is {return_type_needs_drop} but exported function {post_fn_message})"
+      (std::mem::needs_drop::<R>() returned true but exported function does not have post fn exported for this export)"
     );
   }
 }
