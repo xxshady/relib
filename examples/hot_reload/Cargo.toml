@@ -15,16 +15,3 @@ members = [
 version = "0.1.0"
 edition = "2024"  # or set a later one
 
-# # Enable a small amount of optimization in the dev profile.
-# [profile.dev]
-# opt-level = 0
-# # debug = "full"
-# # strip = "none"
-# debug = 0
-# strip = "debuginfo"
-
-# # Enable a large amount of optimization in the dev profile for dependencies.
-# [profile.dev.package."*"]
-# opt-level = 3
-# debug = 0
-# strip = "debuginfo"
