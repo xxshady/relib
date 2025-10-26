@@ -54,8 +54,6 @@ Use `./run.sh` (you need bash for that if you are on Windows) in hot_reload dire
 - `perfect_api` - simple example of library with no global/hidden state
 - `imperfect_api` - simple real-world example
 
-**note:** this example also includes live reload (reload with reset of the state), see main_module/src/main_module.rs.
-
 ## [Usage with `abi_stable` crate](./abi_stable_usage)
 
 Use `cargo run` to compile host, module crates and run host binary.
