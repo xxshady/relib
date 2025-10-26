@@ -176,7 +176,7 @@ fn is_ptr_valid(ptr: *mut u8) -> bool {
 
 #[cfg(not(feature = "dealloc_validation"))]
 #[expect(unreachable_code)]
-fn _suppress_warn() {
+pub fn _suppress_warn() {
   unsafe {
     gen_imports::is_ptr_allocated(unreachable!(), unreachable!());
   }
