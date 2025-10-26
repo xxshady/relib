@@ -14,3 +14,8 @@ compile_error!(
   enable \"unloading\" feature or \
   disable \"global_alloc_tracker\" and enable \"unloading_core\""
 );
+
+// TODO: add support for conditional compilation in relib_interface
+#[doc(hidden)]
+#[cfg(all(feature = "unloading_core", not(feature = "dealloc_validation")))]
+pub use unloading_core::_suppress_warn;
