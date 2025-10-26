@@ -1,18 +1,17 @@
-use std::{
-  alloc::{GlobalAlloc, Layout},
-  collections::HashMap,
-  sync::{
-    atomic::{AtomicBool, Ordering},
-    LazyLock, Mutex, MutexGuard,
+use {
+  super::{
+    MODULE_ID, gen_imports,
+    helpers::{assert_allocator_is_still_accessible, unrecoverable},
   },
-};
-
-use relib_internal_shared::{Allocation, AllocatorOp, AllocatorPtr, StableLayout};
-
-use super::{
-  gen_imports,
-  helpers::{assert_allocator_is_still_accessible, unrecoverable},
-  MODULE_ID,
+  relib_internal_shared::{Allocation, AllocatorOp, AllocatorPtr, StableLayout},
+  std::{
+    alloc::{GlobalAlloc, Layout},
+    collections::HashMap,
+    sync::{
+      LazyLock, Mutex, MutexGuard,
+      atomic::{AtomicBool, Ordering},
+    },
+  },
 };
 
 static UNLOAD_DEALLOCATION: AtomicBool = AtomicBool::new(false);
@@ -173,4 +172,10 @@ fn is_ptr_valid(ptr: *mut u8) -> bool {
   };
 
   cache_contains_ptr || unsafe { gen_imports::is_ptr_allocated(MODULE_ID, ptr) }
+}
+
+#[cfg(not(feature = "dealloc_validation"))]
+#[expect(unreachable_code)]
+fn _suppress_warn() {
+  unsafe { gen_imports::is_ptr_allocated(unreachable!(), unreachable!()) }
 }
