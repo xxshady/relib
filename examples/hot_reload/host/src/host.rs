@@ -1,5 +1,3 @@
-#![allow(unused_imports)] // TODO: fix this
-
 mod shared;
 mod main_instance;
 mod update_instance;
