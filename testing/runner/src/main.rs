@@ -6,6 +6,7 @@ mod panic_in_interface_host;
 mod backtrace_unloading_host_as_dylib;
 #[cfg(target_os = "windows")]
 mod windows_background_threads;
+mod dealloc_validation;
 
 const TEST_FEATURES: &[&str] = &[
   "parallel_module_loading",
@@ -29,6 +30,8 @@ const TEST_FEATURES: &[&str] = &[
 ];
 
 fn main() {
+  dealloc_validation::main();
+
   test_features("debug");
   test_features("release");
 

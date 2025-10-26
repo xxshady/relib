@@ -43,3 +43,6 @@ mod windows_background_threads;
 
 #[cfg(feature = "parallel_module_loading")]
 mod parallel_module_loading;
+
+#[cfg(feature = "dealloc_validation")]
+mod dealloc_validation;
