@@ -37,6 +37,25 @@ but it would be more complex to implement.
 
 Use `./run.sh` (you need bash for that if you are on Windows) in live_reload_extended directory and then change something in live_reload_extended/module/src or live_reload_extended/shared/src.
 
+## [Hot reload](./hot_reload)
+
+Automatically reload code without resetting state.
+
+Use `./run.sh` (you need bash for that if you are on Windows) in hot_reload directory and then change something in hot_reload/update_module/src/update_module.rs.
+
+### Crate structure
+
+- `host` - the one and the only
+- `state` - `State` structure that is preserved between reloads of `update_module`
+- `update_module` - this is the crate that is hot-reloaded (leaked allocations are not collected, yet?)
+- `main_module` - this crate is live-reloaded (if changed the state will be reset)
+- `main_contract` - contains exports of main_module and imports of main_module & update_module
+- `update_contract` - contains imports & exports only of update_module
+- `perfect_api` - simple example of library with no global/hidden state
+- `imperfect_api` - simple real-world example
+
+**note:** this example also includes live reload (reload with reset of the state), see main_module/src/main_module.rs.
+
 ## [Usage with `abi_stable` crate](./abi_stable_usage)
 
 Use `cargo run` to compile host, module crates and run host binary.

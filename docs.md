@@ -310,6 +310,7 @@ It's done using `#[global_allocator]` so if you want to set your own global allo
 | Feature                                                    | Linux   | Windows                             |
 |----------------------------------------------------------- |-------  |------------------------------------  |
 | Memory deallocation [(?)](#memory-deallocation)            | ✅      | ✅                                   |
+| Dealloc validation [(?)](#dealloc-validation)              | ✅      | ✅                                   |
 | Panic handling [(?)](#panic-handling)                      | ✅      | ✅                                   |
 | Thread-locals                                              | ✅      | ✅                                   |
 | Background threads check [(?)](#background-threads-check)  | ✅      | ✅                                   |
@@ -336,6 +337,19 @@ unsafe {
 ```
 
 **note:** keep in mind that only Rust allocations are deallocated, so if you call some C library which has memory leak it won't be freed on module unload (you can use `valgrind` or `heaptrack` to debug such cases).
+
+### Dealloc validation
+
+You can enable `dealloc_validation` feature (only works when unloading is enabled) on relib_module crate (not enabled by default since it may affect performance).
+
+`cargo add relib_module --features dealloc_validation`
+
+Example bug this feature can catch:
+
+1. module A creates Vec
+2. `*mut Vec` is passed via host to module B (different global allocator)
+3. module B pushes something into the vec, tries to deallocate old allocation (owned by module A)
+4. boom
 
 ### Background threads check
 
