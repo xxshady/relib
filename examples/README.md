@@ -39,7 +39,7 @@ Use `./run.sh` (you need bash for that if you are on Windows) in live_reload_ext
 
 ## [Hot reload](./hot_reload)
 
-Automatically reload code without resetting state.
+Automatically reload code without state reset.
 
 Use `./run.sh` (you need bash for that if you are on Windows) in hot_reload directory and then change something in hot_reload/update_module/src/update_module.rs.
 
