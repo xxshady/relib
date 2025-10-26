@@ -19,8 +19,12 @@ mod mmap_hooks;
 mod pthread_key_hooks;
 mod helpers;
 mod exports_impl;
+
 mod alloc_tracker;
-pub use alloc_tracker::{_suppress_warn, AllocTracker};
+pub use alloc_tracker::AllocTracker;
+#[cfg(all(feature = "unloading_core", not(feature = "dealloc_validation")))]
+pub use alloc_tracker::_suppress_warn;
+
 #[cfg(target_os = "windows")]
 mod windows_dll_main;
 #[cfg(target_os = "windows")]
