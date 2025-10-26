@@ -35,6 +35,14 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
+            examples/template/target
+            examples/abi_stable_usage/target
+            examples/custom_global_alloc/target
+            examples/different_interfaces/target
+            examples/export_main_macro/target
+            examples/hot_reload/target
+            examples/live_reload/target
+            examples/live_reload_extended/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: build workspace without default features
