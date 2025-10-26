@@ -24,7 +24,7 @@ impl UpdateModule {
   }
 
   fn load_(alloc: Alloc, dealloc: Dealloc) -> AnyErrorResult<Module<ModuleExports>> {
-    let module: Module<ModuleExports> = load_module("update", init_shared_imports, false)?;
+    let module: Module<ModuleExports> = load_module("update_module", init_shared_imports, false)?;
 
     unsafe {
       module
