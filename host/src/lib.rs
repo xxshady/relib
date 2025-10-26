@@ -1,8 +1,8 @@
-use std::{ffi::OsStr, path::Path};
-
-use libloading::Symbol;
-
-use relib_internal_shared::Str;
+use {
+  libloading::Symbol,
+  relib_internal_shared::Str,
+  std::{ffi::OsStr, path::Path},
+};
 
 mod errors;
 pub use errors::LoadError;
@@ -15,10 +15,12 @@ pub use unloading::*;
 mod module;
 pub use module::Module;
 mod helpers;
-use helpers::{is_library_loaded, next_module_id, open_library, path_to_str, LIBRARY_LOADING_GUARD};
+use helpers::{
+  LIBRARY_LOADING_GUARD, is_library_loaded, next_module_id, open_library, path_to_str,
+};
 mod leak_library;
 pub mod exports_types;
-pub use exports_types::{ModuleExportsForHost, InitImports};
+pub use exports_types::{InitImports, ModuleExportsForHost};
 
 #[cfg(target_os = "windows")]
 mod windows;
@@ -82,7 +84,10 @@ pub unsafe fn load_module<E: ModuleExportsForHost>(
   }
 }
 
-/// See [`load_module`]
+/// See [`load_module`].
+///
+/// # Safety
+/// See [`load_module`].
 pub unsafe fn load_module_with_options<E: ModuleExportsForHost>(
   path: impl AsRef<OsStr>,
   init_imports: impl InitImports,
