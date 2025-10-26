@@ -1,12 +1,12 @@
-use proc_macro2::TokenStream as TokenStream2;
-use quote::quote;
-use syn::FnArg;
-
-use relib_internal_shared::output_to_return_type;
-
-use crate::shared::{
-  SAFETY_DOC, TraitFn, extract_trait_name_from_path, for_each_trait_item, out_dir_file_name,
-  parse_trait_file, pass_out_dir_file_name_to_crate_code, type_needs_box, write_code_to_file,
+use {
+  crate::shared::{
+    SAFETY_DOC, TraitFn, extract_trait_name_from_path, for_each_trait_item, out_dir_file_name,
+    parse_trait_file, pass_out_dir_file_name_to_crate_code, type_needs_box, write_code_to_file,
+  },
+  proc_macro2::TokenStream as TokenStream2,
+  quote::quote,
+  relib_internal_shared::output_to_return_type,
+  syn::FnArg,
 };
 
 #[cfg(feature = "internal")]
@@ -16,13 +16,13 @@ pub fn generate_internal(
   imports_file_content: &'static str,
   imports_trait_path: &str,
 ) {
-  generate_exports(
+  generate_exports_(
     exports_file_content,
     exports_trait_path,
     false,
     "internal_generated_module",
   );
-  generate_imports(
+  generate_imports_(
     imports_file_content,
     imports_trait_path,
     false,
@@ -46,13 +46,13 @@ pub fn generate(
   imports_file_content: &'static str,
   imports_trait_path: &str,
 ) {
-  generate_exports(
+  generate_exports_(
     exports_file_content,
     exports_trait_path,
     true,
     "generated_module",
   );
-  generate_imports(
+  generate_imports_(
     imports_file_content,
     imports_trait_path,
     true,
@@ -77,11 +77,49 @@ pub fn generate_with_prefix(
   imports_file_content: &'static str,
   imports_trait_path: &str,
 ) {
-  generate_exports(exports_file_content, exports_trait_path, true, prefix);
-  generate_imports(imports_file_content, imports_trait_path, true, prefix);
+  generate_exports_(exports_file_content, exports_trait_path, true, prefix);
+  generate_imports_(imports_file_content, imports_trait_path, true, prefix);
 }
 
-fn generate_exports(
+#[cfg(feature = "public")]
+pub fn generate_exports(exports_file_content: &'static str, exports_trait_path: &str) {
+  generate_exports_(
+    exports_file_content,
+    exports_trait_path,
+    true,
+    "generated_module",
+  );
+}
+
+#[cfg(feature = "public")]
+pub fn generate_imports(imports_file_content: &'static str, imports_trait_path: &str) {
+  generate_imports_(
+    imports_file_content,
+    imports_trait_path,
+    true,
+    "generated_module",
+  );
+}
+
+#[cfg(feature = "public")]
+pub fn generate_exports_with_prefix(
+  prefix: &str,
+  exports_file_content: &'static str,
+  exports_trait_path: &str,
+) {
+  generate_exports_(exports_file_content, exports_trait_path, true, prefix);
+}
+
+#[cfg(feature = "public")]
+pub fn generate_imports_with_prefix(
+  prefix: &str,
+  imports_file_content: &'static str,
+  imports_trait_path: &str,
+) {
+  generate_imports_(imports_file_content, imports_trait_path, true, prefix);
+}
+
+fn generate_exports_(
   exports_file_content: &'static str,
   exports_trait_path: &str,
   pub_exports: bool,
@@ -207,7 +245,7 @@ fn generate_exports(
   );
 }
 
-fn generate_imports(
+fn generate_imports_(
   imports_file_content: &'static str,
   imports_trait_path: &str,
   pub_imports: bool,

@@ -2,6 +2,7 @@ mod allocator_proxy;
 
 use {
   crate::update,
+  allocator_proxy::ALLOC_PROXY,
   main_contract::{Alloc, Dealloc},
   relib_module as _,
   state::State,
@@ -9,8 +10,7 @@ use {
 };
 
 relib_interface::include_exports!(gen_exports, "update");
-use {allocator_proxy::ALLOC_PROXY, gen_exports::ModuleExportsImpl};
-relib_interface::include_imports!(gen_imports, "update");
+use gen_exports::ModuleExportsImpl;
 
 impl Exports for ModuleExportsImpl {
   fn init_allocator_proxy(alloc: Alloc, dealloc: Dealloc) {

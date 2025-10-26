@@ -1,17 +1,10 @@
 mod shared_imports;
 mod exports;
-mod empty_imports;
-mod empty_exports;
 
-pub use {
-  empty_exports::EmptyExports, empty_imports::EmptyImports, exports::Exports,
-  shared_imports::SharedImports,
-};
+pub use {exports::Exports, shared_imports::SharedImports};
 
 pub const SHARED_IMPORTS: &str = include_str!("shared_imports.rs");
 pub const EXPORTS: &str = include_str!("exports.rs");
-pub const EMPTY_EXPORTS: &str = include_str!("empty_exports.rs");
-pub const EMPTY_IMPORTS: &str = include_str!("empty_imports.rs");
 
 // perhaps hot reload will be implemented directly in relib in the future
 pub use relib_internal_shared::StableLayout;
