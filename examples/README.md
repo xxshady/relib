@@ -41,6 +41,9 @@ Use `./run.sh` (you need bash for that if you are on Windows) in live_reload_ext
 
 Automatically reload code without state reset.
 
+> [!WARNING]
+> It's more complex and unsafe than live reload.
+
 Use `./run.sh` (you need bash for that if you are on Windows) in hot_reload directory and then change something in hot_reload/update_module/src/update_module.rs.
 
 ### Crate structure
