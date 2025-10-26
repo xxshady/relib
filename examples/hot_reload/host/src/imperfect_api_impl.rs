@@ -12,7 +12,7 @@ use gen_imports::ModuleImportsImpl;
 
 thread_local! {
   static ENTITIES: RefCell<HashSet<u64>> = Default::default();
-  static ENTITY_ID_COUNTER: Cell<u64> = Cell::new(1);
+  static ENTITY_ID_COUNTER: Cell<u64> = const { Cell::new(1) };
 }
 
 pub fn despawn_leaked_entities() {
