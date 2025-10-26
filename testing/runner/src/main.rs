@@ -30,19 +30,16 @@ const TEST_FEATURES: &[&str] = &[
 ];
 
 fn main() {
-  dealloc_validation::main();
-
   test_features("debug");
   test_features("release");
 
   multiple_modules::main();
   code_change::main();
   panic_in_interface_host::main();
-
   backtrace_unloading_host_as_dylib::main();
-
   #[cfg(target_os = "windows")]
   windows_background_threads::main();
+  dealloc_validation::main();
 
   println!();
   println!();
