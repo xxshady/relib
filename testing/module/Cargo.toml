@@ -43,6 +43,7 @@ thread-id.workspace = true
 [dependencies.relib_module]
 version = "=0.6.2"
 path = "../../module"
+features = ["dealloc_validation"]
 
 [dependencies.test_shared]
 version = "=0.6.2"
