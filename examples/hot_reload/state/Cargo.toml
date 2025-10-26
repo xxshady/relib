@@ -1,0 +1,10 @@
+[package]
+name = "state"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+path = "src/state.rs"
+
+[dependencies]
+perfect_api = { version = "0.1.0", path = "../perfect_api" }

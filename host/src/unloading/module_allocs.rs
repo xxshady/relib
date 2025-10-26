@@ -42,14 +42,21 @@ pub fn remove_module(
 
   // this check relies on two allocations in alloc tracker of the module,
   // which needed to cache allocation ops
+  #[cfg(not(feature = "disable_global_alloc_warn"))]
   if allocs.is_empty() {
     eprintln!(
       "[relib] warning: seems like this module doesn't have a registered global alloc tracker\n\
       module path: {}\n\
       note: if \"global_alloc_tracker\" feature is disabled, \
-      make sure that you registered relib_module::AllocTracker<A> using #[global_allocator]",
+      make sure that you registered relib_module::AllocTracker<A> using #[global_allocator]\n\
+      note: if you're sure of what you're doing, you can disable this warning by enabling \
+      \"disable_global_alloc_warn\" feature",
       library_path_str
     );
+  }
+  #[cfg(feature = "disable_global_alloc_warn")]
+  {
+    let _ = library_path_str;
   }
 
   let allocs: Box<[Allocation]> = allocs.into_values().collect();

@@ -34,18 +34,13 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for AllocTracker<A> {
 
     let ptr = unsafe { self.allocator.alloc(layout) };
 
-    let c_layout = StableLayout {
-      size: layout.size(),
-      align: layout.align(),
-    };
-
     if ALLOC_INIT.load(Ordering::SeqCst) {
       // TODO: SAFETY
       unsafe {
-        gen_imports::on_alloc(MODULE_ID, ptr, c_layout);
+        gen_imports::on_alloc(MODULE_ID, ptr, layout.into());
       }
     } else {
-      save_alloc_in_cache(ptr, c_layout);
+      save_alloc_in_cache(ptr, layout.into());
     }
 
     ptr
@@ -55,8 +50,8 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for AllocTracker<A> {
     assert_allocator_is_still_accessible();
 
     #[cfg(feature = "dealloc_validation")]
-    if !is_ptr_valid(ptr) {
-      return;
+    if !UNLOAD_DEALLOCATION.load(Ordering::SeqCst) && !is_ptr_valid(ptr) {
+      unrecoverable("invalid pointer was passed to dealloc of global allocator");
     }
 
     // TODO: SAFETY
@@ -65,12 +60,7 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for AllocTracker<A> {
     }
 
     if !UNLOAD_DEALLOCATION.load(Ordering::SeqCst) {
-      let c_layout = StableLayout {
-        size: layout.size(),
-        align: layout.align(),
-      };
-
-      save_dealloc_in_cache(ptr, c_layout);
+      save_dealloc_in_cache(ptr, layout.into());
     }
   }
 }
@@ -167,11 +157,7 @@ pub unsafe fn dealloc(allocs: &[Allocation]) {
 
   for Allocation(AllocatorPtr(ptr), layout) in allocs {
     unsafe {
-      std::alloc::dealloc(
-        *ptr,
-        Layout::from_size_align(layout.size, layout.align)
-          .unwrap_or_else(|_| unrecoverable("Layout::from_size_align")),
-      );
+      std::alloc::dealloc(*ptr, layout.into());
     }
   }
 
@@ -182,7 +168,7 @@ pub unsafe fn dealloc(allocs: &[Allocation]) {
 /// is this pointer allocated by this allocator and is still alive?
 fn is_ptr_valid(ptr: *mut u8) -> bool {
   let cache_contains_ptr = {
-    let cache = &mut lock_allocs_cache();
+    let cache = lock_allocs_cache();
     cache.contains_key(&AllocatorPtr(ptr))
   };
 

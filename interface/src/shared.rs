@@ -66,7 +66,7 @@ pub fn parse_trait_file(
 
   assert_eq!(
     trait_.ident, trait_name,
-    r#"Trait must be named "{trait_name}""#
+    r#"Trait must be named "{trait_name}" since this name was passed in build.rs relib_interface::<...>::generate"#
   );
 
   (trait_.clone(), module_use_items)

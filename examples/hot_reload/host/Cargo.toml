@@ -1,0 +1,29 @@
+[package]
+name = "host"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "host"
+path = "src/host.rs"
+
+[dependencies]
+libloading = "0.8.6"
+relib_interface = { version = "0", path = "../../../interface", features = [
+  "include",
+] }
+main_contract = { version = "0.1.0", path = "../main_contract" }
+update_contract = { version = "0.1.0", path = "../update_contract" }
+anyhow = { version = "1.0.100", features = ["backtrace"] }
+
+[dependencies.relib_host]
+version = "0"
+path = "../../../host"
+features = ["unloading", "disable_global_alloc_warn"]
+
+[build-dependencies]
+relib_interface = { version = "0", path = "../../../interface", features = [
+  "build",
+] }
+main_contract = { version = "0.1.0", path = "../main_contract" }
+update_contract = { version = "0.1.0", path = "../update_contract" }

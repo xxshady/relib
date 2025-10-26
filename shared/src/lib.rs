@@ -1,4 +1,7 @@
-use std::fmt::{Debug, Formatter, Result as FmtResult};
+use std::{
+  alloc::Layout,
+  fmt::{Debug, Formatter, Result as FmtResult},
+};
 
 pub mod exports;
 pub mod imports;
@@ -28,8 +31,30 @@ impl Debug for Allocation {
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct StableLayout {
-  pub size: usize,
-  pub align: usize,
+  size: usize,
+  align: usize,
+}
+
+impl From<Layout> for StableLayout {
+  fn from(layout: Layout) -> Self {
+    Self {
+      size: layout.size(),
+      align: layout.align(),
+    }
+  }
+}
+
+impl From<StableLayout> for Layout {
+  fn from(value: StableLayout) -> Self {
+    // SAFETY: StableLayout can only be created from valid Layout (see From<Layout> impl)
+    unsafe { Layout::from_size_align_unchecked(value.size, value.align) }
+  }
+}
+
+impl From<&StableLayout> for Layout {
+  fn from(value: &StableLayout) -> Self {
+    Layout::from(*value)
+  }
 }
 
 #[repr(C)]

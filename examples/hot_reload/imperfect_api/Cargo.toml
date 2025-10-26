@@ -1,0 +1,19 @@
+[package]
+name = "imperfect_api"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+path = "src/imperfect_api.rs"
+
+[dependencies]
+relib_interface = { version = "0", path = "../../../interface", features = [
+  "include",
+] }
+main_contract = { version = "0.1.0", path = "../main_contract" }
+
+[build-dependencies]
+relib_interface = { version = "0", path = "../../../interface", features = [
+  "build",
+] }
+main_contract = { version = "0.1.0", path = "../main_contract" }
