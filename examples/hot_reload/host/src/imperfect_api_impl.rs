@@ -6,7 +6,7 @@ use {
   },
 };
 
-relib_interface::include_imports!();
+relib_interface::include_imports!(gen_imports, "main_module");
 pub use gen_imports::init_imports as init_shared_imports;
 use gen_imports::ModuleImportsImpl;
 

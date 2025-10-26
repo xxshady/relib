@@ -8,8 +8,8 @@ use {
   relib_host::Module,
 };
 
-relib_interface::include_exports!(gen_exports, "update_module");
-use gen_exports::ModuleExports;
+relib_interface::include_exports!(exports, "update_module");
+use exports::ModuleExports;
 
 pub struct UpdateModule {
   module: Option<Module<ModuleExports>>,

@@ -1,11 +1,12 @@
 #![allow(unused_imports)] // TODO: fix this
 
 mod shared;
+mod main_instance;
 mod update_instance;
 mod imperfect_api_impl;
 
 use {
-  crate::{shared::load_module, update_instance::UpdateModule},
+  crate::{main_instance::MainModule, shared::load_module, update_instance::UpdateModule},
   anyhow::{anyhow, bail},
   imperfect_api_impl::init_shared_imports,
   main_contract::{MainModuleRet, SharedImports, StableLayout},
@@ -23,9 +24,6 @@ use {
   },
 };
 
-relib_interface::include_exports!();
-use gen_exports::ModuleExports;
-
 fn main() {
   if let Err(e) = main_fallible() {
     eprintln!(
@@ -36,10 +34,8 @@ fn main() {
 }
 
 fn main_fallible() -> AnyErrorResult {
-  let (main_module, mut ret) = load_main_module()?;
-  let mut main_module = Some(main_module);
-
-  let mut update_module = UpdateModule::load(ret.alloc, ret.dealloc)?;
+  let mut main_module = MainModule::load()?;
+  let mut update_module = UpdateModule::load(main_module.ret.alloc, main_module.ret.dealloc)?;
 
   let mut build_failed_in_prev_iteration = false;
   loop {
@@ -56,20 +52,7 @@ fn main_fallible() -> AnyErrorResult {
           // leaks are safe in rust
           imperfect_api_impl::despawn_leaked_entities();
 
-          let main_module_ = main_module.take().unwrap();
-
-          unsafe {
-            main_module_.exports().drop_state(ret.state).unwrap();
-          }
-
-          // when unloading fails it is not safe to load it again
-          main_module_
-            .unload()
-            .map_err(|e| anyhow!("main module unloading failed: {e:#}"))?;
-
-          let (main_module_, ret_) = load_main_module()?;
-          ret = ret_;
-          main_module = Some(main_module_);
+          main_module.reload()?;
         }
 
         let update_module_reload = modules.contains(&"update_module");
@@ -88,7 +71,7 @@ fn main_fallible() -> AnyErrorResult {
         }
 
         if let (true, _) | (_, true) = (update_module_reload, main_module_reload) {
-          update_module.reload(ret.alloc, ret.dealloc)?;
+          update_module.reload(main_module.ret.alloc, main_module.ret.dealloc)?;
         }
       }
       BuildResult::Failure(modules) => {
@@ -107,20 +90,12 @@ fn main_fallible() -> AnyErrorResult {
 
     if !build_failed_in_prev_iteration {
       unsafe {
-        update_module.update(ret.state);
+        update_module.update(main_module.ret.state);
       }
     }
 
     thread::sleep(Duration::from_millis(350));
   }
-}
-
-pub fn load_main_module() -> AnyErrorResult<(Module<ModuleExports>, MainModuleRet)> {
-  println!("loading main module");
-
-  let module = load_module("main_module", init_shared_imports, true)?;
-  let ret = unsafe { module.call_main().unwrap() };
-  Ok((module, ret))
 }
 
 // TODO: use json format of cargo build?
