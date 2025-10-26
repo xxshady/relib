@@ -2,21 +2,10 @@ use {
   crate::{
     imperfect_api_impl::init_shared_imports,
     shared::{AnyErrorResult, load_module},
-    update_instance::UpdateModule,
   },
-  anyhow::{anyhow, bail},
-  main_contract::{MainModuleRet, SharedImports, StableLayout},
+  anyhow::anyhow,
+  main_contract::MainModuleRet,
   relib_host::Module,
-  std::{
-    cell::{Cell, RefCell},
-    env,
-    error::Error,
-    path::Path,
-    process::Command,
-    rc::Rc,
-    thread,
-    time::{Duration, Instant},
-  },
 };
 
 relib_interface::include_exports!(gen_exports, "main_module");

@@ -4,7 +4,7 @@ use {
     shared::{AnyErrorResult, load_module},
   },
   anyhow::anyhow,
-  main_contract::{Alloc, Dealloc, StableLayout},
+  main_contract::{Alloc, Dealloc},
   relib_host::Module,
 };
 

@@ -1,14 +1,6 @@
 use {
   relib_host::{InitImports, Module, ModuleExportsForHost},
-  std::{
-    cell::RefCell,
-    error::Error,
-    fs,
-    process::Command,
-    rc::Rc,
-    thread,
-    time::{Duration, Instant},
-  },
+  std::fs,
 };
 
 pub type AnyErrorResult<T = ()> = anyhow::Result<T>;

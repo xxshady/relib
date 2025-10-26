@@ -4,21 +4,13 @@ mod update_instance;
 mod imperfect_api_impl;
 
 use {
-  crate::{main_instance::MainModule, shared::load_module, update_instance::UpdateModule},
-  anyhow::{anyhow, bail},
-  imperfect_api_impl::init_shared_imports,
-  main_contract::{MainModuleRet, SharedImports, StableLayout},
-  relib_host::Module,
+  crate::{main_instance::MainModule, update_instance::UpdateModule},
+  anyhow::bail,
   shared::AnyErrorResult,
   std::{
-    cell::{Cell, RefCell},
-    env,
-    error::Error,
-    path::Path,
     process::Command,
-    rc::Rc,
     thread,
-    time::{Duration, Instant},
+    time::Duration,
   },
 };
 
