@@ -2,4 +2,6 @@ tab_spaces = 2
 reorder_modules = false
 reorder_imports = false
 imports_granularity = "One"
-group_imports = "StdExternalCrate"
+
+# doesn't work with imports_granularity = "One"
+# group_imports = "StdExternalCrate"
