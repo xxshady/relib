@@ -1,4 +1,8 @@
-use std::{error::Error, process::Command, thread, time::Duration};
+use {
+  libloading::library_filename,
+  shared::imports::Imports,
+  std::{error::Error, fs, path::Path, process::Command, thread, time::Duration},
+};
 
 type AnyErrorResult<T = ()> = Result<T, Box<dyn Error>>;
 
@@ -6,8 +10,7 @@ relib_interface::include_exports!();
 use gen_exports::ModuleExports;
 
 relib_interface::include_imports!();
-use gen_imports::{init_imports, ModuleImportsImpl};
-use shared::imports::Imports;
+use gen_imports::{ModuleImportsImpl, init_imports};
 
 impl Imports for ModuleImportsImpl {
   fn foo() -> i32 {
@@ -49,14 +52,15 @@ fn run_host() -> AnyErrorResult {
 }
 
 fn run_module() -> AnyErrorResult {
-  let file_name = if cfg!(windows) {
-    "module.dll"
-  } else {
-    "libmodule.so"
-  };
-  let path_to_dylib = "target/debug/".to_owned() + file_name;
+  let name = "module";
+  let dylib_filename = library_filename(name);
+  let dylib_copy_filename = library_filename(format!("copy_{name}"));
+  let dylib_path = Path::new("target/debug").join(dylib_filename);
+  let dylib_copy_path = Path::new("target/debug").join(dylib_copy_filename);
 
-  let module = unsafe { relib_host::load_module::<ModuleExports>(path_to_dylib, init_imports) }?;
+  fs::copy(&dylib_path, &dylib_copy_path)?;
+
+  let module = unsafe { relib_host::load_module::<ModuleExports>(dylib_path, init_imports) }?;
 
   let module_shared_build_id = unsafe { module.exports().shared_build_id() }.unwrap();
   let host_shared_build_id = shared::build_id();
@@ -68,9 +72,8 @@ fn run_module() -> AnyErrorResult {
       format!(
         "shared crate was modified, module potentially contains incompatible code\n\
         shared build id of:\n\
-        host:   {}\n\
-        module: {}",
-        host_shared_build_id, module_shared_build_id
+        host:   {host_shared_build_id}\n\
+        module: {module_shared_build_id}",
       )
       .into(),
     );
@@ -90,9 +93,7 @@ fn run_module() -> AnyErrorResult {
 }
 
 fn build_module() -> AnyErrorResult<BuildResult> {
-  let output = Command::new("cargo")
-    .args(["build", "--package", "module"])
-    .output()?;
+  let output = Command::new("cargo").args(["build"]).output()?;
   let stderr = String::from_utf8(output.stderr)?;
 
   if !output.status.success() {

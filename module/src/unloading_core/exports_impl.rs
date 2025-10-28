@@ -1,17 +1,20 @@
-use std::{ffi::c_void, sync::atomic::Ordering};
-
-use relib_internal_shared::{exports::___Internal___Exports___ as Exports, ModuleId};
-use super::{
-  alloc_tracker, gen_exports::ModuleExportsImpl, ALLOCATOR_LOCK, HOST_OWNER_THREAD, MODULE_ID,
+use {
+  super::{
+    ALLOCATOR_LOCK, HOST_OWNER_THREAD, MODULE_ID, alloc_tracker, gen_exports::ModuleExportsImpl,
+  },
+  relib_internal_shared::{ModuleId, exports::___Internal___Exports___ as Exports},
+  std::{ffi::c_void, sync::atomic::Ordering},
 };
 
 impl Exports for ModuleExportsImpl {
-  fn init(host_owner_thread: usize, module: ModuleId) {
+  fn init(host_owner_thread: usize, module: ModuleId, enable_alloc_tracker: bool) {
     unsafe {
       HOST_OWNER_THREAD = host_owner_thread;
       MODULE_ID = module;
 
-      alloc_tracker::init();
+      if enable_alloc_tracker {
+        alloc_tracker::init();
+      }
     }
   }
 

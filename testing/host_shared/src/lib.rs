@@ -1,6 +1,8 @@
-use std::env::consts::{DLL_PREFIX, DLL_SUFFIX};
-
-use relib_host::{InitImports, LoadError, Module, ModuleExportsForHost};
+use {
+  libloading::library_filename,
+  relib_host::{InitImports, LoadError, Module, ModuleExportsForHost},
+  std::path::{Path, PathBuf},
+};
 
 pub fn load_module<Exports: ModuleExportsForHost, MainRet: Clone>(
   init_imports: impl InitImports,
@@ -14,7 +16,8 @@ pub fn load_module_with_name<Exports: ModuleExportsForHost, MainRet: Clone>(
   name: &str,
   check_panic: bool,
 ) -> (Module<Exports>, Option<MainRet>) {
-  let path = dylib_filename(name);
+  let path = library_filename(name);
+  let path = PathBuf::from(path);
   load_module_with_path(init_imports, &path, check_panic)
 }
 
@@ -22,18 +25,19 @@ pub fn load_module_with_result<Exports: ModuleExportsForHost, MainRet: Clone>(
   init_imports: impl InitImports,
   check_panic: bool,
 ) -> Result<(Module<Exports>, Option<MainRet>), LoadError> {
-  let path = dylib_filename("test_module");
+  let path = library_filename("test_module");
+  let path = PathBuf::from(path);
   load_module_with_path_and_result(init_imports, &path, check_panic)
 }
 
 pub fn load_module_with_path<Exports: ModuleExportsForHost, MainRet: Clone>(
   init_imports: impl InitImports,
-  path: &str,
+  path: &Path,
   check_panic: bool,
 ) -> (Module<Exports>, Option<MainRet>) {
   load_module_with_path_and_result(init_imports, path, check_panic).unwrap_or_else(|e| {
     panic!(
-      "load_module_with_path_and_result path: {path} failed:\n\
+      "load_module_with_path_and_result path: {path:?} failed:\n\
       {e:#}"
     );
   })
@@ -41,11 +45,10 @@ pub fn load_module_with_path<Exports: ModuleExportsForHost, MainRet: Clone>(
 
 pub fn load_module_with_path_and_result<Exports: ModuleExportsForHost, MainRet: Clone>(
   init_imports: impl InitImports,
-  path: &str,
+  path: &Path,
   check_panic: bool,
 ) -> Result<(Module<Exports>, Option<MainRet>), LoadError> {
-  let target_dir = current_target_dir();
-  let path = format!("{target_dir}/{path}");
+  let path = current_target_dir().join(path);
 
   let module = unsafe { relib_host::load_module::<Exports>(path, init_imports) }?;
 
@@ -58,15 +61,10 @@ pub fn load_module_with_path_and_result<Exports: ModuleExportsForHost, MainRet: 
   Ok((module, ret))
 }
 
-pub fn current_target_dir() -> &'static str {
+pub fn current_target_dir() -> &'static Path {
   if cfg!(debug_assertions) {
-    "target/debug"
+    Path::new("target/debug")
   } else {
-    "target/release"
+    Path::new("target/release")
   }
-}
-
-// TODO: use libloading::library_filename?
-pub fn dylib_filename(name: &str) -> String {
-  format!("{DLL_PREFIX}{name}{DLL_SUFFIX}")
 }

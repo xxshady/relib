@@ -1,6 +1,7 @@
-use std::{cell::RefCell, ffi::c_void};
-
-use crate::{module_allocs, Module, ModuleExportsForHost, unloading::helpers::unrecoverable};
+use {
+  crate::{Module, ModuleExportsForHost, module_allocs, unloading::helpers::unrecoverable},
+  std::{cell::RefCell, ffi::c_void},
+};
 
 thread_local! {
   static DEALLOC_CLOSURE: RefCell<Option<Box<dyn FnOnce()>>> = Default::default();
@@ -28,7 +29,12 @@ pub fn set<E: ModuleExportsForHost>(module: Module<E>, library_path: String) {
     unsafe {
       module.internal_exports.lock_module_allocator();
     }
-    module_allocs::remove_module(module.id, &module.internal_exports, &library_path);
+    module_allocs::remove_module(
+      module.id,
+      &module.internal_exports,
+      &library_path,
+      module.alloc_tracker_enabled,
+    );
   })));
 }
 

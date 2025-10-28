@@ -24,7 +24,9 @@ pub fn provide() {
   };
 
   const ENV_KEY: &str = "__RELIB__CRATE_COMPILATION_INFO__";
-  println!("cargo:rustc-env={ENV_KEY}={rustc_version}|{host}|{llvm_version}|{workspace_version}|{unloading_enabled}");
+  println!(
+    "cargo:rustc-env={ENV_KEY}={rustc_version}|{host}|{llvm_version}|{workspace_version}|{unloading_enabled}"
+  );
 }
 
 fn get_rust_versions() -> String {

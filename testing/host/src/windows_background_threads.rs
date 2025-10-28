@@ -1,9 +1,9 @@
-use std::{thread, time::Duration};
-
-use cfg_if::cfg_if;
-
-use relib_host::{Module, ModuleExportsForHost};
-use crate::shared::{self, init_module_imports, ModuleExports};
+use {
+  crate::shared::{self, ModuleExports, init_module_imports},
+  cfg_if::cfg_if,
+  relib_host::{Module, ModuleExportsForHost},
+  std::{thread, time::Duration},
+};
 
 pub fn main() {
   thread::scope(|s| {
@@ -13,7 +13,7 @@ pub fn main() {
       unsafe {
         module
           .exports()
-          .spawn_background_threads(module.id, 3)
+          .spawn_background_threads(module.id(), 3)
           .unwrap();
       }
 
@@ -34,7 +34,7 @@ pub fn main() {
       unsafe {
         module
           .exports()
-          .spawn_background_threads(module.id, 5)
+          .spawn_background_threads(module.id(), 5)
           .unwrap();
       }
 
@@ -54,7 +54,7 @@ pub fn main() {
 fn unload_module<E: ModuleExportsForHost>(module: Module<E>) {
   cfg_if! {
     if #[cfg(feature = "windows_background_threads")] {
-      let id = module.id;
+      let id = module.id();
       module.unload().unwrap();
       println!("{:?} unloaded module: {id}", std::thread::current().id());
     } else {

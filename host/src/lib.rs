@@ -1,8 +1,8 @@
-use std::{ffi::OsStr, path::Path};
-
-use libloading::Symbol;
-
-use relib_internal_shared::Str;
+use {
+  libloading::Symbol,
+  relib_internal_shared::Str,
+  std::{ffi::OsStr, path::Path},
+};
 
 mod errors;
 pub use errors::LoadError;
@@ -15,10 +15,12 @@ pub use unloading::*;
 mod module;
 pub use module::Module;
 mod helpers;
-use helpers::{is_library_loaded, next_module_id, open_library, path_to_str, LIBRARY_LOADING_GUARD};
+use helpers::{
+  LIBRARY_LOADING_GUARD, is_library_loaded, next_module_id, open_library, path_to_str,
+};
 mod leak_library;
 pub mod exports_types;
-pub use exports_types::{ModuleExportsForHost, InitImports};
+pub use exports_types::{InitImports, ModuleExportsForHost};
 
 #[cfg(target_os = "windows")]
 mod windows;
@@ -39,15 +41,13 @@ mod windows;
 ///
 /// # Example
 /// ```
-/// let path_to_dylib = if cfg!(target_os = "linux") {
-///   "target/debug/libmodule.so"
-/// } else {
-///   "target/debug/module.dll"
-/// };
+/// use {std::path::Path, libloading::library_filename};
+///
+/// let dylib_path = Path::new("target/debug").join(library_filename("module"));
 ///
 /// // `()` means empty imports and exports, module doesn't import or export anything
 /// let module = unsafe {
-///   relib_host::load_module::<()>(path_to_dylib, ())
+///   relib_host::load_module::<()>(dylib_path, ())
 /// };
 /// let module = module.unwrap_or_else(|e| {
 ///   panic!("module loading failed: {e:#}");
@@ -55,8 +55,8 @@ mod windows;
 ///
 /// // main function is unsafe to call (as well as any other module export) because these pre-conditions are not checked by relib:
 /// // - Returned value must be actually `R` at runtime. For example if you called this function with type bool but module returns i32, UB will occur.
-/// // - Type of return value must be FFI-safe.
-/// // - Returned value must not be a reference-counting pointer (see caveats in README or docs page).
+/// // - Type of return value must be ABI-stable.
+/// // - Returned value must not be a reference-counting pointer or &'static T (see caveats on main docs page/README).
 /// let returned_value = unsafe { module.call_main::<()>() };
 ///
 /// // if module panics while executing any export it returns None
@@ -71,6 +71,27 @@ mod windows;
 pub unsafe fn load_module<E: ModuleExportsForHost>(
   path: impl AsRef<OsStr>,
   init_imports: impl InitImports,
+) -> Result<Module<E>, crate::LoadError> {
+  unsafe {
+    load_module_with_options(
+      path,
+      init_imports,
+      #[cfg(feature = "unloading")]
+      true,
+    )
+  }
+}
+
+/// See [`load_module`].
+///
+/// # Safety
+/// See [`load_module`].
+pub unsafe fn load_module_with_options<E: ModuleExportsForHost>(
+  path: impl AsRef<OsStr>,
+  init_imports: impl InitImports,
+
+  // needs to be passed at runtime because host can load different modules with enabled and disabled alloc tracker
+  #[cfg(feature = "unloading")] enable_alloc_tracker: bool,
 ) -> Result<Module<E>, crate::LoadError> {
   // prevent parallel loading of the same dynamic library
   // to guarantee that LoadError::ModuleAlreadyLoaded is returned
@@ -127,7 +148,7 @@ pub unsafe fn load_module<E: ModuleExportsForHost>(
 
     let internal_exports = unloading::InternalModuleExports::new(&library);
     unsafe {
-      internal_exports.init(thread_id::get(), module_id);
+      internal_exports.init(thread_id::get(), module_id, enable_alloc_tracker);
     }
     internal_exports
   };
@@ -140,7 +161,7 @@ pub unsafe fn load_module<E: ModuleExportsForHost>(
     library,
     pub_exports,
     #[cfg(feature = "unloading")]
-    (internal_exports, path.to_owned()),
+    (internal_exports, path.to_owned(), enable_alloc_tracker),
   );
 
   #[cfg(all(target_os = "windows", feature = "unloading"))]

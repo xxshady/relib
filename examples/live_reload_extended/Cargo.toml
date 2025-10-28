@@ -1,6 +1,12 @@
 [workspace]
 resolver = "3" # edition "2024" implies resolver "3"
-members = ["host", "module", "shared"]
+members = [
+  "host",
+  "module",
+  "shared",
+  "shared_dependency",
+  "shared_dependency_of_dependency",
+]
 
 [workspace.package]
 version = "0.1.0"

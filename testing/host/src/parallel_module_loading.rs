@@ -1,7 +1,8 @@
-use std::sync::atomic::{AtomicBool, Ordering::SeqCst};
-
-use relib_host::LoadError;
-use crate::shared::{self, init_module_imports, ModuleExports};
+use {
+  crate::shared::{self, ModuleExports, init_module_imports},
+  relib_host::LoadError,
+  std::sync::atomic::{AtomicBool, Ordering::SeqCst},
+};
 
 static SECOND_CALL: AtomicBool = AtomicBool::new(false);
 

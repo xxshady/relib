@@ -1,9 +1,10 @@
-use cfg_if::cfg_if;
-
-use relib_host::{Module, ModuleExportsForHost};
-use test_shared::{assert_mem_dealloc, print_memory_use, SIZE_200_MB};
-use crate::shared::{
-  init_module_imports, load_module, DropCallState, ModuleExports, THREAD_LOCAL_DROP_CALL_STATE,
+use {
+  crate::shared::{
+    DropCallState, ModuleExports, THREAD_LOCAL_DROP_CALL_STATE, init_module_imports, load_module,
+  },
+  cfg_if::cfg_if,
+  relib_host::{Module, ModuleExportsForHost},
+  test_shared::{SIZE_200_MB, assert_mem_dealloc, print_memory_use},
 };
 
 fn unload_module<E: ModuleExportsForHost>(module: Module<E>) {

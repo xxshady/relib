@@ -1,12 +1,13 @@
-use std::{
-  io::{Read, Write},
-  process::{ChildStderr, Command, Stdio},
-  sync::atomic::{AtomicI32, Ordering::Relaxed},
-  thread,
-  time::Duration,
+use {
+  crate::helpers::{cmd, host_bin_by_directory},
+  std::{
+    io::{Read, Write},
+    process::{ChildStderr, Command, Stdio},
+    sync::atomic::{AtomicI32, Ordering::Relaxed},
+    thread,
+    time::Duration,
+  },
 };
-
-use crate::helpers::{cmd, host_bin_by_directory};
 
 pub fn main() {
   let (build_debug, build_release) =

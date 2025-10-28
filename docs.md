@@ -45,7 +45,7 @@ unloading = ["relib_host/unloading"]
 - Add the following to `main.rs` of host:
 ```rust
 fn main() {
-  let path_to_dylib = if cfg!(target_os = "linux") {
+  let dylib_path = if cfg!(target_os = "linux") {
     "target/debug/libmodule.so"
   } else {
     "target/debug/module.dll"
@@ -53,7 +53,7 @@ fn main() {
 
   // `()` means empty imports and exports, here module doesn't import or export anything
   let module = unsafe {
-    relib_host::load_module::<()>(path_to_dylib, ())
+    relib_host::load_module::<()>(dylib_path, ())
   };
   let module = module.unwrap_or_else(|e| {
     panic!("module loading failed: {e:#}");
@@ -61,8 +61,8 @@ fn main() {
 
   // main function is unsafe to call (as well as any other module export) because these preconditions are not checked by relib:
   // 1. returned value must be actually `R` at runtime, for example you called this function with type bool but module returns i32.
-  // 2. type of return value must be FFI-safe.
-  // 3. returned value must not be a reference-counting pointer (see caveats on main docs page/README).
+  // 2. type of return value must be ABI-stable.
+  // 3. returned value must not be a reference-counting pointer or &'static T (see caveats on main docs page/README).
   let returned_value: Option<()> = unsafe {
     module.call_main::<()>()
   };
@@ -219,7 +219,7 @@ impl shared::imports::Imports for gen_imports::ModuleImportsImpl {
 ```rust
 let module = unsafe {
   relib_host::load_module::<()>(
-    path_to_dylib,
+    dylib_path,
     gen_imports::init_imports,
   )
 };
@@ -228,10 +228,10 @@ let module = unsafe {
 - And now we can call "foo" from module/src/lib.rs:
 ```rust
 // both imports and exports are unsafe to call since these preconditions are not checked by relib:
-// 1. types of arguments and return value must be FFI-safe
+// 1. types of arguments and return value must be ABI-stable
 //    (you can use abi_stable or stabby crate for it, see "abi_stable_usage" example).
 // 2. host and module crates must be compiled with same shared crate code.
-// 3. returned value must not be a reference-counting pointer (see caveats on main docs page/README).
+// 3. returned value must not be a reference-counting pointer or &'static T (see caveats on main docs page/README).
 let value = unsafe { gen_imports::foo() }; // gen_imports is defined by relib_interface::include_imports!()
 dbg!(value); // prints "value = 10"
 ```
@@ -257,7 +257,7 @@ impl shared::exports::Exports for gen_exports::ModuleExportsImpl {
 // in host/src/main.rs:
 let module = unsafe {
   relib_host::load_module::<gen_exports::ModuleExports>(
-    path_to_dylib,
+    dylib_path,
     gen_imports::init_imports,
   )
 };
@@ -310,6 +310,7 @@ It's done using `#[global_allocator]` so if you want to set your own global allo
 | Feature                                                    | Linux   | Windows                             |
 |----------------------------------------------------------- |-------  |------------------------------------  |
 | Memory deallocation [(?)](#memory-deallocation)            | ✅      | ✅                                   |
+| Dealloc validation [(?)](#dealloc-validation)              | ✅      | ✅                                   |
 | Panic handling [(?)](#panic-handling)                      | ✅      | ✅                                   |
 | Thread-locals                                              | ✅      | ✅                                   |
 | Background threads check [(?)](#background-threads-check)  | ✅      | ✅                                   |
@@ -336,6 +337,19 @@ unsafe {
 ```
 
 **note:** keep in mind that only Rust allocations are deallocated, so if you call some C library which has memory leak it won't be freed on module unload (you can use `valgrind` or `heaptrack` to debug such cases).
+
+### Dealloc validation
+
+You can enable `dealloc_validation` feature (only works when unloading is enabled) on relib_module crate (not enabled by default since it may affect performance).
+
+`cargo add relib_module --features dealloc_validation`
+
+Example bug this feature can catch:
+
+1. module A creates Vec
+2. `*mut Vec` is passed via host to module B (different global allocator)
+3. module B pushes something into the vec, tries to deallocate old allocation (owned by module A)
+4. boom
 
 ### Background threads check
 

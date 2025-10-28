@@ -1,8 +1,9 @@
-use std::fs;
-
-use crate::{
-  cmd,
-  helpers::{call_host_by_directory, dylib_filename},
+use {
+  crate::{
+    cmd,
+    helpers::{call_host_by_directory, dylib_filename},
+  },
+  std::fs,
 };
 
 pub fn main() {

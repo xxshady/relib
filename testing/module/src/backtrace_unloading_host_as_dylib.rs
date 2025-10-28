@@ -13,7 +13,7 @@ pub fn main() {
       "backtrace was:\n{backtrace}",
     );
     assert!(
-      backtrace.contains(&format!("testing{s}host_as_dylib{s}src{s}lib.rs:30")),
+      backtrace.contains(&format!("testing{s}host_as_dylib{s}src{s}lib.rs:33")),
       "backtrace was:\n{backtrace}",
     );
   } else {

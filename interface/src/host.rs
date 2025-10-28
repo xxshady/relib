@@ -1,20 +1,13 @@
-use proc_macro2::TokenStream as TokenStream2;
-use quote::quote;
-
-use relib_internal_shared::output_to_return_type;
-
-use crate::shared::{
-  extract_trait_name_from_path, for_each_trait_item, parse_trait_file, type_needs_box,
-  write_code_to_file, TraitFn, SAFETY_DOC,
+use {
+  crate::shared::{
+    SAFETY_DOC, TraitFn, extract_trait_name_from_path, for_each_trait_item, out_dir_file_name,
+    parse_trait_file, pass_out_dir_file_name_to_crate_code, type_needs_box, write_code_to_file,
+  },
+  proc_macro2::TokenStream as TokenStream2,
+  quote::quote,
+  relib_internal_shared::output_to_return_type,
 };
 
-/// Will generate `generated_module_exports.rs` and `generated_module_imports.rs` in the OUT_DIR which you can include
-/// using `include!(concat!(env!("OUT_DIR"), "/<file>"));` in your `lib.rs` or `main.rs`
-/// and then use `ModuleExports` struct:
-/// ```
-/// let exports = ModuleExports::new(library);
-/// exports.something();
-/// ```
 #[cfg(feature = "internal")]
 pub fn generate_internal(
   exports_file_content: &'static str,
@@ -22,13 +15,24 @@ pub fn generate_internal(
   imports_file_content: &'static str,
   imports_trait_path: &str,
 ) {
-  generate_exports(exports_file_content, exports_trait_path, false);
-  generate_imports(imports_file_content, imports_trait_path, false);
+  generate_exports_(
+    exports_file_content,
+    exports_trait_path,
+    false,
+    "internal_generated_module",
+  );
+  generate_imports_(
+    imports_file_content,
+    imports_trait_path,
+    false,
+    "internal_generated_module",
+  );
 }
 
-/// Will generate `generated_module_exports.rs` and `generated_module_imports.rs` in the OUT_DIR which you can include
-/// using `include!(concat!(env!("OUT_DIR"), "/<file>"));` in your `lib.rs` or `main.rs`
-/// and then use `ModuleExports` struct:
+/// Will generate `generated_module_exports.rs` and `generated_module_imports.rs`
+/// in the OUT_DIR which you can include using
+/// `relib_interface::include_exports!();` and `relib_interface::include_exports!();`
+/// in your `lib.rs` or `main.rs` and then use `ModuleExports` struct:
 /// ```
 /// let exports = ModuleExports::new(library);
 /// exports.something();
@@ -40,15 +44,85 @@ pub fn generate(
   imports_file_content: &'static str,
   imports_trait_path: &str,
 ) {
-  generate_exports(exports_file_content, exports_trait_path, true);
-  generate_imports(imports_file_content, imports_trait_path, true);
+  generate_exports_(
+    exports_file_content,
+    exports_trait_path,
+    true,
+    "generated_module",
+  );
+  generate_imports_(
+    imports_file_content,
+    imports_trait_path,
+    true,
+    "generated_module",
+  );
 }
 
-fn generate_exports(
+/// Will generate `{prefix}_exports.rs` and `{prefix}_imports.rs` in the OUT_DIR which you can include
+/// using `relib_interface::include_exports!(gen_exports, <prefix>);` and `relib_interface::include_imports!(gen_imports, <prefix>);`
+/// in your `lib.rs` or `main.rs` and then use `ModuleExports` struct:
+/// ```
+/// let exports = ModuleExports::new(library);
+/// exports.something();
+/// ```
+#[cfg(feature = "public")]
+pub fn generate_with_prefix(
+  prefix: &str,
+  exports_file_content: &'static str,
+  exports_trait_path: &str,
+  imports_file_content: &'static str,
+  imports_trait_path: &str,
+) {
+  generate_exports_(exports_file_content, exports_trait_path, true, prefix);
+  generate_imports_(imports_file_content, imports_trait_path, true, prefix);
+}
+
+#[cfg(feature = "public")]
+pub fn generate_exports(exports_file_content: &'static str, exports_trait_path: &str) {
+  generate_exports_(
+    exports_file_content,
+    exports_trait_path,
+    true,
+    "generated_module",
+  );
+}
+
+#[cfg(feature = "public")]
+pub fn generate_imports(imports_file_content: &'static str, imports_trait_path: &str) {
+  generate_imports_(
+    imports_file_content,
+    imports_trait_path,
+    true,
+    "generated_module",
+  );
+}
+
+#[cfg(feature = "public")]
+pub fn generate_exports_with_prefix(
+  prefix: &str,
+  exports_file_content: &'static str,
+  exports_trait_path: &str,
+) {
+  generate_exports_(exports_file_content, exports_trait_path, true, prefix);
+}
+
+#[cfg(feature = "public")]
+pub fn generate_imports_with_prefix(
+  prefix: &str,
+  imports_file_content: &'static str,
+  imports_trait_path: &str,
+) {
+  generate_imports_(imports_file_content, imports_trait_path, true, prefix);
+}
+
+fn generate_exports_(
   exports_file_content: &'static str,
   exports_trait_path: &str,
   pub_exports: bool,
+  prefix: &str,
 ) {
+  pass_out_dir_file_name_to_crate_code(prefix, "exports");
+
   let trait_name = extract_trait_name_from_path(exports_trait_path);
   let (exports_trait, module_use_items) =
     parse_trait_file(trait_name, exports_file_content, exports_trait_path);
@@ -69,13 +143,20 @@ fn generate_exports(
       post_mangled_name,
       post_mangled_ident: _,
       lifetimes_for,
-      lifetimes_full,
+      lifetimes_full: _,
+      lifetimes_where_module,
+      lifetimes_module,
     } = for_each_trait_item(trait_name, item);
 
     let pub_return_type = output_to_return_type!(output);
 
-    let panic_message =
-      format!(r#"Failed to get "{ident}" fn symbol from module (mangled name: "{mangled_name}")"#);
+    let panic_message = format!(
+      "Couldn't find \"{ident}\" export\n\
+      note: make sure this module implements {exports_trait_path} trait\n\
+      note: if `relib_interface::include_exports!()` is used not in module crate, \
+      make sure the crate (that invokes `include_exports`) is used in module crate, for example you can do so by \
+      using this syntax: `use <crate> as _;`"
+    );
 
     let post_panic_message = format!(
       r#"Failed to get "{post_ident}" fn symbol from module (mangled name: "{post_mangled_name}")"#
@@ -85,6 +166,10 @@ fn generate_exports(
       #ident: unsafe {
         *library.get(concat!(#mangled_name, "\0").as_bytes()).expect(#panic_message)
       },
+    };
+
+    let ignore_code_style_warns = quote! {
+      #[allow(clippy::needless_lifetimes)]
     };
 
     // !!! keep in sync with main and before_unload calls in relib_host crate !!!
@@ -149,10 +234,12 @@ fn generate_exports(
           /// ```
           #[doc = #SAFETY_DOC]
           #[must_use = "returns None if module panics, consider unloading module if it panicked, as it is unsafe to call it again"]
-          pub unsafe fn #ident #lifetimes_full (
-            &self,
+          #ignore_code_style_warns
+          pub unsafe fn #ident <'module, #lifetimes_module> (
+            &'module self,
             #inputs
           ) -> Option<#pub_return_type>
+          #lifetimes_where_module
           {
             /// All parameters must be Copy, see relib caveats in the readme for more info.
             fn ____assert_type_is_copy____(_: impl Copy) {}
@@ -184,7 +271,10 @@ fn generate_exports(
         import_init,
         quote! {
           #[doc = #SAFETY_DOC]
-          pub unsafe fn #ident #lifetimes_full ( &self, #inputs ) -> #pub_return_type {
+          #ignore_code_style_warns
+          pub unsafe fn #ident #lifetimes_module ( &self, #inputs ) -> #pub_return_type
+          #lifetimes_where_module
+          {
             #[allow(clippy::let_unit_value)]
             let return_value = (self.#ident)( #( #inputs_without_types )* );
             return_value
@@ -205,7 +295,7 @@ fn generate_exports(
   };
 
   write_code_to_file(
-    "generated_module_exports.rs",
+    &out_dir_file_name(prefix, "exports"),
     quote! {
       #module_use_items
 
@@ -235,16 +325,19 @@ fn generate_exports(
   );
 }
 
-fn generate_imports(
+fn generate_imports_(
   imports_file_content: &'static str,
   imports_trait_path: &str,
   pub_imports: bool,
+  prefix: &str,
 ) {
+  pass_out_dir_file_name_to_crate_code(prefix, "imports");
+
   let trait_name = extract_trait_name_from_path(imports_trait_path);
   let (imports_trait, module_use_items) =
     parse_trait_file(trait_name, imports_file_content, imports_trait_path);
 
-  let imports_trait_path: syn::Path =
+  let imports_trait_path_syn: syn::Path =
     syn::parse_str(imports_trait_path).expect("Failed to parse imports_trait_path as syn::Path");
 
   let mut imports = Vec::<TokenStream2>::new();
@@ -262,10 +355,17 @@ fn generate_imports(
       post_mangled_ident: _,
       lifetimes_for,
       lifetimes_full,
+      lifetimes_where_module: _,
+      lifetimes_module: _,
     } = for_each_trait_item(trait_name, &item);
 
-    let panic_message =
-      format!(r#"Failed to get "{mangled_name}" symbol of static function pointer from module"#);
+    let panic_message = format!(
+      "Couldn't find \"{ident}\" import\n\
+      note: make sure this module expects {imports_trait_path} trait\n\
+      note: if `relib_interface::include_imports!()` is used not in module crate, \
+      make sure (that invokes `include_imports`) is used in module crate, for example you can do so by \
+      using this syntax: `use <crate> as _;`"
+    );
 
     let post_panic_message = format!(
       r#"Failed to get "{post_mangled_name}" symbol of static function pointer from module"#
@@ -368,11 +468,11 @@ fn generate_imports(
   }
 
   write_code_to_file(
-    "generated_module_imports.rs",
+    &out_dir_file_name(prefix, "imports"),
     quote! {
       #module_use_items
 
-      use #imports_trait_path as Imports;
+      use #imports_trait_path_syn as Imports;
 
       /// Struct for implementing your `Imports` trait
       pub struct ModuleImportsImpl;

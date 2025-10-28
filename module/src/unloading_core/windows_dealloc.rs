@@ -8,12 +8,13 @@
 // I know that this is horrible but I didn't find any better solution,
 // let's hope that the current behavior won't change :sadge_pray:
 
-use std::{
-  ffi::c_void,
-  sync::atomic::{AtomicBool, Ordering::Relaxed},
+use {
+  super::{MODULE_ID, helpers::unrecoverable, windows_dll_main::DLL_PROCESS_DETACH},
+  std::{
+    ffi::c_void,
+    sync::atomic::{AtomicBool, Ordering::Relaxed},
+  },
 };
-
-use super::{helpers::unrecoverable, windows_dll_main::DLL_PROCESS_DETACH, MODULE_ID};
 
 static SUPER_SPECIAL_CALLBACK_CALLED: AtomicBool = AtomicBool::new(false);
 

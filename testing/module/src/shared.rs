@@ -1,15 +1,15 @@
-use std::{
-  mem::forget,
-  sync::{
-    atomic::{AtomicBool, Ordering::Relaxed},
-    Mutex, MutexGuard,
+use {
+  abi_stable::std_types::{RStr, RString, RVec},
+  std::{
+    mem::forget,
+    sync::{
+      Mutex, MutexGuard,
+      atomic::{AtomicBool, Ordering::Relaxed},
+    },
+    thread::{self, JoinHandle},
   },
-  thread::{self, JoinHandle},
+  test_shared::{SIZE_200_MB, assert_mem_dealloc, exports::Exports},
 };
-
-use abi_stable::std_types::{RStr, RString, RVec};
-
-use test_shared::{assert_mem_dealloc, exports::Exports, SIZE_200_MB};
 
 relib_interface::include_imports!();
 relib_interface::include_exports!();

@@ -1,0 +1,8 @@
+[package]
+name = "main_contract"
+version.workspace = true
+edition.workspace = true
+
+[dependencies.relib_internal_shared]
+version = "0"
+path = "../../../shared"

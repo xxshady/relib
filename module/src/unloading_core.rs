@@ -1,9 +1,10 @@
-use std::sync::atomic::{AtomicBool, Ordering};
+use {
+  relib_internal_shared::ModuleId,
+  std::sync::atomic::{AtomicBool, Ordering},
+};
 
-use relib_internal_shared::ModuleId;
-
-relib_interface::include_exports!();
-relib_interface::include_imports!();
+relib_interface::include_exports!(gen_exports, "internal_generated_module");
+relib_interface::include_imports!(gen_imports, "internal_generated_module");
 
 #[cfg(target_os = "linux")]
 mod thread_locals;
@@ -18,8 +19,12 @@ mod mmap_hooks;
 mod pthread_key_hooks;
 mod helpers;
 mod exports_impl;
+
 mod alloc_tracker;
 pub use alloc_tracker::AllocTracker;
+#[cfg(all(feature = "unloading_core", not(feature = "dealloc_validation")))]
+pub use alloc_tracker::_suppress_warn;
+
 #[cfg(target_os = "windows")]
 mod windows_dll_main;
 #[cfg(target_os = "windows")]
@@ -31,8 +36,7 @@ mod windows_dealloc;
 /// store allocations we need to allocate unknown amount of memory.
 #[cfg(feature = "global_alloc_tracker")]
 mod __alloc_tracker {
-  use std::alloc::System;
-  use super::AllocTracker;
+  use {super::AllocTracker, std::alloc::System};
 
   #[global_allocator]
   static ALLOC_TRACKER: AllocTracker<System> = AllocTracker::new(System);

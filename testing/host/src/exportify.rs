@@ -1,6 +1,7 @@
-use cfg_if::cfg_if;
-
-use crate::shared::{init_module_imports, load_module};
+use {
+  crate::shared::{init_module_imports, load_module},
+  cfg_if::cfg_if,
+};
 
 cfg_if! {
   if #[cfg(feature = "ret_primitive_main")] {

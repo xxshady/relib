@@ -1,7 +1,8 @@
-use cfg_if::cfg_if;
-
-use relib_host::{Module, ModuleExportsForHost};
-use crate::shared::{self, init_module_imports, ModuleExports};
+use {
+  crate::shared::{self, ModuleExports, init_module_imports},
+  cfg_if::cfg_if,
+  relib_host::{Module, ModuleExportsForHost},
+};
 
 pub fn main() {
   let module = load_module("windows_background_threads__test_module_0");
@@ -9,7 +10,7 @@ pub fn main() {
   unsafe {
     module
       .exports()
-      .spawn_background_threads(module.id, 3)
+      .spawn_background_threads(module.id(), 3)
       .unwrap();
   }
 

@@ -1,7 +1,10 @@
-use super::{allocator_lock, gen_imports, HOST_OWNER_THREAD};
+use {
+  super::{HOST_OWNER_THREAD, allocator_lock, gen_imports},
+  crate::unloading_core::MODULE_ID,
+};
 
 pub fn unrecoverable(message: &str) -> ! {
-  unsafe { gen_imports::unrecoverable(message.into()) }
+  unsafe { gen_imports::unrecoverable(MODULE_ID, message.into()) }
 }
 
 pub fn assert_allocator_is_still_accessible() {

@@ -1,18 +1,17 @@
-use std::{
-  alloc::{GlobalAlloc, Layout},
-  collections::HashMap,
-  sync::{
-    atomic::{AtomicBool, Ordering},
-    LazyLock, Mutex, MutexGuard,
+use {
+  super::{
+    MODULE_ID, gen_imports,
+    helpers::{assert_allocator_is_still_accessible, unrecoverable},
   },
-};
-
-use relib_internal_shared::{Allocation, AllocatorOp, AllocatorPtr, StableLayout};
-
-use super::{
-  gen_imports,
-  helpers::{assert_allocator_is_still_accessible, unrecoverable},
-  MODULE_ID,
+  relib_internal_shared::{Allocation, AllocatorOp, AllocatorPtr, StableLayout},
+  std::{
+    alloc::{GlobalAlloc, Layout},
+    collections::HashMap,
+    sync::{
+      LazyLock, Mutex, MutexGuard,
+      atomic::{AtomicBool, Ordering},
+    },
+  },
 };
 
 static UNLOAD_DEALLOCATION: AtomicBool = AtomicBool::new(false);
@@ -34,18 +33,13 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for AllocTracker<A> {
 
     let ptr = unsafe { self.allocator.alloc(layout) };
 
-    let c_layout = StableLayout {
-      size: layout.size(),
-      align: layout.align(),
-    };
-
     if ALLOC_INIT.load(Ordering::SeqCst) {
       // TODO: SAFETY
       unsafe {
-        gen_imports::on_alloc(MODULE_ID, ptr, c_layout);
+        gen_imports::on_alloc(MODULE_ID, ptr, layout.into());
       }
     } else {
-      save_alloc_in_cache(ptr, c_layout);
+      save_alloc_in_cache(ptr, layout.into());
     }
 
     ptr
@@ -54,18 +48,18 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for AllocTracker<A> {
   unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
     assert_allocator_is_still_accessible();
 
+    #[cfg(feature = "dealloc_validation")]
+    if !UNLOAD_DEALLOCATION.load(Ordering::SeqCst) && !is_ptr_valid(ptr) {
+      unrecoverable("invalid pointer was passed to dealloc of global allocator");
+    }
+
     // TODO: SAFETY
     unsafe {
       self.allocator.dealloc(ptr, layout);
     }
 
     if !UNLOAD_DEALLOCATION.load(Ordering::SeqCst) {
-      let c_layout = StableLayout {
-        size: layout.size(),
-        align: layout.align(),
-      };
-
-      save_dealloc_in_cache(ptr, c_layout);
+      save_dealloc_in_cache(ptr, layout.into());
     }
   }
 }
@@ -162,13 +156,28 @@ pub unsafe fn dealloc(allocs: &[Allocation]) {
 
   for Allocation(AllocatorPtr(ptr), layout) in allocs {
     unsafe {
-      std::alloc::dealloc(
-        *ptr,
-        Layout::from_size_align(layout.size, layout.align)
-          .unwrap_or_else(|_| unrecoverable("Layout::from_size_align")),
-      );
+      std::alloc::dealloc(*ptr, layout.into());
     }
   }
 
   UNLOAD_DEALLOCATION.swap(false, Ordering::SeqCst);
+}
+
+#[cfg(feature = "dealloc_validation")]
+/// is this pointer allocated by this allocator and is still alive?
+fn is_ptr_valid(ptr: *mut u8) -> bool {
+  let cache_contains_ptr = {
+    let cache = lock_allocs_cache();
+    cache.contains_key(&AllocatorPtr(ptr))
+  };
+
+  cache_contains_ptr || unsafe { gen_imports::is_ptr_allocated(MODULE_ID, ptr) }
+}
+
+#[cfg(not(feature = "dealloc_validation"))]
+#[expect(unreachable_code)]
+pub fn _suppress_warn() {
+  unsafe {
+    gen_imports::is_ptr_allocated(unreachable!(), unreachable!());
+  }
 }

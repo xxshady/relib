@@ -1,6 +1,8 @@
-use proc_macro::TokenStream;
-use quote::{quote, ToTokens};
-use syn::{spanned::Spanned, ItemFn, ReturnType};
+use {
+  proc_macro::TokenStream,
+  quote::{ToTokens, quote},
+  syn::{ItemFn, ReturnType, spanned::Spanned},
+};
 
 #[proc_macro_attribute]
 pub fn main_export(_args: TokenStream, input: TokenStream) -> TokenStream {

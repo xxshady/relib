@@ -1,6 +1,7 @@
-use std::process::Command;
-
-use crate::helpers::{cmd, host_bin_by_directory};
+use {
+  crate::helpers::{cmd, host_bin_by_directory},
+  std::process::Command,
+};
 
 pub fn main() {
   let (build_debug, build_release) = cmd!(

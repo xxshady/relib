@@ -20,11 +20,42 @@ When module is reloaded host checks if it's still on the same "snapshot" of shar
 <details>
 <summary>How it works</summary>
 
+---
+
 shared crate defines build id (which is just a timestamp of when the crate was built) and it's used to check if host and module are using the same "snapshot" of the shared crate.
+
+Why `./run.sh`? host and module crates needs to be built with the same `cargo build` command, from the same root directory,
+so that build.rs in shared crate is working correctly, also host binary needs to be copied to avoid conflicts with `cargo build`
+runner in the host binary.
+
+Instead of timestamp approach we could, for example, hash shared directory + root Cargo.lock + directories of local dependencies
+but it would be more complex to implement.
+
+---
 
 </details>
 
-Use `cargo run` in live_reload_extended directory and then change something in live_reload_extended/module/src or live_reload_extended/shared/src.
+Use `./run.sh` (you need bash for that if you are on Windows) in live_reload_extended directory and then change something in live_reload_extended/module/src or live_reload_extended/shared/src.
+
+## [Hot reload](./hot_reload)
+
+Automatically reload code without state reset.
+
+> [!WARNING]
+> It's more complex and unsafe than live reload.
+
+Use `./run.sh` (you need bash for that if you are on Windows) in hot_reload directory and then change something in hot_reload/update_module/src/update_module.rs.
+
+### Crate structure
+
+- `host` - the one and the only
+- `state` - `State` structure that is preserved between reloads of `update_module`
+- `update_module` - this is the crate that is hot-reloaded (leaked allocations are not collected, yet?)
+- `main_module` - this crate is live-reloaded (if changed the state will be reset)
+- `main_contract` - contains exports of main_module and imports of main_module & update_module
+- `update_contract` - contains imports & exports only of update_module
+- `perfect_api` - simple example of library with no global/hidden state
+- `imperfect_api` - simple real-world example
 
 ## [Usage with `abi_stable` crate](./abi_stable_usage)
 
@@ -46,5 +77,15 @@ How to run:<br>
 `cargo run --bin basic_host --features unloading <path>` (in repo root)
 
 > replace `<path>` with `examples/custom_global_alloc/target/debug/libcustom_global_alloc.so` on linux and `examples/custom_global_alloc/target/debug/custom_global_alloc.dll` on windows
+
+**note:** you can also build it without `--features unloading` (see ["Usage without unloading"](https://docs.rs/relib/latest/relib/docs/index.html#usage-without-unloading)).
+
+## [Different interfaces](./different_interfaces)
+
+That's when if you want to load modules with different exports and imports.
+
+How to run:<br>
+`cargo build --features unloading`<br>
+`cargo run --features unloading`
 
 **note:** you can also build it without `--features unloading` (see ["Usage without unloading"](https://docs.rs/relib/latest/relib/docs/index.html#usage-without-unloading)).

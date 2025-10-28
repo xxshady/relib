@@ -1,12 +1,13 @@
-use std::{
-  ffi::{c_int, c_uint, c_void},
-  sync::{
-    atomic::{AtomicBool, Ordering::Relaxed},
-    Mutex, MutexGuard,
+use {
+  crate::unloading_core::helpers::unrecoverable,
+  std::{
+    ffi::{c_int, c_uint, c_void},
+    sync::{
+      Mutex, MutexGuard,
+      atomic::{AtomicBool, Ordering::Relaxed},
+    },
   },
 };
-
-use crate::unloading_core::helpers::unrecoverable;
 
 #[expect(non_camel_case_types)]
 type pthread_key_t = c_uint;

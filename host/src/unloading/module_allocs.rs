@@ -1,13 +1,13 @@
-use std::{
-  collections::HashMap,
-  sync::{LazyLock, Mutex, MutexGuard},
+use {
+  super::{InternalModuleExports, helpers::unrecoverable},
+  relib_internal_shared::{
+    Allocation, AllocatorOp, AllocatorPtr, ModuleId, SliceAllocatorOp, StableLayout,
+  },
+  std::{
+    collections::HashMap,
+    sync::{LazyLock, Mutex, MutexGuard},
+  },
 };
-
-use relib_internal_shared::{
-  Allocation, AllocatorOp, AllocatorPtr, ModuleId, SliceAllocatorOp, StableLayout,
-};
-
-use super::{helpers::unrecoverable, InternalModuleExports};
 
 type Allocs = HashMap<ModuleId, HashMap<AllocatorPtr, Allocation>>;
 
@@ -30,6 +30,7 @@ pub fn remove_module(
   module_id: ModuleId,
   internal_exports: &InternalModuleExports,
   library_path_str: &str,
+  alloc_tracker_enabled: bool,
 ) {
   unsafe {
     internal_exports.take_cached_allocs_before_exit();
@@ -42,12 +43,14 @@ pub fn remove_module(
 
   // this check relies on two allocations in alloc tracker of the module,
   // which needed to cache allocation ops
-  if allocs.is_empty() {
+  if alloc_tracker_enabled && allocs.is_empty() {
     eprintln!(
       "[relib] warning: seems like this module doesn't have a registered global alloc tracker\n\
       module path: {}\n\
       note: if \"global_alloc_tracker\" feature is disabled, \
-      make sure that you registered relib_module::AllocTracker<A> using #[global_allocator]",
+      make sure that you registered relib_module::AllocTracker<A> using #[global_allocator]\n\
+      note: if you're sure of what you're doing, you can disable this warning by using \
+      `relib_host::load_module_with_options`",
       library_path_str
     );
   }
@@ -60,11 +63,13 @@ pub fn remove_module(
   }
 }
 
-pub extern "C" fn on_cached_allocs(module_id: ModuleId, ops: SliceAllocatorOp) {
+pub fn on_cached_allocs(module_id: ModuleId, ops: SliceAllocatorOp) {
   let ops = unsafe { ops.into_slice() };
 
   let mut allocs = lock_allocs();
-  let allocs = allocs.get_mut(&module_id).unwrap_or_else(|| unreachable!());
+  let allocs = allocs
+    .get_mut(&module_id)
+    .unwrap_or_else(|| unrecoverable("on_cached_allocs unreachable"));
 
   for op in ops {
     match op {
@@ -80,7 +85,7 @@ pub extern "C" fn on_cached_allocs(module_id: ModuleId, ops: SliceAllocatorOp) {
   }
 }
 
-pub extern "C" fn on_alloc(module_id: ModuleId, ptr: *mut u8, layout: StableLayout) {
+pub fn on_alloc(module_id: ModuleId, ptr: *mut u8, layout: StableLayout) {
   let mut allocs = lock_allocs();
   let allocs = allocs
     .get_mut(&module_id)
@@ -88,4 +93,13 @@ pub extern "C" fn on_alloc(module_id: ModuleId, ptr: *mut u8, layout: StableLayo
 
   let ptr = AllocatorPtr(ptr);
   allocs.insert(ptr, Allocation(ptr, layout));
+}
+
+pub fn is_ptr_allocated(module_id: ModuleId, ptr: *mut u8) -> bool {
+  let allocs = lock_allocs();
+  let allocs = allocs
+    .get(&module_id)
+    .unwrap_or_else(|| unrecoverable("is_ptr_allocated unreachable"));
+
+  allocs.contains_key(&AllocatorPtr(ptr))
 }
