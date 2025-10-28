@@ -1,6 +1,4 @@
-use std::ffi::c_void;
-
-use super::windows_dealloc;
+use {super::windows_dealloc, std::ffi::c_void};
 
 #[expect(clippy::upper_case_acronyms)]
 type BOOL = i32;

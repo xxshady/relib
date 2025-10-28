@@ -1,8 +1,8 @@
 use std::{
   alloc::{GlobalAlloc, Layout, System},
-  sync::atomic::{AtomicUsize, Ordering::Relaxed},
-  mem::forget,
   hint::black_box,
+  mem::forget,
+  sync::atomic::{AtomicUsize, Ordering::Relaxed},
 };
 
 struct Counter;
@@ -28,8 +28,7 @@ unsafe impl GlobalAlloc for Counter {
 
 #[cfg(feature = "unloading")]
 mod with_unloading {
-  use relib_module::AllocTracker;
-  use super::Counter;
+  use {super::Counter, relib_module::AllocTracker};
 
   #[global_allocator]
   static ALLOC_COUNTER: AllocTracker<Counter> = AllocTracker::new(Counter);

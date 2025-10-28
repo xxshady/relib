@@ -1,7 +1,9 @@
-use relib_internal_shared::{
-  imports::___Internal___Imports___ as Imports, ModuleId, SliceAllocatorOp, StableLayout, Str,
+use {
+  super::{gen_imports::ModuleImportsImpl, helpers, module_allocs},
+  relib_internal_shared::{
+    ModuleId, SliceAllocatorOp, StableLayout, Str, imports::___Internal___Imports___ as Imports,
+  },
 };
-use super::{gen_imports::ModuleImportsImpl, helpers, module_allocs};
 
 impl Imports for ModuleImportsImpl {
   fn on_alloc(module: ModuleId, ptr: *mut u8, layout: StableLayout) {

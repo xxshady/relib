@@ -1,19 +1,19 @@
-use std::{
-  collections::HashMap,
-  ffi::c_void,
-  sync::{LazyLock, Mutex, MutexGuard, Once},
-};
-
-use minhook::MinHook;
-
-use crate::{
-  module::WindowsLibraryHandle,
-  windows::{
-    get_dylib_handle_from_addr,
-    imports::{CreateThread, HANDLE},
+use {
+  super::helpers::unrecoverable,
+  crate::{
+    module::WindowsLibraryHandle,
+    windows::{
+      get_dylib_handle_from_addr,
+      imports::{CreateThread, HANDLE},
+    },
+  },
+  minhook::MinHook,
+  std::{
+    collections::HashMap,
+    ffi::c_void,
+    sync::{LazyLock, Mutex, MutexGuard, Once},
   },
 };
-use super::{helpers::unrecoverable};
 
 type Payload = (
   unsafe extern "system" fn(main: *mut c_void) -> u32,

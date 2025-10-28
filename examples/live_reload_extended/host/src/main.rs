@@ -10,7 +10,7 @@ relib_interface::include_exports!();
 use gen_exports::ModuleExports;
 
 relib_interface::include_imports!();
-use gen_imports::{init_imports, ModuleImportsImpl};
+use gen_imports::{ModuleImportsImpl, init_imports};
 
 impl Imports for ModuleImportsImpl {
   fn foo() -> i32 {

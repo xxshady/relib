@@ -1,5 +1,7 @@
-use std::{collections::HashSet, env, path::Path, time::SystemTime};
-use cargo_metadata::{CargoOpt, Metadata, MetadataCommand, PackageId};
+use {
+  cargo_metadata::{CargoOpt, Metadata, MetadataCommand, PackageId},
+  std::{collections::HashSet, env, path::Path, time::SystemTime},
+};
 
 fn main() {
   let key = "SHARED_CRATE_BUILD_ID";

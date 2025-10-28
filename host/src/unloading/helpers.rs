@@ -20,8 +20,10 @@ fn unrecoverable_impl(message: &str) -> ! {
 
 #[cfg(target_os = "windows")]
 pub mod windows {
-  use libloading::{os::windows::Library as WindowsLibrary, Library};
-  use crate::module::WindowsLibraryHandle;
+  use {
+    crate::module::WindowsLibraryHandle,
+    libloading::{Library, os::windows::Library as WindowsLibrary},
+  };
 
   pub fn library_handle(library: Library) -> (Library, WindowsLibraryHandle) {
     let handle = WindowsLibrary::from(library).into_raw();

@@ -1,6 +1,7 @@
-use std::{backtrace::Backtrace, mem::forget, path::MAIN_SEPARATOR};
-
-use crate::shared::alloc_some_bytes;
+use {
+  crate::shared::alloc_some_bytes,
+  std::{backtrace::Backtrace, mem::forget, path::MAIN_SEPARATOR},
+};
 
 #[relib_module::export]
 pub fn main() {

@@ -1,6 +1,7 @@
-use std::fs;
-
-use crate::helpers::{call_host_by_directory, cmd};
+use {
+  crate::helpers::{call_host_by_directory, cmd},
+  std::fs,
+};
 
 pub fn main() {
   // ------------------------- windows_background_threads

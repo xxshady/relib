@@ -1,23 +1,23 @@
-use std::{
-  env::current_exe,
-  ffi::c_void,
-  path::{Path, PathBuf},
-  sync::{Mutex, MutexGuard},
-};
-
-use libloading::Library;
-use minhook::MinHook;
-
-use crate::{
-  helpers::{cstr_bytes, is_library_loaded, path_to_str},
-  windows::{
-    get_current_dylib,
-    imports::{GetCurrentProcess, GetLastError, FALSE, TRUE},
+use {
+  super::{
+    imports::{BOOL, HANDLE, PCWSTR, PWSTR},
+    str_to_wide_cstring,
   },
-};
-use super::{
-  imports::{BOOL, HANDLE, PCWSTR, PWSTR},
-  str_to_wide_cstring,
+  crate::{
+    helpers::{cstr_bytes, is_library_loaded, path_to_str},
+    windows::{
+      get_current_dylib,
+      imports::{FALSE, GetCurrentProcess, GetLastError, TRUE},
+    },
+  },
+  libloading::Library,
+  minhook::MinHook,
+  std::{
+    env::current_exe,
+    ffi::c_void,
+    path::{Path, PathBuf},
+    sync::{Mutex, MutexGuard},
+  },
 };
 
 const STATIC_SEARCH_PATH_ENTRIES: usize = 2;

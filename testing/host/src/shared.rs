@@ -1,15 +1,17 @@
-use std::cell::Cell;
-
-use abi_stable::std_types::{RStr, RString, RVec};
-use test_shared::{imports::Imports, SIZE_200_MB};
-
+use {
+  abi_stable::std_types::{RStr, RString, RVec},
+  std::cell::Cell,
+  test_shared::{SIZE_200_MB, imports::Imports},
+};
 pub use test_host_shared::*;
 
 relib_interface::include_exports!();
 relib_interface::include_imports!();
 
-pub use gen_exports::ModuleExports;
-pub use gen_imports::{init_imports as init_module_imports, ModuleImportsImpl};
+pub use {
+  gen_exports::ModuleExports,
+  gen_imports::{ModuleImportsImpl, init_imports as init_module_imports},
+};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DropCallState {

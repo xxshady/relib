@@ -1,13 +1,13 @@
-use std::{fs, path::Path};
-
-use proc_macro2::TokenStream as TokenStream2;
-use quote::{format_ident, quote, ToTokens};
-use syn::{
-  punctuated::Punctuated, FnArg, GenericParam, Ident, Item, ItemTrait, ItemUse, ReturnType, Token,
-  TraitItem, UseTree,
+use {
+  proc_macro2::TokenStream as TokenStream2,
+  quote::{ToTokens, format_ident, quote},
+  relib_internal_shared::fn_inputs_without_types,
+  std::{fs, path::Path},
+  syn::{
+    FnArg, GenericParam, Ident, Item, ItemTrait, ItemUse, ReturnType, Token, TraitItem, UseTree,
+    punctuated::Punctuated,
+  },
 };
-
-use relib_internal_shared::fn_inputs_without_types;
 
 pub fn format_code(code: &str, file_name: &str) -> String {
   match syn::parse_file(code) {

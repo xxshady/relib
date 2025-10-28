@@ -7,11 +7,7 @@ use {
   crate::{main_instance::MainModule, update_instance::UpdateModule},
   anyhow::bail,
   shared::AnyErrorResult,
-  std::{
-    process::Command,
-    thread,
-    time::Duration,
-  },
+  std::{process::Command, thread, time::Duration},
 };
 
 fn main() {

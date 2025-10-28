@@ -11,5 +11,7 @@ pub(crate) mod windows_thread_spawn_hook;
 
 relib_interface::include_exports!(gen_exports, "internal_generated_module");
 relib_interface::include_imports!(gen_imports, "internal_generated_module");
-pub(crate) use gen_exports::ModuleExports as InternalModuleExports;
-pub(crate) use gen_imports::init_imports as init_internal_imports;
+pub(crate) use {
+  gen_exports::ModuleExports as InternalModuleExports,
+  gen_imports::init_imports as init_internal_imports,
+};

@@ -1,6 +1,7 @@
-use std::ffi::c_void;
-
-use crate::{ModuleId, SliceAllocation};
+use {
+  crate::{ModuleId, SliceAllocation},
+  std::ffi::c_void,
+};
 
 #[expect(non_camel_case_types)]
 pub trait ___Internal___Exports___ {

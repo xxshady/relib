@@ -1,5 +1,4 @@
-use abi_stable::std_types::RString;
-use shared::exports::Exports;
+use {abi_stable::std_types::RString, shared::exports::Exports};
 
 relib_interface::include_exports!();
 use gen_exports::ModuleExportsImpl;

@@ -1,6 +1,7 @@
-use std::backtrace::Backtrace;
-
-use crate::shared::{init_module_imports, load_module};
+use {
+  crate::shared::{init_module_imports, load_module},
+  std::backtrace::Backtrace,
+};
 
 pub fn main() {
   let backtrace = Backtrace::force_capture();

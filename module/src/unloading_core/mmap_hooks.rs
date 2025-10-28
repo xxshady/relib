@@ -1,10 +1,11 @@
-use std::{
-  ffi::c_void,
-  mem::transmute,
-  sync::{Mutex, MutexGuard},
+use {
+  super::helpers::unrecoverable,
+  std::{
+    ffi::c_void,
+    mem::transmute,
+    sync::{Mutex, MutexGuard},
+  },
 };
-
-use super::helpers::unrecoverable;
 
 struct Ptr(*mut c_void);
 

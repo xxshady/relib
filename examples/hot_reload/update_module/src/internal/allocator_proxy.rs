@@ -1,8 +1,10 @@
-use std::{
-  alloc::{GlobalAlloc, Layout},
-  sync::OnceLock,
+use {
+  main_contract::{Alloc, Dealloc},
+  std::{
+    alloc::{GlobalAlloc, Layout},
+    sync::OnceLock,
+  },
 };
-use main_contract::{Alloc, Dealloc};
 
 pub struct Proxy {
   pub alloc: OnceLock<Alloc>,

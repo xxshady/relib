@@ -1,6 +1,7 @@
-use std::{ffi::OsString, os::windows::ffi::OsStringExt, path::PathBuf};
-
-use minhook::MinHook;
+use {
+  minhook::MinHook,
+  std::{ffi::OsString, os::windows::ffi::OsStringExt, path::PathBuf},
+};
 
 /// What does it solve:
 /// 1. Synchronizes dbghelp.dll between all modules: each module has it's own standard library and because of that sync
@@ -45,8 +46,9 @@ pub mod imports {
   ) -> HANDLE;
 }
 use imports::{
-  GetLastError, GetModuleFileNameW, GetModuleHandleExW, DWORD, ERROR_INSUFFICIENT_BUFFER,
-  GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+  DWORD, ERROR_INSUFFICIENT_BUFFER, GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+  GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, GetLastError, GetModuleFileNameW,
+  GetModuleHandleExW,
 };
 
 pub fn str_to_wide_cstring(str: &str) -> Vec<u16> {

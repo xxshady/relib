@@ -1,10 +1,10 @@
-use std::io::{stderr, stdin, Write};
-
-use cfg_if::cfg_if;
-
-use relib_host::{Module, ModuleExportsForHost};
-use test_shared::print_memory_use;
-use crate::shared::{init_module_imports, load_module};
+use {
+  crate::shared::{init_module_imports, load_module},
+  cfg_if::cfg_if,
+  relib_host::{Module, ModuleExportsForHost},
+  std::io::{Write, stderr, stdin},
+  test_shared::print_memory_use,
+};
 
 pub fn main() {
   println!("start");

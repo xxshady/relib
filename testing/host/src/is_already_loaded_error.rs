@@ -1,8 +1,9 @@
-use cfg_if::cfg_if;
-use relib_host::{LoadError, Module, ModuleExportsForHost};
-use test_host_shared::load_module_with_result;
-
-use crate::shared::{init_module_imports, load_module};
+use {
+  crate::shared::{init_module_imports, load_module},
+  cfg_if::cfg_if,
+  relib_host::{LoadError, Module, ModuleExportsForHost},
+  test_host_shared::load_module_with_result,
+};
 
 pub fn main() {
   let (module, _) = load_module::<(), ()>(init_module_imports, true);
