@@ -27,7 +27,7 @@ fn startup() -> State {
     perfect_api_state,
     entity,
 
-    vec: vec![1, 2, 3],
+    vec: vec![1, 2, 3].into(),
   };
 
   println!("---------- startup ----------");

@@ -24,8 +24,12 @@ fn update(state: &mut State) {
 
   // all allocations are owned by main_module and
   // will not be deallocated when this module is unloaded
-  // so, this is a temporary leak (until main_module is reloaded)
-  state.vec.push(1);
+  state.vec = {
+    let mut vec = std::mem::take(&mut state.vec).into_vec();
+    vec.push(1);
+    dbg!(vec.len());
+    vec.into()
+  };
 
   println!("---------- update ----------");
 }
