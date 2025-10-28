@@ -78,7 +78,11 @@ jobs:
           cargo check
           cd ../live_reload_extended
           cargo check
+          cd ../hot_reload
+          cargo check
           cd ../export_main_macro
+          cargo check
+          cd ../different_interfaces
           cargo check
 
       # reset two commits: by cargo-release and "relib files" one and after that merge them in new one
