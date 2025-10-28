@@ -4,7 +4,7 @@ use {
   relib_internal_shared::fn_inputs_without_types,
   std::{fs, path::Path},
   syn::{
-    FnArg, GenericParam, Ident, Item, ItemTrait, ItemUse, ReturnType, Token, TraitItem, UseTree,
+    FnArg, GenericParam, Ident, Item, ItemTrait, ReturnType, Token, TraitItem, UseTree,
     punctuated::Punctuated,
   },
 };
@@ -42,7 +42,8 @@ pub fn parse_trait_file(
         return None;
       };
 
-      Some(patch_item_use_if_needed(item_use, &crate_name))
+      let patched_use_tree = patch_use_tree_if_needed(&item_use.tree, &crate_name);
+      Some(quote! { use #patched_use_tree; })
     })
     .collect::<TokenStream2>();
 
@@ -204,15 +205,15 @@ pub fn extract_trait_name_from_path(trait_path: &str) -> &str {
   })
 }
 
-fn patch_item_use_if_needed(item_use: &ItemUse, crate_name: &Ident) -> TokenStream2 {
-  match &item_use.tree {
+fn patch_use_tree_if_needed(use_tree: &UseTree, crate_name: &Ident) -> TokenStream2 {
+  match use_tree {
     UseTree::Path(path) => {
       let ident = path.ident.to_string();
       let ident = ident.as_str();
 
       match ident {
         "super" => {
-          let code = item_use.to_token_stream();
+          let code = path.to_token_stream();
           panic!(
             "Failed to copy `{code}`\n\
             note: `use super::` syntax is not supported, use absolute imports, for example `use crate::something`"
@@ -220,15 +221,22 @@ fn patch_item_use_if_needed(item_use: &ItemUse, crate_name: &Ident) -> TokenStre
         }
         "crate" => {
           let tree = &path.tree;
-          quote! {
-            use #crate_name::#tree;
-          }
+          quote! { #crate_name::#tree }
         }
-        _ => item_use.to_token_stream(),
+        _ => use_tree.to_token_stream(),
       }
     }
+    UseTree::Group(group) => {
+      let use_items = group
+        .items
+        .iter()
+        .map(|use_tree| patch_use_tree_if_needed(use_tree, crate_name))
+        .collect::<Vec<_>>();
+
+      quote! { { #( #use_items ),* } }
+    }
     _ => {
-      let code = item_use.to_token_stream();
+      let code = use_tree.to_token_stream();
       panic!("unexpected syntax: `{code}`");
     }
   }
