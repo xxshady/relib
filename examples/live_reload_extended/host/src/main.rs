@@ -1,4 +1,8 @@
-use std::{error::Error, fs, process::Command, thread, time::Duration};
+use {
+  libloading::library_filename,
+  shared::imports::Imports,
+  std::{error::Error, fs, path::Path, process::Command, thread, time::Duration},
+};
 
 type AnyErrorResult<T = ()> = Result<T, Box<dyn Error>>;
 
@@ -7,7 +11,6 @@ use gen_exports::ModuleExports;
 
 relib_interface::include_imports!();
 use gen_imports::{init_imports, ModuleImportsImpl};
-use shared::imports::Imports;
 
 impl Imports for ModuleImportsImpl {
   fn foo() -> i32 {
@@ -49,17 +52,15 @@ fn run_host() -> AnyErrorResult {
 }
 
 fn run_module() -> AnyErrorResult {
-  let file_name = if cfg!(windows) {
-    "module.dll"
-  } else {
-    "libmodule.so"
-  };
-  let path_to_dylib = format!("target/debug/{file_name}");
-  let copy_path_to_dylib = format!("target/debug/copy_{file_name}");
+  let name = "module";
+  let dylib_filename = library_filename(name);
+  let dylib_copy_filename = library_filename(format!("copy_{name}"));
+  let dylib_path = Path::new("target/debug").join(dylib_filename);
+  let dylib_copy_path = Path::new("target/debug").join(dylib_copy_filename);
 
-  fs::copy(&path_to_dylib, &copy_path_to_dylib)?;
+  fs::copy(&dylib_path, &dylib_copy_path)?;
 
-  let module = unsafe { relib_host::load_module::<ModuleExports>(path_to_dylib, init_imports) }?;
+  let module = unsafe { relib_host::load_module::<ModuleExports>(dylib_path, init_imports) }?;
 
   let module_shared_build_id = unsafe { module.exports().shared_build_id() }.unwrap();
   let host_shared_build_id = shared::build_id();

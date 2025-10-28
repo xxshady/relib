@@ -1,5 +1,7 @@
-use abi_stable::std_types::RVec;
-use shared::imports::Imports;
+use {
+  abi_stable::std_types::RVec, libloading::library_filename, shared::imports::Imports,
+  std::path::Path,
+};
 
 relib_interface::include_exports!();
 use gen_exports::ModuleExports;
@@ -14,13 +16,9 @@ impl Imports for ModuleImportsImpl {
 }
 
 fn main() {
-  let path_to_dylib = if cfg!(target_os = "linux") {
-    "target/debug/libmodule.so"
-  } else {
-    "target/debug/module.dll"
-  };
+  let dylib_path = Path::new("target/debug").join(library_filename("module"));
 
-  let module = unsafe { relib_host::load_module::<ModuleExports>(path_to_dylib, init_imports) };
+  let module = unsafe { relib_host::load_module::<ModuleExports>(dylib_path, init_imports) };
   let module = module.unwrap_or_else(|e| {
     panic!("module loading failed: {e:#}");
   });

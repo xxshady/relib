@@ -1,5 +1,9 @@
-use relib_host::{ModuleExportsForHost, InitImports};
-use shared::{imports::Imports, imports2::Imports2};
+use {
+  libloading::library_filename,
+  relib_host::{InitImports, ModuleExportsForHost},
+  shared::{imports::Imports, imports2::Imports2},
+  std::path::Path,
+};
 
 relib_interface::include_exports!();
 relib_interface::include_imports!();
@@ -41,13 +45,9 @@ fn load_module<E: ModuleExportsForHost>(
   init_imports: impl InitImports,
   call_export: impl FnOnce(&E),
 ) {
-  let path_to_dylib = if cfg!(target_os = "linux") {
-    format!("target/debug/lib{name}.so")
-  } else {
-    format!("target/debug/{name}.dll")
-  };
+  let dylib_path = Path::new("target/debug").join(library_filename(name));
 
-  let module = unsafe { relib_host::load_module::<E>(path_to_dylib, init_imports) };
+  let module = unsafe { relib_host::load_module::<E>(dylib_path, init_imports) };
   let module = module.unwrap_or_else(|e| {
     panic!("module loading failed: {e:#}");
   });

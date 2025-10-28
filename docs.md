@@ -45,7 +45,7 @@ unloading = ["relib_host/unloading"]
 - Add the following to `main.rs` of host:
 ```rust
 fn main() {
-  let path_to_dylib = if cfg!(target_os = "linux") {
+  let dylib_path = if cfg!(target_os = "linux") {
     "target/debug/libmodule.so"
   } else {
     "target/debug/module.dll"
@@ -53,7 +53,7 @@ fn main() {
 
   // `()` means empty imports and exports, here module doesn't import or export anything
   let module = unsafe {
-    relib_host::load_module::<()>(path_to_dylib, ())
+    relib_host::load_module::<()>(dylib_path, ())
   };
   let module = module.unwrap_or_else(|e| {
     panic!("module loading failed: {e:#}");
@@ -219,7 +219,7 @@ impl shared::imports::Imports for gen_imports::ModuleImportsImpl {
 ```rust
 let module = unsafe {
   relib_host::load_module::<()>(
-    path_to_dylib,
+    dylib_path,
     gen_imports::init_imports,
   )
 };
@@ -257,7 +257,7 @@ impl shared::exports::Exports for gen_exports::ModuleExportsImpl {
 // in host/src/main.rs:
 let module = unsafe {
   relib_host::load_module::<gen_exports::ModuleExports>(
-    path_to_dylib,
+    dylib_path,
     gen_imports::init_imports,
   )
 };

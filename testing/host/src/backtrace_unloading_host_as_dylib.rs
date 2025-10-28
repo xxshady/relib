@@ -1,14 +1,12 @@
-use std::env::consts::{DLL_PREFIX, DLL_SUFFIX};
-
-use libloading::Library;
-
-use crate::shared::current_target_dir;
+use {
+  crate::shared::current_target_dir,
+  libloading::{Library, library_filename},
+};
 
 pub fn main() {
-  let target_dir = current_target_dir();
-  let path = format!(
-    "{target_dir}/backtrace_unloading_host_as_dylib__host/{DLL_PREFIX}test_host_as_dylib{DLL_SUFFIX}"
-  );
+  let path = current_target_dir()
+    .join("backtrace_unloading_host_as_dylib__host")
+    .join(library_filename("test_host_as_dylib"));
 
   unsafe {
     let host = Library::new(path).unwrap();

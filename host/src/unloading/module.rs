@@ -1,8 +1,10 @@
-use crate::{
-  helpers::{call_module_pub_export, is_library_loaded},
-  Module, ModuleExportsForHost,
+use {
+  super::errors::UnloadError,
+  crate::{
+    Module, ModuleExportsForHost,
+    helpers::{call_module_pub_export, is_library_loaded},
+  },
 };
-use super::errors::UnloadError;
 
 impl<E: ModuleExportsForHost> Module<E> {
   /// Unloads module, if it fails, module may be leaked and never be unloaded.
@@ -57,14 +59,19 @@ impl<E: ModuleExportsForHost> Module<E> {
     // are called by standard library in `library.close()`)
 
     #[cfg(target_os = "linux")]
-    super::module_allocs::remove_module(self.id, &self.internal_exports, &library_path);
+    super::module_allocs::remove_module(
+      self.id,
+      &self.internal_exports,
+      &library_path,
+      self.alloc_tracker_enabled,
+    );
 
     #[cfg(target_os = "linux")]
     self.library.take().close()?;
 
     #[cfg(target_os = "windows")]
     {
-      use crate::{windows::dbghelp, unloading::windows_dealloc};
+      use crate::{unloading::windows_dealloc, windows::dbghelp};
 
       let handle = self.library_handle;
       let library = self.library.take();

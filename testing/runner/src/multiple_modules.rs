@@ -1,6 +1,11 @@
-use std::fs;
-
-use crate::helpers::{call_host_by_directory, cmd};
+use {
+  crate::helpers::{call_host_by_directory, cmd},
+  std::{
+    env::consts::{DLL_PREFIX, DLL_SUFFIX},
+    fs,
+    path::Path,
+  },
+};
 
 pub fn main() {
   let (build_debug, build_release) = cmd!(
@@ -18,20 +23,14 @@ pub fn main() {
 }
 
 fn run_multiple_modules(directory: &str) {
+  let dylib_filename = format!("{}test_module{}", DLL_PREFIX, DLL_SUFFIX);
+  let target_directory = Path::new("target").join(directory);
+  let dylib_path = target_directory.join(dylib_filename);
+
   for idx in 0..10 {
-    if cfg!(target_os = "linux") {
-      fs::copy(
-        format!("target/{directory}/libtest_module.so"),
-        format!("target/{directory}/libtest_module_{idx}.so"),
-      )
-      .unwrap();
-    } else {
-      fs::copy(
-        format!("target/{directory}/test_module.dll"),
-        format!("target/{directory}/test_module_{idx}.dll"),
-      )
-      .unwrap();
-    }
+    let dylib_copy_filename = format!("{}test_module_{idx}{}", DLL_PREFIX, DLL_SUFFIX);
+    let dylib_copy_path = target_directory.join(dylib_copy_filename);
+    fs::copy(&dylib_path, dylib_copy_path).unwrap();
   }
   call_host_by_directory(directory);
 }

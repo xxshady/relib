@@ -1,4 +1,4 @@
-use std::env::consts::{DLL_PREFIX, DLL_SUFFIX};
+use std::env::consts::{DLL_PREFIX, DLL_SUFFIX, EXE_SUFFIX};
 
 macro_rules! cmd_impl {
   ( $program:expr $(, $arg:expr )* $(; current_dir: $current_dir:expr )? ) => {
@@ -48,11 +48,7 @@ macro_rules! cmd_impl {
 pub(crate) use cmd_impl as cmd;
 
 pub fn host_bin_by_directory(directory: &str) -> String {
-  if cfg!(target_os = "linux") {
-    format!("target/{directory}/test_host")
-  } else {
-    format!("target/{directory}/test_host.exe")
-  }
+  format!("target/{directory}/test_host{EXE_SUFFIX}")
 }
 
 pub fn call_host_by_directory(directory: &str) {

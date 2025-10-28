@@ -1,4 +1,7 @@
-use std::{error::Error, process::Command, thread, time::Duration};
+use {
+  libloading::library_filename,
+  std::{error::Error, path::Path, process::Command, thread, time::Duration},
+};
 
 type AnyErrorResult<T = ()> = Result<T, Box<dyn Error>>;
 
@@ -36,14 +39,9 @@ fn run_host() -> AnyErrorResult {
 }
 
 fn run_module() -> AnyErrorResult {
-  let file_name = if cfg!(windows) {
-    "module.dll"
-  } else {
-    "libmodule.so"
-  };
-  let path_to_dylib = "target/debug/".to_owned() + file_name;
+  let dylib_path = Path::new("target/debug").join(library_filename("module"));
 
-  let module = unsafe { relib_host::load_module::<()>(path_to_dylib, ()) }?;
+  let module = unsafe { relib_host::load_module::<()>(dylib_path, ()) }?;
 
   let returned = unsafe { module.call_main::<()>() };
   if returned.is_none() {

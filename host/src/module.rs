@@ -1,13 +1,13 @@
-use std::fmt::Debug;
-
 #[cfg(feature = "unloading")]
 use std::{marker::PhantomData, path::PathBuf};
 
-use relib_internal_shared::ModuleId;
-use libloading::Library;
-
-use crate::{
-  exports_types::ModuleExportsForHost, helpers::call_module_pub_export, leak_library::LeakLibrary,
+use {
+  crate::{
+    exports_types::ModuleExportsForHost, helpers::call_module_pub_export, leak_library::LeakLibrary,
+  },
+  libloading::Library,
+  relib_internal_shared::ModuleId,
+  std::fmt::Debug,
 };
 
 #[cfg(feature = "unloading")]
@@ -19,7 +19,7 @@ pub(crate) type WindowsLibraryHandle = isize;
 #[must_use = "module will be leaked if dropped, \
   if you don't want that consider using `unload` method (see \"unloading\" feature)"]
 pub struct Module<E: ModuleExportsForHost> {
-  pub id: ModuleId,
+  pub(crate) id: ModuleId,
   pub(crate) library: LeakLibrary,
 
   #[cfg(all(target_os = "windows", feature = "unloading"))]
@@ -37,6 +37,9 @@ pub struct Module<E: ModuleExportsForHost> {
   /// Module must be loaded and unloaded from the same thread
   /// for thread locals destructors to work correctly.
   _not_thread_safe: PhantomData<*const ()>,
+
+  #[cfg(feature = "unloading")]
+  pub(crate) alloc_tracker_enabled: bool,
 }
 
 impl<E: ModuleExportsForHost> Module<E> {
@@ -45,9 +48,10 @@ impl<E: ModuleExportsForHost> Module<E> {
     library: Library,
     pub_exports: E,
 
-    #[cfg(feature = "unloading")] (internal_exports, library_path): (
+    #[cfg(feature = "unloading")] (internal_exports, library_path, alloc_tracker_enabled): (
       InternalModuleExports,
       PathBuf,
+      bool,
     ),
   ) -> Self {
     #[cfg(all(target_os = "windows", feature = "unloading"))]
@@ -65,10 +69,16 @@ impl<E: ModuleExportsForHost> Module<E> {
       library_path,
       #[cfg(feature = "unloading")]
       internal_exports,
+      #[cfg(feature = "unloading")]
+      alloc_tracker_enabled,
 
       #[cfg(all(target_os = "windows", feature = "unloading"))]
       library_handle,
     }
+  }
+
+  pub fn id(&self) -> ModuleId {
+    self.id
   }
 
   pub fn library(&self) -> &Library {

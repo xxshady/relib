@@ -1,9 +1,9 @@
-use std::thread;
-
-use cfg_if::cfg_if;
-
-use relib_host::{Module, ModuleExportsForHost};
-use crate::shared::{self, init_module_imports};
+use {
+  crate::shared::{self, init_module_imports},
+  cfg_if::cfg_if,
+  relib_host::{Module, ModuleExportsForHost},
+  std::thread,
+};
 
 pub fn main() {
   thread::scope(|s| {
@@ -19,7 +19,7 @@ pub fn main() {
 fn unload_module<E: ModuleExportsForHost>(module: Module<E>) {
   cfg_if! {
     if #[cfg(feature = "multiple_modules")] {
-      let id = module.id;
+      let id = module.id();
       module.unload().unwrap();
       println!("{:?} unloaded: {id}", std::thread::current().id());
     } else {

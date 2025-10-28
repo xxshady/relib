@@ -1,6 +1,7 @@
 use {
+  libloading::library_filename,
   relib_host::{InitImports, Module, ModuleExportsForHost},
-  std::fs,
+  std::{fs, path::Path},
 };
 
 pub type AnyErrorResult<T = ()> = anyhow::Result<T>;
@@ -10,22 +11,15 @@ pub fn load_module<E: ModuleExportsForHost>(
   init_imports: impl InitImports,
   enable_alloc_tracker: bool,
 ) -> AnyErrorResult<Module<E>> {
-  let file_name = if cfg!(windows) {
-    format!("{name}.dll")
-  } else {
-    format!("lib{name}.so")
-  };
-  let path_to_dylib = format!("target/debug/{file_name}");
-  let copy_path_to_dylib = format!("target/debug/copy_{file_name}");
+  let dylib_filename = library_filename(name);
+  let dylib_copy_filename = library_filename(format!("copy_{name}"));
+  let dylib_path = Path::new("target/debug").join(dylib_filename);
+  let dylib_copy_path = Path::new("target/debug").join(dylib_copy_filename);
 
-  fs::copy(&path_to_dylib, &copy_path_to_dylib)?;
+  fs::copy(&dylib_path, &dylib_copy_path)?;
 
   let module = unsafe {
-    relib_host::load_module_with_options::<E>(
-      copy_path_to_dylib,
-      init_imports,
-      enable_alloc_tracker,
-    )?
+    relib_host::load_module_with_options::<E>(dylib_copy_path, init_imports, enable_alloc_tracker)?
   };
 
   Ok(module)

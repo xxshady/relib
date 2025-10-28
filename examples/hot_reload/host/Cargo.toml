@@ -19,7 +19,7 @@ anyhow = { version = "1.0.100", features = ["backtrace"] }
 [dependencies.relib_host]
 version = "0"
 path = "../../../host"
-features = ["unloading", "disable_global_alloc_warn"]
+features = ["unloading"]
 
 [build-dependencies]
 relib_interface = { version = "0", path = "../../../interface", features = [

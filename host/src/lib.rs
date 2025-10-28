@@ -41,15 +41,13 @@ mod windows;
 ///
 /// # Example
 /// ```
-/// let path_to_dylib = if cfg!(target_os = "linux") {
-///   "target/debug/libmodule.so"
-/// } else {
-///   "target/debug/module.dll"
-/// };
+/// use {std::path::Path, libloading::library_filename};
+///
+/// let dylib_path = Path::new("target/debug").join(library_filename("module"));
 ///
 /// // `()` means empty imports and exports, module doesn't import or export anything
 /// let module = unsafe {
-///   relib_host::load_module::<()>(path_to_dylib, ())
+///   relib_host::load_module::<()>(dylib_path, ())
 /// };
 /// let module = module.unwrap_or_else(|e| {
 ///   panic!("module loading failed: {e:#}");
@@ -163,7 +161,7 @@ pub unsafe fn load_module_with_options<E: ModuleExportsForHost>(
     library,
     pub_exports,
     #[cfg(feature = "unloading")]
-    (internal_exports, path.to_owned()),
+    (internal_exports, path.to_owned(), enable_alloc_tracker),
   );
 
   #[cfg(all(target_os = "windows", feature = "unloading"))]
