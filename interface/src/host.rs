@@ -150,8 +150,13 @@ fn generate_exports_(
 
     let pub_return_type = output_to_return_type!(output);
 
-    let panic_message =
-      format!(r#"Failed to get "{ident}" fn symbol from module (mangled name: "{mangled_name}")"#);
+    let panic_message = format!(
+      "Couldn't find \"{ident}\" export\n\
+      note: make sure this module implements {exports_trait_path} trait\n\
+      note: if `relib_interface::include_exports!()` is used not in module crate, \
+      make sure the crate (that invokes `include_exports`) is used in module crate, for example you can do so by \
+      using this syntax: `use <crate> as _;`"
+    );
 
     let post_panic_message = format!(
       r#"Failed to get "{post_ident}" fn symbol from module (mangled name: "{post_mangled_name}")"#
@@ -332,7 +337,7 @@ fn generate_imports_(
   let (imports_trait, module_use_items) =
     parse_trait_file(trait_name, imports_file_content, imports_trait_path);
 
-  let imports_trait_path: syn::Path =
+  let imports_trait_path_syn: syn::Path =
     syn::parse_str(imports_trait_path).expect("Failed to parse imports_trait_path as syn::Path");
 
   let mut imports = Vec::<TokenStream2>::new();
@@ -354,8 +359,13 @@ fn generate_imports_(
       lifetimes_module: _,
     } = for_each_trait_item(trait_name, &item);
 
-    let panic_message =
-      format!(r#"Failed to get "{mangled_name}" symbol of static function pointer from module"#);
+    let panic_message = format!(
+      "Couldn't find \"{ident}\" import\n\
+      note: make sure this module expects {imports_trait_path} trait\n\
+      note: if `relib_interface::include_imports!()` is used not in module crate, \
+      make sure (that invokes `include_imports`) is used in module crate, for example you can do so by \
+      using this syntax: `use <crate> as _;`"
+    );
 
     let post_panic_message = format!(
       r#"Failed to get "{post_mangled_name}" symbol of static function pointer from module"#
@@ -462,7 +472,7 @@ fn generate_imports_(
     quote! {
       #module_use_items
 
-      use #imports_trait_path as Imports;
+      use #imports_trait_path_syn as Imports;
 
       /// Struct for implementing your `Imports` trait
       pub struct ModuleImportsImpl;
