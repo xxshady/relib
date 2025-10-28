@@ -21,7 +21,8 @@ pub fn main() {
       let backtrace = Backtrace::force_capture();
       let backtrace = format!("{backtrace}");
       assert!(
-        backtrace.contains(&format!("testing{s}module{s}src{s}code_change.rs:20")),
+        // `let backtrace = Backtrace::force_capture();`
+        backtrace.contains(&format!("testing{s}module{s}src{s}code_change.rs:21")),
         "backtrace was:\n{backtrace}"
       );
     } else {
@@ -48,7 +49,10 @@ pub fn main() {
     if cfg!(debug_assertions) {
       let backtrace = Backtrace::force_capture();
       let backtrace = format!("{backtrace}");
-      assert!(backtrace.contains(&format!("testing{s}module{s}src{s}code_change.rs:48")));
+      assert!(
+        // `let backtrace = Backtrace::force_capture();`
+        backtrace.contains(&format!("testing{s}module{s}src{s}code_change.rs:50"))
+      );
     } else {
       #[inline(never)]
       #[unsafe(no_mangle)]
