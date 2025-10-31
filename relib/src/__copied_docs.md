@@ -21,11 +21,11 @@ version = "0.1.0"
 edition = "2024" # or set a later one
 ```
 
-- Create host crate: (`--vcs none` to not create unneeded git stuff)<br>
-`cargo new host --vcs none`
+- Create host crate:<br>
+`cargo new host`
 
 - Create module crate:<br>
-`cargo new --lib module --vcs none`
+`cargo new --lib module`
 
 - Configure module crate to compile as dynamic library, add the following to the `module/Cargo.toml`:
 ```toml
@@ -125,7 +125,7 @@ To communicate between host and module `relib` provides convenient API for decla
 `cargo add relib_interface --package host --features build --build`<br>
 `cargo add relib_interface --package module --features build --build`
 
-- Create "shared" crate: `cargo new shared --lib --vcs none`
+- Create "shared" crate: `cargo new shared --lib`
 
 - Add it as dependency to host and module crates:<br>
 `cargo add --path ./shared --package host`<br>
