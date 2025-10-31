@@ -1,4 +1,6 @@
 **/target/debug
 **/target/release
 **/target/.rustc_info.json
+**/target/.rustdoc_fingerprint.json
 **/target/CACHEDIR.TAG
+**/target/doc
