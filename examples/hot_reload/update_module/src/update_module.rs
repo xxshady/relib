@@ -25,7 +25,10 @@ fn update(state: &mut State) {
   // all allocations are owned by main_module and
   // will not be deallocated when this module is unloaded
   state.vec = {
+    // since this module and main_module use the same global allocator
+    // we don't need to clone it here (see allocator_proxy.rs)
     let mut vec = std::mem::take(&mut state.vec).into_vec();
+
     vec.push(1);
     dbg!(vec.len());
     vec.into()
