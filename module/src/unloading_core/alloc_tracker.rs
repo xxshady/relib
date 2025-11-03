@@ -190,11 +190,17 @@ unsafe impl TransferTarget for TransferToHost {
 
   fn transfer(ptr: *mut u8, _: &()) {
     let mut cache = lock_allocs_cache();
-    if cache.remove(&AllocatorPtr(ptr)).is_none() {
-      let transferred = unsafe { gen_imports::transfer_alloc_to_host(MODULE_ID, ptr) };
-      if !transferred {
-        unrecoverable("failed to transfer allocation to host");
-      }
+
+    let transferred = cache.remove(&AllocatorPtr(ptr)).is_some();
+    if transferred {
+      return;
     }
+
+    let transferred = unsafe { gen_imports::transfer_alloc_to_host(MODULE_ID, ptr) };
+    if transferred {
+      return;
+    }
+
+    unrecoverable("failed to transfer allocation to host");
   }
 }
