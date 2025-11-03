@@ -11,8 +11,6 @@ pub use errors::LoadError;
 mod unloading;
 #[cfg(feature = "unloading")]
 pub use unloading::UnloadError;
-#[cfg(feature = "unloading")]
-pub(crate) use unloading::module_allocs;
 
 mod module;
 pub use module::Module;

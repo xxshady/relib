@@ -6,7 +6,7 @@ use {
 };
 
 // TODO: update this documentation:
-/// Takes function code and transforms it into exported `extern "C"` function with panic handling.
+/// Takes function code and transforms it into exported function with panic handling.
 /// See `relib_export` for proc-macro.
 ///
 /// # Example
@@ -18,7 +18,7 @@ use {
 ///
 /// // output:
 /// #[unsafe(export_name = "...")]
-/// extern "C" fn foo(
+/// fn foo(
 ///   ____return_value____: *mut std::mem::MaybeUninit<i32>,
 /// ) -> bool {
 ///   fn ____wrapper____() -> i32 {
@@ -77,7 +77,7 @@ pub fn exportify(input: TokenStream2) -> TokenStream2 {
       },
       quote! {
         #[unsafe(no_mangle)]
-        pub #unsafety extern "C" fn #post_mangled_name_ident(
+        pub #unsafety fn #post_mangled_name_ident(
           return_value_ptr: *mut #return_type
         ) {
           use ::std::boxed::Box;

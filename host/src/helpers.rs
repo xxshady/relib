@@ -71,7 +71,7 @@ pub unsafe fn call_module_pub_export<R>(
   let mangled_name = format!("__relib__{name}");
 
   let fn_ = unsafe { get_library_export(library, &mangled_name) }?;
-  let fn_: Symbol<extern "C" fn(*mut bool) -> MaybeUninit<R>> = fn_;
+  let fn_: Symbol<fn(*mut bool) -> MaybeUninit<R>> = fn_;
 
   let mut ____success____ = MaybeUninit::<bool>::uninit();
 
