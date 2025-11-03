@@ -1,17 +1,15 @@
 #[cfg(feature = "unloading")]
+use crate::unloading::InternalModuleExports;
+#[cfg(feature = "unloading")]
 use std::{marker::PhantomData, path::PathBuf};
-
 use {
   crate::{
     exports_types::ModuleExportsForHost, helpers::call_module_pub_export, leak_library::LeakLibrary,
   },
   libloading::Library,
-  relib_internal_shared::ModuleId,
+  relib_shared::ModuleId,
   std::fmt::Debug,
 };
-
-#[cfg(feature = "unloading")]
-use crate::unloading::InternalModuleExports;
 
 #[cfg(all(target_os = "windows", feature = "unloading"))]
 pub(crate) type WindowsLibraryHandle = isize;
@@ -113,8 +111,8 @@ impl<E: ModuleExportsForHost> Module<E> {
   /// If main function is not exported from the module.
   #[must_use = "returns `None` if module panics"]
   pub unsafe fn call_main<R>(&self) -> Option<R>
-  where
-    R: Clone,
+// where
+  //   R: Clone,
   {
     let res = unsafe { call_module_pub_export(self.library(), "main") };
     res.unwrap_or_else(|e| {

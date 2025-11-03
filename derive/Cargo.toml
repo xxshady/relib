@@ -1,0 +1,13 @@
+[package]
+name = "relib_derive"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+# TODO: use deps from workspace
+syn = { version = "1.0", features = ["full"] }
+quote = "1.0"
+proc-macro2 = "1.0"
+
+[lib]
+proc-macro = true

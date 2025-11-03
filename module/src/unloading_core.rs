@@ -1,5 +1,5 @@
 use {
-  relib_internal_shared::ModuleId,
+  relib_shared::ModuleId,
   std::sync::atomic::{AtomicBool, Ordering},
 };
 
@@ -21,9 +21,9 @@ mod helpers;
 mod exports_impl;
 
 mod alloc_tracker;
-pub use alloc_tracker::AllocTracker;
 #[cfg(all(feature = "unloading_core", not(feature = "dealloc_validation")))]
 pub use alloc_tracker::_suppress_warn;
+pub use alloc_tracker::{AllocTracker, TransferToHost};
 
 #[cfg(target_os = "windows")]
 mod windows_dll_main;
@@ -48,7 +48,7 @@ fn allocator_lock() -> bool {
 }
 
 // SAFETY: will be initialized on one thread once and then never change
-static mut MODULE_ID: ModuleId = 0;
+pub static mut MODULE_ID: ModuleId = 0;
 
 // The id of the thread in which this module was loaded and in which it must be unloaded
 //

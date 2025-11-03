@@ -10,7 +10,9 @@ pub use errors::LoadError;
 #[cfg(feature = "unloading")]
 mod unloading;
 #[cfg(feature = "unloading")]
-pub use unloading::*;
+pub use unloading::UnloadError;
+#[cfg(feature = "unloading")]
+pub(crate) use unloading::module_allocs;
 
 mod module;
 pub use module::Module;
@@ -24,6 +26,14 @@ pub use exports_types::{InitImports, ModuleExportsForHost};
 
 #[cfg(target_os = "windows")]
 mod windows;
+
+#[doc(hidden)]
+pub mod __internal {
+  #[cfg(feature = "unloading")]
+  pub use crate::unloading::TransferToModule;
+}
+
+pub use relib_shared::*;
 
 /// Loads a module (dynamic library) by specified path.
 ///
@@ -146,14 +156,14 @@ pub unsafe fn load_module_with_options<E: ModuleExportsForHost>(
     unloading::init_internal_imports(&library);
     unloading::module_allocs::add_module(module_id);
 
-    let internal_exports = unloading::InternalModuleExports::new(&library);
+    let internal_exports = unloading::InternalModuleExports::new(&library, module_id);
     unsafe {
       internal_exports.init(thread_id::get(), module_id, enable_alloc_tracker);
     }
     internal_exports
   };
 
-  let pub_exports = E::new(&library);
+  let pub_exports = E::new(&library, module_id);
   init_imports.init(&library);
 
   let module = Module::new(

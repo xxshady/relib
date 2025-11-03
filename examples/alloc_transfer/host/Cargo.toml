@@ -1,0 +1,23 @@
+[package]
+name = "host"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+libloading = "0.8.6"
+relib_interface = { version = "0.7.0", features = [
+  "include",
+], path = "../../../interface" }
+shared = { version = "0.1.0", path = "../shared" }
+relib_shared = { version = "0", path = "../../../relib_shared" }
+
+[dependencies.relib_host]
+version = "0"
+path = "../../../host"
+features = ["unloading"]
+
+[build-dependencies]
+relib_interface = { version = "0.7.0", features = [
+  "build",
+], path = "../../../interface" }
+shared = { version = "0.1.0", path = "../shared" }

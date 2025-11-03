@@ -295,7 +295,16 @@ dependencies = [
 
 [[package]]
 name = "relib"
-version = "0.7.1"
+version = "0.7.0"
+
+[[package]]
+name = "relib_derive"
+version = "0.7.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
 
 [[package]]
 name = "relib_export"
@@ -324,6 +333,7 @@ dependencies = [
  "relib_interface",
  "relib_internal_crate_compilation_info",
  "relib_internal_shared",
+ "relib_shared",
  "thiserror",
  "thread-id",
  "windows-targets 0.53.0",
@@ -347,6 +357,10 @@ version = "0.7.0"
 [[package]]
 name = "relib_internal_shared"
 version = "0.7.0"
+dependencies = [
+ "relib_derive",
+ "relib_shared",
+]
 
 [[package]]
 name = "relib_module"
@@ -357,8 +371,13 @@ dependencies = [
  "relib_interface",
  "relib_internal_crate_compilation_info",
  "relib_internal_shared",
+ "relib_shared",
  "thread-id",
 ]
+
+[[package]]
+name = "relib_shared"
+version = "0.7.0"
 
 [[package]]
 name = "repr_offset"

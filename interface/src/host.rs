@@ -1,7 +1,8 @@
 use {
   crate::shared::{
-    SAFETY_DOC, TraitFn, extract_trait_name_from_path, for_each_trait_item, out_dir_file_name,
-    parse_trait_file, pass_out_dir_file_name_to_crate_code, type_needs_box, write_code_to_file,
+    SAFETY_DOC, TRANSFER_IMPORTS_TO_MODULE, TRANSFER_IMPORTS_TO_MODULE_INTERNAL, TraitFn,
+    extract_trait_name_from_path, for_each_trait_item, out_dir_file_name, parse_trait_file,
+    pass_out_dir_file_name_to_crate_code, type_needs_box, write_code_to_file,
   },
   proc_macro2::TokenStream as TokenStream2,
   quote::quote,
@@ -172,13 +173,42 @@ fn generate_exports_(
       #[allow(clippy::needless_lifetimes)]
     };
 
+    let transfer_imports_pub = TRANSFER_IMPORTS_TO_MODULE.clone();
+    let transfer_imports_internal = TRANSFER_IMPORTS_TO_MODULE_INTERNAL.clone();
+
+    let transfer_inputs = quote! {
+      #(
+        unsafe {
+          Transfer::<TransferToModule>::transfer(
+            &#inputs_without_types,
+            &(
+              Layout::for_value(&#inputs_without_types),
+              self.____module_id____,
+            )
+          );
+        };
+      )*
+    };
+    let transfer_inputs_pub = quote! {
+      {
+        #transfer_imports_pub
+        #transfer_inputs
+      }
+    };
+    let transfer_inputs_internal = quote! {
+      {
+        #transfer_imports_internal
+        #transfer_inputs
+      }
+    };
+
     // !!! keep in sync with main and before_unload calls in relib_host crate !!!
     let (decl, init, impl_) = if pub_exports {
       let needs_box = type_needs_box(&pub_return_type);
       let (post_decl, post_init, return_type, read_return_value) = if needs_box {
         (
           quote! {
-            #post_ident: #lifetimes_for extern "C" fn( *mut #pub_return_type ),
+            #post_ident: #lifetimes_for fn( *mut #pub_return_type ),
           },
           quote! {
             #post_ident: unsafe {
@@ -208,7 +238,7 @@ fn generate_exports_(
 
       (
         quote! {
-          #ident: #lifetimes_for extern "C" fn(
+          #ident: #lifetimes_for fn(
             ____success____: *mut bool,
             #inputs
           ) -> std::mem::MaybeUninit<#return_type>,
@@ -241,15 +271,13 @@ fn generate_exports_(
           ) -> Option<#pub_return_type>
           #lifetimes_where_module
           {
-            /// All parameters must be Copy, see relib caveats in the readme for more info.
-            fn ____assert_type_is_copy____(_: impl Copy) {}
-            #( ____assert_type_is_copy____( #inputs_without_types ); )*
+            #transfer_inputs_pub
 
             let mut ____success____ = std::mem::MaybeUninit::<bool>::uninit();
 
             let return_value = (self.#ident)(
               ____success____.as_mut_ptr(),
-              #( #inputs_without_types )*
+              #( #inputs_without_types, )*
             );
 
             // SAFETY: this bool is guaranteed to be initialized by the module
@@ -266,7 +294,7 @@ fn generate_exports_(
     } else {
       (
         quote! {
-          #ident: #lifetimes_for extern "C" fn( #inputs ) #output,
+          #ident: #lifetimes_for fn( #inputs ) #output,
         },
         import_init,
         quote! {
@@ -275,8 +303,10 @@ fn generate_exports_(
           pub unsafe fn #ident #lifetimes_module ( &self, #inputs ) -> #pub_return_type
           #lifetimes_where_module
           {
+            #transfer_inputs_internal
+
             #[allow(clippy::let_unit_value)]
-            let return_value = (self.#ident)( #( #inputs_without_types )* );
+            let return_value = (self.#ident)( #( #inputs_without_types, )* );
             return_value
           }
         },
@@ -299,26 +329,30 @@ fn generate_exports_(
     quote! {
       #module_use_items
 
-      use #types_import_crate::exports_types::ModuleExportsForHost;
+      use #types_import_crate::{
+        exports_types::ModuleExportsForHost,
+        // renaming it to avoid name collision with user code
+        ModuleId as RelibModuleId,
+      };
 
       #[allow(non_snake_case)]
       pub struct ModuleExports {
+        #[allow(unused)]
+        ____module_id____: RelibModuleId,
+
         #( #export_decls )*
       }
 
       impl ModuleExports {
-        pub fn new(library: &libloading::Library) -> Self {
-          Self {
-            #( #export_inits )*
-          }
-        }
-
         #( #export_impls )*
       }
 
       impl ModuleExportsForHost for ModuleExports {
-        fn new(library: &libloading::Library) -> Self {
-          Self::new(library)
+        fn new(library: &libloading::Library, ____module_id____: RelibModuleId) -> Self {
+          Self {
+            ____module_id____,
+            #( #export_inits )*
+          }
         }
       }
     },
@@ -371,11 +405,55 @@ fn generate_imports_(
       r#"Failed to get "{post_mangled_name}" symbol of static function pointer from module"#
     );
 
+    let transfer_imports_pub = TRANSFER_IMPORTS_TO_MODULE.clone();
+    let transfer_imports_internal = TRANSFER_IMPORTS_TO_MODULE_INTERNAL.clone();
+
+    let transfer_return_value = quote! {
+      {
+        unsafe {
+          Transfer::<TransferToModule>::transfer(
+            &return_value,
+            &(
+              Layout::for_value(&return_value),
+              ____transfer_module_id_____,
+            )
+          );
+        };
+        return_value
+      }
+    };
+
+    let return_type = output_to_return_type!(output);
+
+    let (transfer_return_value_pub, transfer_return_value_internal) =
+      if return_type.to_string() != "!" {
+        (
+          quote! {
+            {
+              #transfer_imports_pub
+              #transfer_return_value
+            }
+          },
+          quote! {
+            {
+              #transfer_imports_internal
+              #transfer_return_value
+            }
+          },
+        )
+      } else {
+        (quote! {}, quote! {})
+      };
+
+    let transfer_return_value_module_id = quote! {
+      ____transfer_module_id_____: relib_shared::ModuleId
+    };
+
     // !!! keep in sync with main and before_unload calls in relib_host crate !!!
     let impl_code = if pub_imports {
-      let return_type = output_to_return_type!(output);
       let needs_box = type_needs_box(&return_type);
-      let (return_type, return_value, post_init) = if needs_box {
+      // TODO: remove _return_value?
+      let (return_type, _return_value, post_init) = if needs_box {
         (
           quote! {
             *mut #return_type
@@ -385,13 +463,13 @@ fn generate_imports_(
             Box::into_raw(Box::new(return_value))
           },
           quote! {
-            let post_ptr: *mut #lifetimes_for extern "C" fn(return_value_ptr: *mut #return_type)
+            let post_ptr: *mut #lifetimes_for fn(return_value_ptr: *mut #return_type)
               = *library.get(concat!(#post_mangled_name, "\0").as_bytes()).expect(#post_panic_message);
 
             *post_ptr = post_impl;
 
             #[allow(clippy::extra_unused_lifetimes)]
-            extern "C" fn post_impl #lifetimes_full (return_value_ptr: *mut #return_type) {
+            fn post_impl #lifetimes_full (return_value_ptr: *mut #return_type) {
               use std::boxed::Box;
               unsafe {
                 drop(Box::from_raw(return_value_ptr));
@@ -405,25 +483,23 @@ fn generate_imports_(
 
       quote! {
         unsafe {
-          let ptr: *mut #lifetimes_for extern "C" fn(
+          let ptr: *mut #lifetimes_for fn(
             ____success____: *mut bool,
+            #transfer_return_value_module_id,
             #inputs
           ) -> std::mem::MaybeUninit<#return_type>
             = *library.get(concat!(#mangled_name, "\0").as_bytes()).expect(#panic_message);
 
           *ptr = impl_;
 
-          extern "C" fn impl_ #lifetimes_full (
+          fn impl_ #lifetimes_full (
             ____success____: *mut bool,
+            #transfer_return_value_module_id,
             #inputs
           ) -> std::mem::MaybeUninit<#return_type> // will be initialized if function won't panic
           {
-            /// All parameters must be Copy, see relib caveats in the readme for more info.
-            fn ____assert_type_is_copy____(_: impl Copy) {}
-            #( ____assert_type_is_copy____( #inputs_without_types ); )*
-
             let result = std::panic::catch_unwind(move || {
-              <ModuleImportsImpl as Imports>::#ident( #( #inputs_without_types )* )
+              <ModuleImportsImpl as Imports>::#ident( #( #inputs_without_types, )* )
             });
 
             match result {
@@ -433,7 +509,7 @@ fn generate_imports_(
                 }
 
                 #[allow(unused_braces, clippy::unit_arg)]
-                std::mem::MaybeUninit::new({ #return_value })
+                std::mem::MaybeUninit::new({ #transfer_return_value_pub })
               }
               // ignoring content since it's handled in default panic hook of std
               Err(_) => {
@@ -452,13 +528,21 @@ fn generate_imports_(
     } else {
       quote! {
         unsafe {
-          let ptr: *mut #lifetimes_for extern "C" fn( #inputs ) #output
+          let ptr: *mut #lifetimes_for fn(
+            #transfer_return_value_module_id,
+            #inputs
+          ) #output
             = *library.get(concat!(#mangled_name, "\0").as_bytes()).expect(#panic_message);
 
           *ptr = impl_;
 
-          extern "C" fn impl_ #lifetimes_full ( #inputs ) #output {
-            <ModuleImportsImpl as Imports>::#ident( #( #inputs_without_types )* )
+          fn impl_ #lifetimes_full (
+            #transfer_return_value_module_id,
+            #inputs
+          ) #output {
+            #[allow(unused_variables)] // for never type
+            let return_value = <ModuleImportsImpl as Imports>::#ident( #( #inputs_without_types, )* );
+            #transfer_return_value_internal
           }
         }
       }

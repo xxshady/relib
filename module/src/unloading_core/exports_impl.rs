@@ -2,7 +2,8 @@ use {
   super::{
     ALLOCATOR_LOCK, HOST_OWNER_THREAD, MODULE_ID, alloc_tracker, gen_exports::ModuleExportsImpl,
   },
-  relib_internal_shared::{ModuleId, exports::___Internal___Exports___ as Exports},
+  relib_internal_shared::exports::___Internal___Exports___ as Exports,
+  relib_shared::ModuleId,
   std::{ffi::c_void, sync::atomic::Ordering},
 };
 
