@@ -20,6 +20,9 @@ impl Imports for gen_imports::ModuleImportsImpl {
     for _ in 1..=(1024 * 1024 * 100) {
       vec.push(2);
     }
+
+    println!("host ret vec: {:?}", vec.as_ptr());
+
     vec
   }
 }
@@ -42,6 +45,9 @@ fn run_host() -> AnyErrorResult {
         run_module()?;
 
         build_failed_in_prev_iteration = false;
+
+        // TEST
+        std::process::exit(0);
       }
       BuildResult::Failure(message) => {
         if build_failed_in_prev_iteration {
@@ -58,7 +64,14 @@ fn run_host() -> AnyErrorResult {
 }
 
 fn run_module() -> AnyErrorResult {
-  let dylib_path = Path::new("target/debug").join(library_filename("module"));
+  let dir = if cfg!(debug_assertions) {
+    "debug"
+  } else {
+    "release"
+  };
+  let dylib_path = Path::new("target")
+    .join(dir)
+    .join(library_filename("module"));
 
   let module =
     unsafe { relib_host::load_module::<gen_exports::ModuleExports>(dylib_path, init_imports) }?;
@@ -104,9 +117,14 @@ fn run_module() -> AnyErrorResult {
 }
 
 fn build_module() -> AnyErrorResult<BuildResult> {
-  let output = Command::new("cargo")
-    .args(["build", "--package", "module"])
-    .output()?;
+  let mut command = Command::new("cargo");
+  command.args(["build", "--package", "module"]);
+
+  if !cfg!(debug_assertions) {
+    command.arg("--release");
+  }
+
+  let output = command.output()?;
   let stderr = String::from_utf8(output.stderr)?;
 
   if !output.status.success() {
