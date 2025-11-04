@@ -1,5 +1,4 @@
 use std::{
-  alloc::Layout,
   collections::{BTreeMap, BTreeSet, HashMap, HashSet, LinkedList, VecDeque},
   fmt::Debug,
 };
@@ -23,12 +22,12 @@ where
   /// # Safety
   /// After calling this on a container it's your responsibility to immediately move
   /// it to the host or module.
-  unsafe fn transfer(&self, ctx: &F::ExtraContext);
+  unsafe fn transfer(&self, ctx: F::ExtraContext);
 }
 
 pub unsafe trait TransferTarget {
-  type ExtraContext: Debug;
-  fn transfer(ptr: *mut u8, layout: Layout, ctx: &Self::ExtraContext);
+  type ExtraContext: Debug + Copy;
+  fn transfer(ptr: *mut u8, ctx: Self::ExtraContext);
 }
 
 macro_rules! impl_for_copy {
@@ -46,7 +45,7 @@ macro_rules! impl_for_copy {
       where
         F: TransferTarget,
       {
-        unsafe fn transfer(&self, _ctx: &F::ExtraContext) {
+        unsafe fn transfer(&self, _ctx: F::ExtraContext) {
           // this type is copy so there is no allocation to transfer
         }
       }
@@ -75,7 +74,7 @@ where
   T: Transfer<F>,
   F: TransferTarget,
 {
-  unsafe fn transfer(&self, ctx: &F::ExtraContext) {
+  unsafe fn transfer(&self, ctx: F::ExtraContext) {
     let ptr = self.as_ptr();
     println!("[transfer] Vec {ptr:?} ctx: {ctx:?}");
 
@@ -94,11 +93,12 @@ where
   T: Transfer<F>,
   F: TransferTarget,
 {
-  unsafe fn transfer(&self, ctx: &F::ExtraContext) {
+  unsafe fn transfer(&self, ctx: F::ExtraContext) {
     let ptr = &**self as *const T;
     println!("[transfer] Box {ptr:?} ctx: {ctx:?}");
 
     F::transfer(ptr as *mut u8, ctx);
+
     // The inner value also needs to be transferred if it contains allocations
     unsafe {
       Transfer::<F>::transfer(&**self, ctx);
@@ -107,9 +107,10 @@ where
 }
 
 unsafe impl<F: TransferTarget> Transfer<F> for String {
-  unsafe fn transfer(&self, ctx: &F::ExtraContext) {
+  unsafe fn transfer(&self, ctx: F::ExtraContext) {
     let ptr = self.as_ptr();
     println!("[transfer] String {ptr:?} ctx: {ctx:?}");
+
     F::transfer(ptr as *mut u8, ctx);
   }
 }
@@ -119,7 +120,7 @@ where
   T: Transfer<F>,
   F: TransferTarget,
 {
-  unsafe fn transfer(&self, ctx: &F::ExtraContext) {
+  unsafe fn transfer(&self, ctx: F::ExtraContext) {
     if let Some(inner) = self {
       unsafe { Transfer::<F>::transfer(inner, ctx) };
     }
@@ -132,7 +133,7 @@ where
   E: Transfer<F>,
   F: TransferTarget,
 {
-  unsafe fn transfer(&self, ctx: &F::ExtraContext) {
+  unsafe fn transfer(&self, ctx: F::ExtraContext) {
     unsafe {
       match self {
         Ok(inner) => Transfer::<F>::transfer(inner, ctx),
@@ -148,7 +149,7 @@ where
   V: Transfer<F>,
   F: TransferTarget,
 {
-  unsafe fn transfer(&self, ctx: &F::ExtraContext) {
+  unsafe fn transfer(&self, ctx: F::ExtraContext) {
     for (k, v) in self {
       unsafe {
         Transfer::<F>::transfer(k, ctx);
@@ -164,7 +165,7 @@ where
   V: Transfer<F>,
   F: TransferTarget,
 {
-  unsafe fn transfer(&self, ctx: &F::ExtraContext) {
+  unsafe fn transfer(&self, ctx: F::ExtraContext) {
     for (k, v) in self {
       unsafe {
         Transfer::<F>::transfer(k, ctx);
@@ -179,7 +180,7 @@ where
   T: Transfer<F>,
   F: TransferTarget,
 {
-  unsafe fn transfer(&self, ctx: &F::ExtraContext) {
+  unsafe fn transfer(&self, ctx: F::ExtraContext) {
     for el in self {
       unsafe {
         Transfer::<F>::transfer(el, ctx);
@@ -193,7 +194,7 @@ where
   T: Transfer<F>,
   F: TransferTarget,
 {
-  unsafe fn transfer(&self, ctx: &F::ExtraContext) {
+  unsafe fn transfer(&self, ctx: F::ExtraContext) {
     for el in self {
       unsafe {
         Transfer::<F>::transfer(el, ctx);
@@ -207,7 +208,7 @@ where
   T: Transfer<F>,
   F: TransferTarget,
 {
-  unsafe fn transfer(&self, ctx: &F::ExtraContext) {
+  unsafe fn transfer(&self, ctx: F::ExtraContext) {
     for el in self {
       unsafe {
         Transfer::<F>::transfer(el, ctx);
@@ -221,7 +222,7 @@ where
   T: Transfer<F>,
   F: TransferTarget,
 {
-  unsafe fn transfer(&self, ctx: &F::ExtraContext) {
+  unsafe fn transfer(&self, ctx: F::ExtraContext) {
     for el in self {
       unsafe {
         Transfer::<F>::transfer(el, ctx);
@@ -235,7 +236,7 @@ where
   T: Transfer<F>,
   F: TransferTarget,
 {
-  unsafe fn transfer(&self, ctx: &F::ExtraContext) {
+  unsafe fn transfer(&self, ctx: F::ExtraContext) {
     for el in self {
       unsafe {
         Transfer::<F>::transfer(el, ctx);
@@ -256,7 +257,7 @@ macro_rules! impl_for_tuples {
         F: TransferTarget,
         $( $T: Transfer<F>, )+
       {
-        unsafe fn transfer(&self, ctx: &F::ExtraContext) {
+        unsafe fn transfer(&self, ctx: F::ExtraContext) {
           #[allow(non_snake_case)]
           let ( $( $T, )+ ) = self;
 

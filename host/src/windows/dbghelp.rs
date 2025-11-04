@@ -32,7 +32,7 @@ fn lock_instance() -> MutexGuard<'static, Option<Dbghelp>> {
   })
 }
 
-#[cfg(feature = "unloading")]
+#[cfg(feature = "unloading_core")]
 type SymUnloadModule64 = unsafe extern "system" fn(process: HANDLE, base: u64) -> BOOL;
 type SymInitializeW =
   unsafe extern "system" fn(hprocess: HANDLE, usersearchpath: PCWSTR, finvadeprocess: BOOL) -> BOOL;
@@ -50,7 +50,7 @@ struct Dbghelp {
 
   refresh_module_list: SymRefreshModuleList,
   set_search_path: SymSetSearchPathW,
-  #[cfg(feature = "unloading")]
+  #[cfg(feature = "unloading_core")]
   unload_module: SymUnloadModule64,
 }
 
@@ -225,7 +225,7 @@ unsafe fn init() -> Dbghelp {
   let mut instance = Dbghelp {
     refresh_module_list: unsafe { get_lib!(SymRefreshModuleList) },
     set_search_path,
-    #[cfg(feature = "unloading")]
+    #[cfg(feature = "unloading_core")]
     unload_module: unsafe { get_lib!(SymUnloadModule64) },
 
     _lib: lib,
@@ -253,7 +253,7 @@ pub fn add_module(path: &str) {
   refresh_modules_and_search_path(instance);
 }
 
-#[cfg(feature = "unloading")]
+#[cfg(feature = "unloading_core")]
 pub fn remove_module(handle: isize, path: &str) {
   let mut instance = lock_instance();
   let instance = instance

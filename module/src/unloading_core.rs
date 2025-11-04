@@ -32,6 +32,8 @@ mod windows_dealloc;
 
 /// Middleware for tracking all allocations to deallocate leaks
 /// (for example `std::mem:forget`, static items) on module unload.
+///
+/// // TODO: do we really need it if we can use allocator-api2 crate?
 /// It sends all allocations and deallocations to host because to
 /// store allocations we need to allocate unknown amount of memory.
 ///

@@ -20,7 +20,7 @@ pub const EXPORTS_NO_UNLOADING: &str = include_str!("exports_no_unloading.rs");
 #[derive(Transfer)]
 pub struct AllocatorPtr(pub *mut u8);
 
-// SAFETY: `*mut u8` won't be touched anywhere except in the dynamic library in the main thread for deallocation
+// SAFETY: this is never dereferenced, only used as an address, so it should be thread-safe.
 unsafe impl Send for AllocatorPtr {}
 unsafe impl Sync for AllocatorPtr {}
 

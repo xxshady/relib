@@ -197,7 +197,7 @@ fn generate_exports_(
           return_type,
           quote! {
             #transfer_imports
-            unsafe { Transfer::<TransferToHost>::transfer(&return_value, &()) }
+            unsafe { Transfer::<TransferToHost>::transfer(&return_value, ()) }
             return_value
           },
           quote! {},
@@ -332,7 +332,7 @@ fn generate_imports_(
         unsafe {
           Transfer::<TransferToHost>::transfer(
             &#inputs_without_types,
-            &()
+            ()
           );
         };
       )*

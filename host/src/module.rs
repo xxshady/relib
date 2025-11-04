@@ -1,6 +1,6 @@
-#[cfg(feature = "unloading")]
-use crate::unloading::InternalModuleExports;
-#[cfg(feature = "unloading")]
+#[cfg(feature = "unloading_core")]
+use crate::unloading_core::InternalModuleExports;
+#[cfg(feature = "unloading_core")]
 use std::{marker::PhantomData, path::PathBuf};
 use {
   crate::{
@@ -11,7 +11,7 @@ use {
   std::fmt::Debug,
 };
 
-#[cfg(all(target_os = "windows", feature = "unloading"))]
+#[cfg(all(target_os = "windows", feature = "unloading_core"))]
 pub(crate) type WindowsLibraryHandle = isize;
 
 #[must_use = "module will be leaked if dropped, \
@@ -20,23 +20,23 @@ pub struct Module<E: ModuleExportsForHost> {
   pub(crate) id: ModuleId,
   pub(crate) library: LeakLibrary,
 
-  #[cfg(all(target_os = "windows", feature = "unloading"))]
+  #[cfg(all(target_os = "windows", feature = "unloading_core"))]
   pub(crate) library_handle: WindowsLibraryHandle,
 
-  #[cfg(feature = "unloading")]
+  #[cfg(feature = "unloading_core")]
   pub(crate) library_path: PathBuf,
 
-  #[cfg(feature = "unloading")]
+  #[cfg(feature = "unloading_core")]
   pub(crate) internal_exports: InternalModuleExports,
 
   pub_exports: E,
 
-  #[cfg(feature = "unloading")]
+  #[cfg(feature = "unloading_core")]
   /// Module must be loaded and unloaded from the same thread
   /// for thread locals destructors to work correctly.
   _not_thread_safe: PhantomData<*const ()>,
 
-  #[cfg(feature = "unloading")]
+  #[cfg(feature = "unloading_core")]
   pub(crate) alloc_tracker_enabled: bool,
 }
 
@@ -46,31 +46,32 @@ impl<E: ModuleExportsForHost> Module<E> {
     library: Library,
     pub_exports: E,
 
-    #[cfg(feature = "unloading")] (internal_exports, library_path, alloc_tracker_enabled): (
+    #[cfg(feature = "unloading_core")] (internal_exports, library_path, alloc_tracker_enabled): (
       InternalModuleExports,
       PathBuf,
       bool,
     ),
   ) -> Self {
-    #[cfg(all(target_os = "windows", feature = "unloading"))]
-    let (library, library_handle) = { crate::unloading::helpers::windows::library_handle(library) };
+    #[cfg(all(target_os = "windows", feature = "unloading_core"))]
+    let (library, library_handle) =
+      { crate::unloading_core::helpers::windows::library_handle(library) };
 
     Self {
       id,
       library: LeakLibrary::new(library),
       pub_exports,
 
-      #[cfg(feature = "unloading")]
+      #[cfg(feature = "unloading_core")]
       _not_thread_safe: PhantomData,
 
-      #[cfg(feature = "unloading")]
+      #[cfg(feature = "unloading_core")]
       library_path,
-      #[cfg(feature = "unloading")]
+      #[cfg(feature = "unloading_core")]
       internal_exports,
-      #[cfg(feature = "unloading")]
+      #[cfg(feature = "unloading_core")]
       alloc_tracker_enabled,
 
-      #[cfg(all(target_os = "windows", feature = "unloading"))]
+      #[cfg(all(target_os = "windows", feature = "unloading_core"))]
       library_handle,
     }
   }
@@ -132,7 +133,7 @@ impl<E: ModuleExportsForHost> Debug for Module<E> {
   }
 }
 
-#[cfg(not(feature = "unloading"))]
+#[cfg(not(feature = "unloading_core"))]
 fn _test_for_send_sync() {
   let _: &(dyn Sync + Send) = &module();
 

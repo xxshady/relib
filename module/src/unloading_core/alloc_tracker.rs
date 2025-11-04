@@ -163,6 +163,14 @@ pub unsafe fn dealloc(allocs: &[Allocation]) {
   UNLOAD_DEALLOCATION.swap(false, Ordering::SeqCst);
 }
 
+pub fn remove_ptr_from_cache(ptr: *mut u8) {
+  let removed = {
+    let mut cache = lock_allocs_cache();
+    cache.remove(&AllocatorPtr(ptr)).is_some()
+  };
+  dbg!(removed);
+}
+
 #[cfg(feature = "dealloc_validation")]
 /// is this pointer allocated by this allocator and is still alive?
 fn is_ptr_valid(ptr: *mut u8) -> bool {

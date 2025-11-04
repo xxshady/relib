@@ -15,7 +15,10 @@ shared = { version = "0.1.0", path = "../shared" }
 [dependencies.relib_module]
 version = "0"
 path = "../../../module"
-features = ["unloading", "dealloc_validation"]
+features = [
+  "unloading",
+  "dealloc_validation"
+]
 
 [dependencies.relib_derive]
 path = "../../../derive"

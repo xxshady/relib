@@ -44,6 +44,10 @@ impl Exports for ModuleExportsImpl {
     ALLOCATOR_LOCK.store(true, Ordering::SeqCst);
   }
 
+  fn remove_allocation_ptr_from_alloc_tracker_cache(ptr: *mut u8) {
+    alloc_tracker::remove_ptr_from_cache(ptr);
+  }
+
   fn run_thread_local_dtors() {
     #[cfg(target_os = "linux")]
     {

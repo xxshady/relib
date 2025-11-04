@@ -95,7 +95,7 @@ pub fn transfer_derive(input: TokenStream) -> TokenStream {
 
   let expanded = quote! {
     unsafe impl #impl_generics ::relib_shared::Transfer<F> for #name #ty_generics #where_clause {
-      unsafe fn transfer(&self, ctx: &F::ExtraContext) {
+      unsafe fn transfer(&self, ctx: F::ExtraContext) {
         #transfer_calls
       }
     }

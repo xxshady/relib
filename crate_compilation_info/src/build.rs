@@ -14,14 +14,8 @@ pub fn provide() {
 
   let workspace_version = env!("CARGO_PKG_VERSION");
 
-  // relib_host has only "unloading" feature
-  let unloading_feature = env::var("CARGO_FEATURE_UNLOADING");
-  // relib_module has "unloading" and "unloading_core"
   let unloading_core_feature = env::var("CARGO_FEATURE_UNLOADING_CORE");
-  let unloading_enabled = match (unloading_feature, unloading_core_feature) {
-    (Ok(_), _) | (_, Ok(_)) => "1",
-    (Err(_), Err(_)) => "0",
-  };
+  let unloading_enabled = unloading_core_feature.is_ok();
 
   const ENV_KEY: &str = "__RELIB__CRATE_COMPILATION_INFO__";
   println!(

@@ -92,7 +92,7 @@ pub fn exportify(input: TokenStream2) -> TokenStream2 {
       return_type,
       quote! {
         #transfer_imports
-        unsafe { Transfer::<TransferToHost>::transfer(&return_value, &()) }
+        unsafe { Transfer::<TransferToHost>::transfer(&return_value, ()) }
         return_value
       },
       quote! {},

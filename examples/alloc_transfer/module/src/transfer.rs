@@ -1,18 +1,14 @@
-use {
-  relib_derive::Transfer,
-  relib_module::__internal::TransferToHost,
-  relib_shared::Transfer,
-};
+use {relib_derive::Transfer, relib_module::__internal::TransferToHost, relib_shared::Transfer};
 
 fn _test() {
   unsafe {
     let tuple = (1, "2", 3.0);
     let tuple2 = (1, "2", 3.0, true);
     let tuple3 = (1,);
-    Transfer::<TransferToHost>::transfer(&(tuple, tuple2, tuple3), &());
+    Transfer::<TransferToHost>::transfer(&(tuple, tuple2, tuple3), ());
 
     let array = [1, 2, 3];
-    Transfer::<TransferToHost>::transfer(&array, &());
+    Transfer::<TransferToHost>::transfer(&array, ());
   }
 
   #[derive(Transfer)]
@@ -31,14 +27,14 @@ fn _test() {
   }
 
   let _test = TestDeriveStruct(1);
-  unsafe { Transfer::<TransferToHost>::transfer(&_test, &()) };
+  unsafe { Transfer::<TransferToHost>::transfer(&_test, ()) };
 
   let _test = TestDeriveEnum::Variant1;
-  unsafe { Transfer::<TransferToHost>::transfer(&_test, &()) };
+  unsafe { Transfer::<TransferToHost>::transfer(&_test, ()) };
 
   let _test = TestDeriveStruct2 {
     field: 1,
     field2: vec![1, 2, 3],
   };
-  unsafe { Transfer::<TransferToHost>::transfer(&_test, &()) };
+  unsafe { Transfer::<TransferToHost>::transfer(&_test, ()) };
 }

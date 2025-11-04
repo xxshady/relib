@@ -1,5 +1,5 @@
 use {
-  crate::{Module, ModuleExportsForHost, module_allocs, unloading::helpers::unrecoverable},
+  crate::{Module, ModuleExportsForHost, module_allocs, unloading_core::helpers::unrecoverable},
   std::{cell::RefCell, ffi::c_void},
 };
 

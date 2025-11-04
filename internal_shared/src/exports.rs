@@ -16,6 +16,7 @@ pub trait ___Internal___Exports___ {
   fn exit(allocs: SliceAllocation);
   fn take_cached_allocs_before_exit();
   fn lock_module_allocator();
+  fn remove_allocation_ptr_from_alloc_tracker_cache(ptr: *mut u8);
 
   // linux-only
   fn spawned_threads_count() -> u64;

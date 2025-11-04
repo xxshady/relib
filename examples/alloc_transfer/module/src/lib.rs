@@ -1,9 +1,7 @@
 // TODO: remove it?
 mod transfer;
 
-use std::alloc::Layout;
-
-use shared::Exports;
+use {shared::Exports, std::alloc::Layout};
 
 relib_interface::include_all!();
 
@@ -28,7 +26,8 @@ impl Exports for gen_exports::ModuleExportsImpl {
 
   fn nested_alloc(vec: Vec<Box<String>>) {
     dbg!(vec.as_ptr(), vec[0].as_ptr());
-    dbg!(Layout::for_value(&vec), Layout::for_value(&vec[0]));
+    // this is invalid:
+    // dbg!(Layout::for_value(&vec), Layout::for_value(&vec[0]));
     std::mem::forget(vec);
   }
 }

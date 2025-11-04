@@ -190,10 +190,7 @@ fn generate_exports_(
         unsafe {
           Transfer::<TransferToModule>::transfer(
             &#inputs_without_types,
-            &(
-              Layout::for_value(&#inputs_without_types),
-              self.____module_id____,
-            )
+            self.____module_id____,
           );
         };
       )*
@@ -303,7 +300,7 @@ fn generate_exports_(
     } else {
       (
         quote! {
-          #ident: #lifetimes_for fn( #inputs ) #output,
+          pub(crate) #ident: #lifetimes_for fn( #inputs ) #output,
         },
         import_init,
         quote! {
@@ -422,10 +419,7 @@ fn generate_imports_(
         unsafe {
           Transfer::<TransferToModule>::transfer(
             &return_value,
-            &(
-              Layout::for_value(&return_value),
-              ____transfer_module_id_____,
-            )
+            ____transfer_module_id_____,
           );
         };
         return_value

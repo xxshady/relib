@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-#[cfg(feature = "unloading")]
+#[cfg(feature = "unloading_core")]
 #[derive(Error, Debug)]
 pub enum UnloadError {
   #[error(
