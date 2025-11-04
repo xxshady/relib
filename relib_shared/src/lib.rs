@@ -1,7 +1,12 @@
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet, LinkedList, VecDeque};
+use std::{
+  alloc::Layout,
+  collections::{BTreeMap, BTreeSet, HashMap, HashSet, LinkedList, VecDeque},
+  fmt::Debug,
+};
 
 pub type ModuleId = u64;
 
+// TODO: improve this description:
 /// A trait for moving allocations to the host (executable) from the module (cdylib).
 /// This is necessary since module has global alloc tracker allocations,
 /// when module is unloaded all leaks are deallocated manually so we need to manually
@@ -12,6 +17,7 @@ pub type ModuleId = u64;
 )]
 pub unsafe trait Transfer<F>
 where
+  // TODO: turn it into associated type?
   F: TransferTarget,
 {
   /// # Safety
@@ -21,8 +27,8 @@ where
 }
 
 pub unsafe trait TransferTarget {
-  type ExtraContext;
-  fn transfer(ptr: *mut u8, ctx: &Self::ExtraContext);
+  type ExtraContext: Debug;
+  fn transfer(ptr: *mut u8, layout: Layout, ctx: &Self::ExtraContext);
 }
 
 macro_rules! impl_for_copy {
@@ -56,6 +62,12 @@ impl_for_copy!(
 
   *mut T, generics: T
   *const T, generics: T
+
+  // TODO: more impls
+  fn(T1) -> T2, generics: T1, T2
+  fn(T1, T2) -> T3, generics: T1, T2, T3
+  unsafe fn(T1) -> T2, generics: T1, T2
+  unsafe fn(T1, T2) -> T3, generics: T1, T2, T3
 );
 
 unsafe impl<T, F> Transfer<F> for Vec<T>
@@ -65,6 +77,8 @@ where
 {
   unsafe fn transfer(&self, ctx: &F::ExtraContext) {
     let ptr = self.as_ptr();
+    println!("[transfer] Vec {ptr:?} ctx: {ctx:?}");
+
     F::transfer(ptr as *mut u8, ctx);
 
     for el in self {
@@ -82,6 +96,8 @@ where
 {
   unsafe fn transfer(&self, ctx: &F::ExtraContext) {
     let ptr = &**self as *const T;
+    println!("[transfer] Box {ptr:?} ctx: {ctx:?}");
+
     F::transfer(ptr as *mut u8, ctx);
     // The inner value also needs to be transferred if it contains allocations
     unsafe {
@@ -93,6 +109,7 @@ where
 unsafe impl<F: TransferTarget> Transfer<F> for String {
   unsafe fn transfer(&self, ctx: &F::ExtraContext) {
     let ptr = self.as_ptr();
+    println!("[transfer] String {ptr:?} ctx: {ctx:?}");
     F::transfer(ptr as *mut u8, ctx);
   }
 }

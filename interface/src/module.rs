@@ -31,6 +31,15 @@ pub fn generate_internal(
   );
 }
 
+#[cfg(feature = "internal")]
+pub fn generate_internal_exports_with_prefix(
+  prefix: &str,
+  exports_file_content: &'static str,
+  exports_trait_path: &str,
+) {
+  generate_exports_(exports_file_content, exports_trait_path, false, prefix);
+}
+
 /// in the OUT_DIR which you can include using
 /// `relib_interface::include_exports!();` and `relib_interface::include_exports!();`
 /// in your `lib.rs` or `main.rs`

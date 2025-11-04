@@ -8,9 +8,11 @@ use {
 
 pub mod exports;
 pub mod imports;
+pub mod exports_no_unloading;
 
 pub const EXPORTS: &str = include_str!("exports.rs");
 pub const IMPORTS: &str = include_str!("imports.rs");
+pub const EXPORTS_NO_UNLOADING: &str = include_str!("exports_no_unloading.rs");
 
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -30,8 +32,8 @@ pub struct Allocation(pub AllocatorPtr, pub StableLayout);
 
 impl Debug for Allocation {
   fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-    let Self(AllocatorPtr(ptr), StableLayout { size, .. }) = self;
-    write!(f, "({ptr:?}, {size:?})")
+    let Self(AllocatorPtr(ptr), StableLayout { size, align }) = self;
+    write!(f, "({ptr:?}, size: {size:?} align: {align:?})")
   }
 }
 
@@ -200,3 +202,6 @@ pub fn type_needs_box(_type_: &str) -> bool {
 
   // !stable_copy_type
 }
+
+pub type Alloc = unsafe fn(layout: StableLayout) -> *mut u8;
+pub type Dealloc = unsafe fn(ptr: *mut u8, layout: StableLayout);

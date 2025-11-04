@@ -4,7 +4,6 @@ use {
     helpers::{assert_allocator_is_still_accessible, unrecoverable},
   },
   relib_internal_shared::{Allocation, AllocatorOp, AllocatorPtr, StableLayout},
-  relib_shared::TransferTarget,
   std::{
     alloc::{GlobalAlloc, Layout},
     collections::HashMap,
@@ -183,24 +182,18 @@ pub fn _suppress_warn() {
   }
 }
 
-pub struct TransferToHost;
+pub fn transfer_alloc_to_host(ptr: *mut u8) {
+  let mut cache = lock_allocs_cache();
 
-unsafe impl TransferTarget for TransferToHost {
-  type ExtraContext = ();
-
-  fn transfer(ptr: *mut u8, _: &()) {
-    let mut cache = lock_allocs_cache();
-
-    let transferred = cache.remove(&AllocatorPtr(ptr)).is_some();
-    if transferred {
-      return;
-    }
-
-    let transferred = unsafe { gen_imports::transfer_alloc_to_host(MODULE_ID, ptr) };
-    if transferred {
-      return;
-    }
-
-    unrecoverable("failed to transfer allocation to host");
+  let transferred = cache.remove(&AllocatorPtr(ptr)).is_some();
+  if transferred {
+    return;
   }
+
+  let transferred = unsafe { gen_imports::transfer_alloc_to_host(MODULE_ID, ptr) };
+  if transferred {
+    return;
+  }
+
+  unrecoverable("failed to transfer allocation to host");
 }

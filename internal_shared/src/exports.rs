@@ -1,8 +1,18 @@
-use {crate::SliceAllocation, relib_shared::ModuleId, std::ffi::c_void};
+use {
+  crate::{Alloc, Dealloc, SliceAllocation},
+  relib_shared::ModuleId,
+  std::ffi::c_void,
+};
 
 #[expect(non_camel_case_types)]
 pub trait ___Internal___Exports___ {
-  fn init(host_owner_thread: usize, module: ModuleId, enable_alloc_tracker: bool);
+  fn init(
+    host_owner_thread: usize,
+    module: ModuleId,
+    enable_alloc_tracker: bool,
+    alloc: Alloc,
+    dealloc: Dealloc,
+  );
   fn exit(allocs: SliceAllocation);
   fn take_cached_allocs_before_exit();
   fn lock_module_allocator();

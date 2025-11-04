@@ -2,7 +2,6 @@ mod module;
 mod errors;
 pub use errors::UnloadError;
 pub(crate) mod module_allocs;
-pub use module_allocs::TransferToModule;
 pub(crate) mod helpers;
 mod imports_impl;
 #[cfg(target_os = "windows")]

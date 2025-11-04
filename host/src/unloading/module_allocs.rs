@@ -1,7 +1,7 @@
 use {
   super::{InternalModuleExports, helpers::unrecoverable},
   relib_internal_shared::{Allocation, AllocatorOp, AllocatorPtr, SliceAllocatorOp, StableLayout},
-  relib_shared::{ModuleId, TransferTarget},
+  relib_shared::ModuleId,
   std::{
     alloc::Layout,
     collections::HashMap,
@@ -62,7 +62,7 @@ pub fn remove_module(
   println!(
     "calling dealloc for:\n\
     {:?}",
-    allocs.iter().map(|v| v.0.0).collect::<Vec<_>>()
+    allocs.iter().map(|v| v).collect::<Vec<_>>()
   );
 
   unsafe {
@@ -121,21 +121,15 @@ pub fn transfer_alloc_to_host(module_id: ModuleId, ptr: *mut u8) -> bool {
   allocs.remove(&ptr).is_some()
 }
 
-pub struct TransferToModule;
+pub fn transfer_alloc_to_module(ptr: *mut u8, layout: Layout, module_id: relib_shared::ModuleId) {
+  let mut allocs = lock_allocs();
+  let allocs = allocs
+    .get_mut(&module_id)
+    .unwrap_or_else(|| unrecoverable("transfer_alloc_to_host unreachable"));
 
-unsafe impl TransferTarget for TransferToModule {
-  type ExtraContext = (Layout, relib_shared::ModuleId);
+  let ptr = AllocatorPtr(ptr);
 
-  fn transfer(ptr: *mut u8, (layout, module_id): &Self::ExtraContext) {
-    let mut allocs = lock_allocs();
-    let allocs = allocs
-      .get_mut(module_id)
-      .unwrap_or_else(|| unrecoverable("transfer_alloc_to_host unreachable"));
-
-    let ptr = AllocatorPtr(ptr);
-
-    // TODO: get rid of StableLayout if we can just use std types as they are
-    // "guaranteed" to be ABI-stable between two crates compiled with the same rustc version + flags
-    allocs.insert(ptr, Allocation(ptr, (*layout).into()));
-  }
+  // TODO: get rid of StableLayout if we can just use std types as they are
+  // "guaranteed" to be ABI-stable between two crates compiled with the same rustc version + flags
+  allocs.insert(ptr, Allocation(ptr, layout.into()));
 }

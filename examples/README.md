@@ -70,6 +70,7 @@ This example shows how you can make your own export macro for main function whic
 - Try to change main function of module, add arguments or change return type.
 - Try to build the module using `cargo build --workspace` in export_main_macro directory
 
+<!-- TODO: update this example, module's global allocator should use host global alloctor -->
 ## [Custom global allocator](./custom_global_alloc)
 
 How to run:<br>

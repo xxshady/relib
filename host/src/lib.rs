@@ -1,6 +1,6 @@
 use {
   libloading::Symbol,
-  relib_internal_shared::Str,
+  relib_internal_shared::{StableLayout, Str},
   std::{ffi::OsStr, path::Path},
 };
 
@@ -11,6 +11,9 @@ pub use errors::LoadError;
 mod unloading;
 #[cfg(feature = "unloading")]
 pub use unloading::UnloadError;
+
+#[cfg(not(feature = "unloading"))]
+mod no_unloading;
 
 mod module;
 pub use module::Module;
@@ -28,7 +31,24 @@ mod windows;
 #[doc(hidden)]
 pub mod __internal {
   #[cfg(feature = "unloading")]
-  pub use crate::unloading::TransferToModule;
+  use {
+    crate::unloading::module_allocs::transfer_alloc_to_module, relib_shared::TransferTarget,
+    std::alloc::Layout,
+  };
+
+  pub struct TransferToModule;
+
+  unsafe impl TransferTarget for TransferToModule {
+    type ExtraContext = (Layout, relib_shared::ModuleId);
+
+    fn transfer(ptr: *mut u8, (layout, module_id): &Self::ExtraContext) {
+      #[cfg(feature = "unloading")]
+      transfer_alloc_to_module(ptr, *layout, *module_id);
+
+      #[cfg(not(feature = "unloading"))]
+      let _ = (ptr, layout, module_id);
+    }
+  }
 }
 
 pub use relib_shared::*;
@@ -156,10 +176,24 @@ pub unsafe fn load_module_with_options<E: ModuleExportsForHost>(
 
     let internal_exports = unloading::InternalModuleExports::new(&library, module_id);
     unsafe {
-      internal_exports.init(thread_id::get(), module_id, enable_alloc_tracker);
+      internal_exports.init(
+        thread_id::get(),
+        module_id,
+        enable_alloc_tracker,
+        global_alloc,
+        global_dealloc,
+      );
     }
     internal_exports
   };
+
+  #[cfg(not(feature = "unloading"))]
+  {
+    let exports = no_unloading::InternalModuleExportsNoUnloading::new(&library, module_id);
+    unsafe {
+      exports.init(global_alloc, global_dealloc);
+    }
+  }
 
   let pub_exports = E::new(&library, module_id);
   init_imports.init(&library);
@@ -235,4 +269,12 @@ pub unsafe fn __suppress_unused_warning_for_windows_only_exports(
   exports: unloading::InternalModuleExports,
 ) {
   unsafe { exports.set_dealloc_callback(todo!()) }
+}
+
+unsafe fn global_alloc(layout: StableLayout) -> *mut u8 {
+  unsafe { std::alloc::alloc(layout.into()) }
+}
+
+unsafe fn global_dealloc(ptr: *mut u8, layout: StableLayout) {
+  unsafe { std::alloc::dealloc(ptr, layout.into()) }
 }

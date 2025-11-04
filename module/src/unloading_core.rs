@@ -20,10 +20,10 @@ mod pthread_key_hooks;
 mod helpers;
 mod exports_impl;
 
-mod alloc_tracker;
+pub mod alloc_tracker;
 #[cfg(all(feature = "unloading_core", not(feature = "dealloc_validation")))]
 pub use alloc_tracker::_suppress_warn;
-pub use alloc_tracker::{AllocTracker, TransferToHost};
+pub use alloc_tracker::AllocTracker;
 
 #[cfg(target_os = "windows")]
 mod windows_dll_main;
@@ -34,12 +34,15 @@ mod windows_dealloc;
 /// (for example `std::mem:forget`, static items) on module unload.
 /// It sends all allocations and deallocations to host because to
 /// store allocations we need to allocate unknown amount of memory.
+///
+/// **Safety requirement** if you want to set your own `#[global_allocator]`:
+/// it must use global allocator of the host (you can use [`HostAllocProxy`] for it).
 #[cfg(feature = "global_alloc_tracker")]
-mod __alloc_tracker {
-  use {super::AllocTracker, std::alloc::System};
+mod __global_alloc {
+  use crate::{host_alloc_proxy::HostAllocProxy, unloading_core::AllocTracker};
 
   #[global_allocator]
-  static ALLOC_TRACKER: AllocTracker<System> = AllocTracker::new(System);
+  static ALLOC_TRACKER: AllocTracker<HostAllocProxy> = AllocTracker::new(HostAllocProxy);
 }
 
 static ALLOCATOR_LOCK: AtomicBool = AtomicBool::new(false);

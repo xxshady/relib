@@ -5,5 +5,12 @@ fn main() {
     relib_internal_shared::IMPORTS,
     "relib_internal_shared::imports::___Internal___Imports___",
   );
+
+  relib_interface::module::generate_internal_exports_with_prefix(
+    "internal_generated_module_no_unloading",
+    relib_internal_shared::EXPORTS_NO_UNLOADING,
+    "relib_internal_shared::exports_no_unloading::___Exports___NoUnloading___",
+  );
+
   relib_internal_crate_compilation_info::provide();
 }

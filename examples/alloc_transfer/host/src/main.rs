@@ -1,7 +1,13 @@
 use {
   libloading::library_filename,
   shared::Imports,
-  std::{error::Error, path::Path, process::Command, thread, time::Duration},
+  std::{
+    error::Error,
+    path::Path,
+    process::Command,
+    thread,
+    time::{Duration, Instant},
+  },
 };
 
 type AnyErrorResult<T = ()> = Result<T, Box<dyn Error>>;
@@ -76,42 +82,56 @@ fn run_module() -> AnyErrorResult {
   let module =
     unsafe { relib_host::load_module::<gen_exports::ModuleExports>(dylib_path, init_imports) }?;
 
-  let returned = unsafe { module.call_main::<Vec<u8>>() };
-  let returned = returned.unwrap();
+  {
+    let measure = Instant::now();
 
-  println!(
-    "module returned vec: {:?}",
-    &returned[..10.min(returned.len())]
-  );
+    let returned = unsafe { module.call_main::<Vec<u8>, 
+      // TODO: fix this
+      relib_host::__internal::TransferToModule
+    >()
+    };
+    let returned = returned.unwrap();
 
-  let ret_vec = unsafe {
-    let vec = vec![1, 2, 3, 4, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5];
-    module.exports().take_forget(vec).unwrap();
+    println!(
+      "module returned vec: {:?}",
+      &returned[..10.min(returned.len())]
+    );
 
-    let vec = vec![1, 2, 3, 4, 5, 1, 2, 3, 4, 5];
-    module.exports().take_drop(vec).unwrap();
+    let ret_vec = unsafe {
+      let vec = vec![1, 2, 3, 4, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5];
+      module.exports().take_forget(vec).unwrap();
 
-    module.exports().ret().unwrap()
-  };
+      let vec = vec![1, 2, 3, 4, 5, 1, 2, 3, 4, 5];
+      module.exports().take_drop(vec).unwrap();
 
-  // when unloading fails it is not safe to load it again
-  module
-    .unload()
-    .map_err(|e| format!("module unloading failed: {e:#}"))?;
+      {
+        let mut vec = vec![];
 
-  dbg!();
+        // for _ in 0..3 {
+          vec.push(Box::new("fkgjfkgjkfg".into()));
+        // }
 
-  // unsafe {
-  //   let _ = std::alloc::alloc_zeroed(std::alloc::Layout::new::<[u8; 1024 * 1024 * 100]>());
-  // }
+        println!("----------------");
+        module.exports().nested_alloc(vec).unwrap();
+        println!("----------------");
+      }
 
-  dbg!();
+      module.exports().ret().unwrap()
+    };
 
-  println!(
-    "after unloading module returned vec: {:?} ret_vec: {:?}",
-    &returned[..10.min(returned.len())],
-    &ret_vec[..10.min(ret_vec.len())]
-  );
+    // when unloading fails it is not safe to load it again
+    module
+      .unload()
+      .map_err(|e| format!("module unloading failed: {e:#}"))?;
+
+    println!(
+      "after unloading module returned vec: {:?} ret_vec: {:?}",
+      &returned[..10.min(returned.len())],
+      &ret_vec[..10.min(ret_vec.len())]
+    );
+
+    dbg!(measure.elapsed());
+  }
 
   Ok(())
 }

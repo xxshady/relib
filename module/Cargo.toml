@@ -9,10 +9,12 @@ rust-version.workspace = true
 description = "relib is a framework for reloadable dynamic libraries"
 
 [features]
+default = ["host_global_alloc"]
 unloading = ["unloading_core", "global_alloc_tracker"]
 unloading_core = ["relib_interface/unloading", "dep:thread-id"]
 global_alloc_tracker = []
 dealloc_validation = []
+host_global_alloc = []
 
 [lints.clippy]
 # unrecoverable must be used instead
