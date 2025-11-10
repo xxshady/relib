@@ -33,9 +33,9 @@ pub mod imports {
   windows_targets::link!("kernel32.dll" "system" fn GetCurrentProcess() -> HANDLE);
   windows_targets::link!("kernel32.dll" "system" fn GetLastError() -> DWORD);
 
-  #[cfg(feature = "unloading")]
+  #[cfg(feature = "unloading_core")]
   windows_targets::link!("kernel32.dll" "system" fn CreateThread(lpthreadattributes : *const c_void, dwstacksize : usize, lpstartaddress : unsafe extern "system" fn(main: *mut c_void) -> u32, lpparameter : *mut c_void, dwcreationflags : u32, lpthreadid : *mut u32) -> HANDLE);
-  #[cfg(feature = "unloading")]
+  #[cfg(feature = "unloading_core")]
   pub type CreateThread = unsafe extern "system" fn(
     lpthreadattributes: *const c_void,
     dwstacksize: usize,

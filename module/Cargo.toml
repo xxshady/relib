@@ -9,10 +9,12 @@ rust-version.workspace = true
 description = "relib is a framework for reloadable dynamic libraries"
 
 [features]
+default = ["host_global_alloc"]
 unloading = ["unloading_core", "global_alloc_tracker"]
 unloading_core = ["relib_interface/unloading", "dep:thread-id"]
 global_alloc_tracker = []
 dealloc_validation = []
+host_global_alloc = []
 
 [lints.clippy]
 # unrecoverable must be used instead
@@ -41,7 +43,7 @@ libc.workspace = true
 
 [dependencies.relib_internal_shared]
 version = "=0.7.0"
-path = "../shared"
+path = "../internal_shared"
 
 [dependencies.relib_interface]
 version = "=0.7.0"
@@ -53,6 +55,10 @@ version = "=0.7.0"
 path = "../crate_compilation_info"
 features = ["normal"]
 
+[dependencies.relib_shared]
+version = "=0.7.0"
+path = "../relib_shared"
+
 [build-dependencies]
 
 [build-dependencies.relib_interface]
@@ -62,7 +68,7 @@ features = ["internal", "build"]
 
 [build-dependencies.relib_internal_shared]
 version = "=0.7.0"
-path = "../shared"
+path = "../internal_shared"
 
 [build-dependencies.relib_internal_crate_compilation_info]
 version = "=0.7.0"

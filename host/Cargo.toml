@@ -9,8 +9,15 @@ rust-version.workspace = true
 description = "relib is a framework for reloadable dynamic libraries"
 
 [features]
-unloading = ["relib_interface/unloading", "dep:thread-id"]
+unloading = ["unloading_core", "global_alloc"]
 super_special_reinit_of_dbghelp = []
+global_alloc = []
+unloading_core = [
+  "relib_interface/unloading",
+  "dep:thread-id",
+  "dep:allocator-api2",
+  "dep:hashbrown",
+]
 
 [lints.clippy]
 unwrap_used = "forbid"
@@ -25,6 +32,16 @@ rustdoc-args = ["--generate-link-to-definition", "--cfg", "relib_docs"]
 libloading.workspace = true
 thiserror = "2.0.3"
 
+# ------- these two are needed together:
+[dependencies.allocator-api2]
+version = "=0.2.21"
+optional = true
+
+[dependencies.hashbrown]
+version = "=0.16.0"
+optional = true
+# --------------------------------------
+
 [dependencies.thread-id]
 optional = true
 workspace = true
@@ -38,7 +55,7 @@ minhook = "0.6.0"
 
 [dependencies.relib_internal_shared]
 version = "=0.7.0"
-path = "../shared"
+path = "../internal_shared"
 
 [dependencies.relib_interface]
 version = "=0.7.0"
@@ -50,6 +67,10 @@ version = "=0.7.0"
 path = "../crate_compilation_info"
 features = ["normal"]
 
+[dependencies.relib_shared]
+version = "=0.7.0"
+path = "../relib_shared"
+
 [build-dependencies]
 
 [build-dependencies.relib_interface]
@@ -59,7 +80,7 @@ features = ["internal", "build"]
 
 [build-dependencies.relib_internal_shared]
 version = "=0.7.0"
-path = "../shared"
+path = "../internal_shared"
 
 [build-dependencies.relib_internal_crate_compilation_info]
 version = "=0.7.0"

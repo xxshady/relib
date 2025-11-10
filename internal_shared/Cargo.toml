@@ -9,3 +9,11 @@ rust-version.workspace = true
 description = "relib is a framework for reloadable dynamic libraries"
 
 [dependencies]
+
+[dependencies.relib_shared]
+version = "=0.7.0"
+path = "../relib_shared"
+
+[dependencies.relib_derive]
+version = "=0.7.0"
+path = "../derive"

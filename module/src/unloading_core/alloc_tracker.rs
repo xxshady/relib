@@ -163,6 +163,14 @@ pub unsafe fn dealloc(allocs: &[Allocation]) {
   UNLOAD_DEALLOCATION.swap(false, Ordering::SeqCst);
 }
 
+pub fn remove_ptr_from_cache(ptr: *mut u8) {
+  let removed = {
+    let mut cache = lock_allocs_cache();
+    cache.remove(&AllocatorPtr(ptr)).is_some()
+  };
+  dbg!(removed);
+}
+
 #[cfg(feature = "dealloc_validation")]
 /// is this pointer allocated by this allocator and is still alive?
 fn is_ptr_valid(ptr: *mut u8) -> bool {
@@ -180,4 +188,20 @@ pub fn _suppress_warn() {
   unsafe {
     gen_imports::is_ptr_allocated(unreachable!(), unreachable!());
   }
+}
+
+pub fn transfer_alloc_to_host(ptr: *mut u8) {
+  let mut cache = lock_allocs_cache();
+
+  let transferred = cache.remove(&AllocatorPtr(ptr)).is_some();
+  if transferred {
+    return;
+  }
+
+  let transferred = unsafe { gen_imports::transfer_alloc_to_host(MODULE_ID, ptr) };
+  if transferred {
+    return;
+  }
+
+  unrecoverable("failed to transfer allocation to host");
 }

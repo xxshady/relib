@@ -71,7 +71,7 @@ impl<E: ModuleExportsForHost> Module<E> {
 
     #[cfg(target_os = "windows")]
     {
-      use crate::{unloading::windows_dealloc, windows::dbghelp};
+      use crate::{unloading_core::windows_dealloc, windows::dbghelp};
 
       let handle = self.library_handle;
       let library = self.library.take();

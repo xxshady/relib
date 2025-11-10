@@ -1,16 +1,18 @@
 use {
   libloading::Symbol,
-  relib_internal_shared::Str,
+  relib_internal_shared::{StableLayout, Str},
   std::{ffi::OsStr, path::Path},
 };
 
 mod errors;
 pub use errors::LoadError;
+#[cfg(feature = "unloading_core")]
+mod unloading_core;
+#[cfg(feature = "unloading_core")]
+pub use unloading_core::{UnloadError, global_alloc::AllocLayoutTracker};
 
-#[cfg(feature = "unloading")]
-mod unloading;
-#[cfg(feature = "unloading")]
-pub use unloading::*;
+#[cfg(not(feature = "unloading_core"))]
+mod no_unloading;
 
 mod module;
 pub use module::Module;
@@ -24,6 +26,35 @@ pub use exports_types::{InitImports, ModuleExportsForHost};
 
 #[cfg(target_os = "windows")]
 mod windows;
+
+#[doc(hidden)]
+pub mod __internal {
+  #[cfg(feature = "unloading_core")]
+  use crate::unloading_core::{global_alloc::layout_of, module_allocs::transfer_alloc_to_module};
+  use relib_shared::{ModuleId, TransferTarget};
+
+  pub struct TransferToModule;
+
+  unsafe impl TransferTarget for TransferToModule {
+    type ExtraContext = ModuleId;
+
+    fn transfer(ptr: *mut u8, module_id: ModuleId) {
+      #[cfg(feature = "unloading_core")]
+      {
+        // TEST
+        dbg!(ptr);
+
+        let layout = layout_of(ptr);
+        transfer_alloc_to_module(ptr, layout, module_id);
+      }
+
+      #[cfg(not(feature = "unloading_core"))]
+      let _ = (ptr, module_id);
+    }
+  }
+}
+
+pub use relib_shared::*;
 
 /// Loads a module (dynamic library) by specified path.
 ///
@@ -76,7 +107,7 @@ pub unsafe fn load_module<E: ModuleExportsForHost>(
     load_module_with_options(
       path,
       init_imports,
-      #[cfg(feature = "unloading")]
+      #[cfg(feature = "unloading_core")]
       true,
     )
   }
@@ -91,7 +122,7 @@ pub unsafe fn load_module_with_options<E: ModuleExportsForHost>(
   init_imports: impl InitImports,
 
   // needs to be passed at runtime because host can load different modules with enabled and disabled alloc tracker
-  #[cfg(feature = "unloading")] enable_alloc_tracker: bool,
+  #[cfg(feature = "unloading_core")] enable_alloc_tracker: bool,
 ) -> Result<Module<E>, crate::LoadError> {
   // prevent parallel loading of the same dynamic library
   // to guarantee that LoadError::ModuleAlreadyLoaded is returned
@@ -103,8 +134,8 @@ pub unsafe fn load_module_with_options<E: ModuleExportsForHost>(
   {
     windows::dbghelp::try_init_from_load_module();
     unsafe {
-      #[cfg(feature = "unloading")]
-      unloading::windows_thread_spawn_hook::init();
+      #[cfg(feature = "unloading_core")]
+      unloading_core::windows_thread_spawn_hook::init();
       windows::enable_hooks();
     }
   }
@@ -141,31 +172,48 @@ pub unsafe fn load_module_with_options<E: ModuleExportsForHost>(
 
   let module_id = next_module_id();
 
-  #[cfg(feature = "unloading")]
+  #[cfg(feature = "unloading_core")]
   let internal_exports = {
-    unloading::init_internal_imports(&library);
-    unloading::module_allocs::add_module(module_id);
+    unloading_core::init_internal_imports(&library);
+    let internal_exports = unloading_core::InternalModuleExports::new(&library, module_id);
 
-    let internal_exports = unloading::InternalModuleExports::new(&library);
+    unloading_core::module_allocs::add_module(
+      module_id,
+      internal_exports.remove_allocation_ptr_from_alloc_tracker_cache,
+    );
     unsafe {
-      internal_exports.init(thread_id::get(), module_id, enable_alloc_tracker);
+      internal_exports.init(
+        thread_id::get(),
+        module_id,
+        enable_alloc_tracker,
+        global_alloc,
+        global_dealloc,
+      );
     }
     internal_exports
   };
 
-  let pub_exports = E::new(&library);
+  #[cfg(not(feature = "unloading_core"))]
+  {
+    let exports = no_unloading::InternalModuleExportsNoUnloading::new(&library, module_id);
+    unsafe {
+      exports.init(global_alloc, global_dealloc);
+    }
+  }
+
+  let pub_exports = E::new(&library, module_id);
   init_imports.init(&library);
 
   let module = Module::new(
     module_id,
     library,
     pub_exports,
-    #[cfg(feature = "unloading")]
+    #[cfg(feature = "unloading_core")]
     (internal_exports, path.to_owned(), enable_alloc_tracker),
   );
 
-  #[cfg(all(target_os = "windows", feature = "unloading"))]
-  unloading::windows_thread_spawn_hook::add_module(module.library_handle);
+  #[cfg(all(target_os = "windows", feature = "unloading_core"))]
+  unloading_core::windows_thread_spawn_hook::add_module(module.library_handle);
 
   Ok(module)
 }
@@ -186,8 +234,8 @@ pub unsafe fn init() {
   {
     windows::dbghelp::try_init_standalone();
     unsafe {
-      #[cfg(feature = "unloading")]
-      unloading::windows_thread_spawn_hook::init();
+      #[cfg(feature = "unloading_core")]
+      unloading_core::windows_thread_spawn_hook::init();
       windows::enable_hooks();
     }
   }
@@ -211,9 +259,9 @@ pub unsafe fn forcibly_reinit_dbghelp() {
 
 // TODO: fix it
 #[doc(hidden)]
-#[cfg(all(target_os = "windows", feature = "unloading"))]
+#[cfg(all(target_os = "windows", feature = "unloading_core"))]
 pub unsafe fn __suppress_unused_warning_for_linux_only_exports(
-  exports: unloading::InternalModuleExports,
+  exports: unloading_core::InternalModuleExports,
 ) {
   unsafe {
     exports.spawned_threads_count();
@@ -222,9 +270,25 @@ pub unsafe fn __suppress_unused_warning_for_linux_only_exports(
 
 #[doc(hidden)]
 #[expect(unreachable_code)]
-#[cfg(all(target_os = "linux", feature = "unloading"))]
+#[cfg(all(target_os = "linux", feature = "unloading_core"))]
 pub unsafe fn __suppress_unused_warning_for_windows_only_exports(
-  exports: unloading::InternalModuleExports,
+  exports: unloading_core::InternalModuleExports,
 ) {
   unsafe { exports.set_dealloc_callback(todo!()) }
 }
+
+unsafe fn global_alloc(layout: StableLayout) -> *mut u8 {
+  unsafe { std::alloc::alloc(layout.into()) }
+}
+
+unsafe fn global_dealloc(ptr: *mut u8, layout: StableLayout) {
+  unsafe { std::alloc::dealloc(ptr, layout.into()) }
+}
+
+#[cfg(all(feature = "global_alloc", not(feature = "unloading_core")))]
+compile_error!(
+  "\"global_alloc\" feature cannot be enabled without \"unloading_core\" feature:\n\
+  you can either: \
+  enable \"unloading\" feature or \
+  disable \"global_alloc\" and enable \"unloading_core\""
+);

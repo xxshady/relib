@@ -1,8 +1,9 @@
 use {
   super::{gen_imports::ModuleImportsImpl, helpers, module_allocs},
   relib_internal_shared::{
-    ModuleId, SliceAllocatorOp, StableLayout, Str, imports::___Internal___Imports___ as Imports,
+    SliceAllocatorOp, StableLayout, Str, imports::___Internal___Imports___ as Imports,
   },
+  relib_shared::ModuleId,
 };
 
 impl Imports for ModuleImportsImpl {
@@ -21,5 +22,9 @@ impl Imports for ModuleImportsImpl {
 
   fn is_ptr_allocated(module: ModuleId, ptr: *mut u8) -> bool {
     module_allocs::is_ptr_allocated(module, ptr)
+  }
+
+  fn transfer_alloc_to_host(module: ModuleId, ptr: *mut u8) -> bool {
+    module_allocs::transfer_alloc_to_host(module, ptr)
   }
 }

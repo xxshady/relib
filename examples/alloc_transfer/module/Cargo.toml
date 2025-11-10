@@ -1,0 +1,33 @@
+[package]
+name = "module"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+relib_interface = { version = "0.7.0", features = [
+  "include",
+], path = "../../../interface" }
+shared = { version = "0.1.0", path = "../shared" }
+
+[dependencies.relib_module]
+version = "0"
+path = "../../../module"
+features = [
+  "unloading",
+  "dealloc_validation"
+]
+
+[dependencies.relib_derive]
+path = "../../../derive"
+
+[dependencies.relib_shared]
+path = "../../../relib_shared"
+
+[build-dependencies]
+relib_interface = { version = "0.7.0", features = [
+  "build",
+], path = "../../../interface" }
+shared = { version = "0.1.0", path = "../shared" }

@@ -2,15 +2,26 @@ use {
   super::{
     ALLOCATOR_LOCK, HOST_OWNER_THREAD, MODULE_ID, alloc_tracker, gen_exports::ModuleExportsImpl,
   },
-  relib_internal_shared::{ModuleId, exports::___Internal___Exports___ as Exports},
+  crate::host_alloc_proxy::HOST_ALLOC_PROXY,
+  relib_internal_shared::{Alloc, Dealloc, exports::___Internal___Exports___ as Exports},
+  relib_shared::ModuleId,
   std::{ffi::c_void, sync::atomic::Ordering},
 };
 
 impl Exports for ModuleExportsImpl {
-  fn init(host_owner_thread: usize, module: ModuleId, enable_alloc_tracker: bool) {
+  fn init(
+    host_owner_thread: usize,
+    module: ModuleId,
+    enable_alloc_tracker: bool,
+    alloc: Alloc,
+    dealloc: Dealloc,
+  ) {
     unsafe {
       HOST_OWNER_THREAD = host_owner_thread;
       MODULE_ID = module;
+
+      HOST_ALLOC_PROXY.alloc.set(alloc).unwrap();
+      HOST_ALLOC_PROXY.dealloc.set(dealloc).unwrap();
 
       if enable_alloc_tracker {
         alloc_tracker::init();
@@ -31,6 +42,10 @@ impl Exports for ModuleExportsImpl {
 
   fn lock_module_allocator() {
     ALLOCATOR_LOCK.store(true, Ordering::SeqCst);
+  }
+
+  fn remove_allocation_ptr_from_alloc_tracker_cache(ptr: *mut u8) {
+    alloc_tracker::remove_ptr_from_cache(ptr);
   }
 
   fn run_thread_local_dtors() {

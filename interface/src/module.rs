@@ -1,7 +1,8 @@
 use {
   crate::shared::{
-    SAFETY_DOC, TraitFn, extract_trait_name_from_path, for_each_trait_item, out_dir_file_name,
-    parse_trait_file, pass_out_dir_file_name_to_crate_code, type_needs_box, write_code_to_file,
+    SAFETY_DOC, TRANSFER_IMPORTS_TO_HOST, TRANSFER_IMPORTS_TO_HOST_INTERNAL, TraitFn,
+    extract_trait_name_from_path, for_each_trait_item, out_dir_file_name, parse_trait_file,
+    pass_out_dir_file_name_to_crate_code, type_needs_box, write_code_to_file,
   },
   proc_macro2::TokenStream as TokenStream2,
   quote::quote,
@@ -28,6 +29,15 @@ pub fn generate_internal(
     false,
     "internal_generated_module",
   );
+}
+
+#[cfg(feature = "internal")]
+pub fn generate_internal_exports_with_prefix(
+  prefix: &str,
+  exports_file_content: &'static str,
+  exports_trait_path: &str,
+) {
+  generate_exports_(exports_file_content, exports_trait_path, false, prefix);
 }
 
 /// in the OUT_DIR which you can include using
@@ -154,6 +164,8 @@ fn generate_exports_(
       lifetimes_module: _,
     } = for_each_trait_item(trait_name, &item);
 
+    let transfer_imports = TRANSFER_IMPORTS_TO_HOST.clone();
+
     // !!! keep in sync with main and before_unload calls in relib_host crate !!!
     let code = if pub_exports {
       let return_type = output_to_return_type!(output);
@@ -170,7 +182,7 @@ fn generate_exports_(
           quote! {
             #[unsafe(no_mangle)]
             #[allow(clippy::extra_unused_lifetimes)]
-            pub extern "C" fn #post_mangled_ident #lifetimes_full (
+            pub fn #post_mangled_ident #lifetimes_full (
               return_value_ptr: *mut #return_type
             ) {
               use std::boxed::Box;
@@ -181,18 +193,27 @@ fn generate_exports_(
           },
         )
       } else {
-        (return_type, quote! { return_value }, quote! {})
+        (
+          return_type,
+          quote! {
+            #transfer_imports
+            unsafe { Transfer::<TransferToHost>::transfer(&return_value, ()) }
+            return_value
+          },
+          quote! {},
+        )
       };
 
       quote! {
         #[unsafe(no_mangle)]
-        pub extern "C" fn #mangled_ident #lifetimes_full (
+        #[allow(non_snake_case)]
+        pub fn #mangled_ident #lifetimes_full (
           ____success____: *mut bool,
           #inputs
         ) -> std::mem::MaybeUninit<#return_type> // will be initialized if function won't panic
         {
           let result = std::panic::catch_unwind(move || {
-            <ModuleExportsImpl as Exports>::#ident( #( #inputs_without_types )* )
+            <ModuleExportsImpl as Exports>::#ident( #( #inputs_without_types, )* )
           });
 
           match result {
@@ -220,8 +241,8 @@ fn generate_exports_(
     } else {
       quote! {
         #[unsafe(export_name = #mangled_name)]
-        pub extern "C" fn #ident #lifetimes_full ( #inputs ) #output {
-          <ModuleExportsImpl as Exports>::#ident( #( #inputs_without_types )* )
+        pub fn #ident #lifetimes_full ( #inputs ) #output {
+          <ModuleExportsImpl as Exports>::#ident( #( #inputs_without_types, )* )
         }
       }
     };
@@ -302,6 +323,36 @@ fn generate_imports_(
       #[allow(unused_variables, clippy::let_unit_value, clippy::diverging_sub_expression)]
     };
 
+    let transfer_imports_pub = TRANSFER_IMPORTS_TO_HOST.clone();
+    let transfer_imports_internal = TRANSFER_IMPORTS_TO_HOST_INTERNAL.clone();
+
+    let transfer_inputs = quote! {
+      #(
+        unsafe {
+          Transfer::<TransferToHost>::transfer(
+            &#inputs_without_types,
+            ()
+          );
+        };
+      )*
+    };
+    let transfer_inputs_pub = quote! {
+      {
+        #transfer_imports_pub
+        #transfer_inputs
+      }
+    };
+    let transfer_inputs_internal = quote! {
+      {
+        #transfer_imports_internal
+        #transfer_inputs
+      }
+    };
+
+    let transfer_return_value_module_id = quote! {
+      ____transfer_module_id_____: relib_shared::ModuleId
+    };
+
     // !!! keep in sync with main and before_unload calls in relib_host crate !!!
     let function_body = if pub_imports {
       let return_type = output_to_return_type!(output);
@@ -313,10 +364,10 @@ fn generate_imports_(
           quote! {
             #[allow(non_upper_case_globals)]
             #[unsafe(no_mangle)]
-            static mut #post_mangled_ident: #lifetimes_for extern "C" fn(return_value_ptr: *mut #return_type) = ____post_placeholder____;
+            static mut #post_mangled_ident: #lifetimes_for fn(return_value_ptr: *mut #return_type) = ____post_placeholder____;
 
             #[allow(clippy::extra_unused_lifetimes)]
-            extern "C" fn ____post_placeholder____ #lifetimes_full (_: *mut #return_type) {
+            fn ____post_placeholder____ #lifetimes_full (_: *mut #return_type) {
               unreachable!();
             }
           },
@@ -349,13 +400,15 @@ fn generate_imports_(
       };
 
       quote! {
-        #function_static_decl: #lifetimes_for extern "C" fn(
+        #function_static_decl: #lifetimes_for fn(
           ____success____: *mut bool,
+          #transfer_return_value_module_id,
           #inputs
         ) -> std::mem::MaybeUninit<#return_type> = ____placeholder____;
 
-        extern "C" fn ____placeholder____ #lifetimes_full (
-          _: *mut bool,
+        fn ____placeholder____ #lifetimes_full (
+          ____success____: *mut bool,
+          #transfer_return_value_module_id,
           #placeholder_inputs
         ) -> std::mem::MaybeUninit<#return_type> {
           unreachable!();
@@ -365,9 +418,15 @@ fn generate_imports_(
 
         let mut ____success____ = std::mem::MaybeUninit::<bool>::uninit();
 
+        #transfer_inputs_pub
+
         #suppress_lints_for_return_value
         let return_value = unsafe {
-          #mangled_ident( ____success____.as_mut_ptr(), #( #inputs_without_types )* )
+          #mangled_ident(
+            ____success____.as_mut_ptr(),
+            relib_module::__internal::module_id(),
+            #( #inputs_without_types, )*
+          )
         };
 
         // SAFETY: this bool is guaranteed to be initialized by the host
@@ -382,14 +441,25 @@ fn generate_imports_(
       }
     } else {
       quote! {
-        #function_static_decl: #lifetimes_for extern "C" fn( #inputs ) #output = placeholder;
+        #function_static_decl: #lifetimes_for fn(
+          #transfer_return_value_module_id,
+          #inputs
+        ) #output = placeholder;
 
-        extern "C" fn placeholder #lifetimes_full ( #placeholder_inputs ) #output {
+        fn placeholder #lifetimes_full (
+          #transfer_return_value_module_id,
+          #placeholder_inputs
+        ) #output {
           unreachable!();
         }
 
+        #transfer_inputs_internal
+
         unsafe {
-          #mangled_ident( #( #inputs_without_types )* )
+          #mangled_ident(
+            crate::__internal::module_id(),
+            #( #inputs_without_types, )*
+          )
         }
       }
     };

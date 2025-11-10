@@ -5,7 +5,8 @@ use {
   syn::ItemFn,
 };
 
-/// Takes function code and transforms it into exported `extern "C"` function with panic handling.
+// TODO: update this documentation:
+/// Takes function code and transforms it into exported function with panic handling.
 /// See `relib_export` for proc-macro.
 ///
 /// # Example
@@ -17,7 +18,7 @@ use {
 ///
 /// // output:
 /// #[unsafe(export_name = "...")]
-/// extern "C" fn foo(
+/// fn foo(
 ///   ____return_value____: *mut std::mem::MaybeUninit<i32>,
 /// ) -> bool {
 ///   fn ____wrapper____() -> i32 {
@@ -53,6 +54,14 @@ pub fn exportify(input: TokenStream2) -> TokenStream2 {
   let return_type = output_to_return_type!(output);
   let inputs_without_types = fn_inputs_without_types!(inputs);
 
+  // TODO: move it to internal shared?
+  let transfer_imports = quote! {
+    use {
+      ::relib_module::__internal::TransferToHost,
+      ::relib_shared::Transfer,
+    };
+  };
+
   let ret_needs_box = relib_internal_shared::type_needs_box(&return_type.to_string());
 
   let (return_type, return_value, post_export) = if ret_needs_box {
@@ -60,7 +69,7 @@ pub fn exportify(input: TokenStream2) -> TokenStream2 {
       quote! { *mut #return_type },
       quote! {
         unsafe {
-          use std::boxed::Box;
+          use ::std::boxed::Box;
 
           let ptr = Box::into_raw(Box::new(return_value));
           ptr
@@ -68,10 +77,10 @@ pub fn exportify(input: TokenStream2) -> TokenStream2 {
       },
       quote! {
         #[unsafe(no_mangle)]
-        pub #unsafety extern "C" fn #post_mangled_name_ident(
+        pub #unsafety fn #post_mangled_name_ident(
           return_value_ptr: *mut #return_type
         ) {
-          use std::boxed::Box;
+          use ::std::boxed::Box;
           unsafe {
             drop(Box::from_raw(return_value_ptr));
           }
@@ -82,6 +91,8 @@ pub fn exportify(input: TokenStream2) -> TokenStream2 {
     (
       return_type,
       quote! {
+        #transfer_imports
+        unsafe { Transfer::<TransferToHost>::transfer(&return_value, ()) }
         return_value
       },
       quote! {},
@@ -97,6 +108,13 @@ pub fn exportify(input: TokenStream2) -> TokenStream2 {
     ) -> std::mem::MaybeUninit<#return_type> // will be initialized if function won't panic
     {
       fn #mangled_name_ident( #inputs ) #output #block
+
+      // this is needed for a better compile error
+      {
+        #transfer_imports
+        fn ____assert_type_is_transfer____<T: Transfer<TransferToHost>>() {}
+        ____assert_type_is_transfer____::<#return_type>();
+      }
 
       let result = std::panic::catch_unwind(|| {
         #mangled_name_ident( #( #inputs_without_types )* )

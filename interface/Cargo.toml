@@ -31,11 +31,12 @@ rustdoc-args = ["--generate-link-to-definition"]
 [dependencies.relib_internal_shared]
 optional = true
 version = "=0.7.0"
-path = "../shared"
+path = "../internal_shared"
 
 [dependencies.prettyplease]
 optional = true
 version = "0.2.25"
+features = ["verbatim"]
 
 [dependencies.proc-macro2]
 optional = true
