@@ -204,8 +204,7 @@ fn generate_exports_(
               #[allow(unused_braces, clippy::unit_arg)]
               std::mem::MaybeUninit::new({ #return_value })
             }
-            // ignoring content since it's handled in our panic hook or
-            // in default panic hook of std when unloading is disabled
+            // ignoring content since it's printed by std
             Err(_) => {
               unsafe {
                 *____success____ = false;

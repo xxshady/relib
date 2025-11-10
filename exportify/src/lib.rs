@@ -110,7 +110,7 @@ pub fn exportify(input: TokenStream2) -> TokenStream2 {
           #[allow(unused_braces)]
           std::mem::MaybeUninit::new({ #return_value })
         }
-        // ignoring content since it's handled in our panic hook
+        // ignoring content since it's printed by std
         Err(_) => {
           unsafe {
             *____success____ = false;
