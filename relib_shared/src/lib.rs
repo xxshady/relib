@@ -76,6 +76,7 @@ where
 {
   unsafe fn transfer(&self, ctx: F::ExtraContext) {
     let ptr = self.as_ptr();
+    // TEST
     println!("[transfer] Vec {ptr:?} ctx: {ctx:?}");
 
     F::transfer(ptr as *mut u8, ctx);
