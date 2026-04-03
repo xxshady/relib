@@ -53,9 +53,9 @@ libc.workspace = true
 windows-targets = "0.53.0"
 minhook = "0.6.0"
 
-[dependencies.relib_shared]
+[dependencies.relib_internal_shared]
 version = "=0.7.0"
-path = "../relib_shared"
+path = "../shared"
 
 [dependencies.relib_interface]
 version = "=0.7.0"
@@ -74,9 +74,9 @@ version = "=0.7.0"
 path = "../interface"
 features = ["internal", "build"]
 
-[build-dependencies.relib_shared]
+[build-dependencies.relib_internal_shared]
 version = "=0.7.0"
-path = "../relib_shared"
+path = "../shared"
 
 [build-dependencies.relib_internal_crate_compilation_info]
 version = "=0.7.0"

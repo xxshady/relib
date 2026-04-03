@@ -1,6 +1,6 @@
 use {
   libloading::Symbol,
-  relib_shared::{StableLayout, Str},
+  relib_internal_shared::{StableLayout, Str},
   std::{ffi::OsStr, path::Path},
 };
 
@@ -32,7 +32,7 @@ pub mod __internal {
   #[cfg(feature = "unloading_core")]
   use {
     crate::unloading_core::{global_alloc::layout_of, module_allocs::transfer_alloc_to_module},
-    relib_shared::ModuleId,
+    relib_internal_shared::ModuleId,
   };
 
   pub struct TransferToModule;
@@ -51,10 +51,10 @@ pub mod __internal {
     }
   }
 
-  pub use relib_shared::*;
+  pub use relib_internal_shared::*;
 }
 
-pub use relib_shared::*;
+pub use relib_internal_shared::*;
 
 /// Loads a module (dynamic library) by specified path.
 ///

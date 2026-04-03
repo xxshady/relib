@@ -4,7 +4,7 @@ members = [
   "interface",
   "host",
   "module",
-  "relib_shared",
+  "shared",
   "crate_compilation_info",
   "testing/shared",
   "testing/host",

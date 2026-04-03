@@ -1,0 +1,2755 @@
+--- Analyzing PR #35 against branch 'main' ---
+Fetching latest data from remote 'origin'...
+Found merge-base: 5198dccc31a4
+
+=== Commits in PR #35 ===
+9fe2288 - wip (xshady)
+5ddd01d - add pr_changes example (xshady)
+21a6999 - wip (xshady)
+fe99104 - update comment (xshady)
+1c1a955 - todo (xshady)
+942d6a5 - wip (xshady)
+c666cf5 - wip (xshady)
+50df62c - wip (xshady)
+f66463c - wip (xshady)
+7422c75 - wip (xshady)
+2fe446c - wip (xshady)
+a573675 - fix rustfmt config (xshady)
+
+=== Changed Files in PR #35 ===
+M	Cargo.lock
+M	Cargo.toml
+A	TODO.md
+M	crate_compilation_info/src/build.rs
+A	docs/image.png
+M	examples/README.md
+M	examples/hot_reload/main_contract/Cargo.toml
+M	examples/hot_reload/main_contract/src/lib.rs
+M	exportify/Cargo.toml
+M	exportify/src/lib.rs
+M	host/Cargo.toml
+M	host/build.rs
+M	host/src/exports_types.rs
+M	host/src/helpers.rs
+M	host/src/leak_library.rs
+M	host/src/lib.rs
+M	host/src/module.rs
+A	host/src/no_unloading.rs
+D	host/src/unloading/imports_impl.rs
+R090	host/src/unloading.rs	host/src/unloading_core.rs
+R095	host/src/unloading/errors.rs	host/src/unloading_core/errors.rs
+A	host/src/unloading_core/global_alloc.rs
+R100	host/src/unloading/helpers.rs	host/src/unloading_core/helpers.rs
+A	host/src/unloading_core/imports_impl.rs
+R097	host/src/unloading/module.rs	host/src/unloading_core/module.rs
+R057	host/src/unloading/module_allocs.rs	host/src/unloading_core/module_allocs.rs
+R097	host/src/unloading/windows_dealloc.rs	host/src/unloading_core/windows_dealloc.rs
+R100	host/src/unloading/windows_thread_spawn_hook.rs	host/src/unloading_core/windows_thread_spawn_hook.rs
+M	host/src/windows.rs
+M	host/src/windows/dbghelp.rs
+M	interface/Cargo.toml
+M	interface/src/host.rs
+M	interface/src/lib.rs
+M	interface/src/module.rs
+M	interface/src/shared.rs
+M	module/Cargo.toml
+M	module/build.rs
+M	module/src/compilation_info.rs
+A	module/src/host_alloc_proxy.rs
+M	module/src/lib.rs
+A	module/src/no_unloading.rs
+M	module/src/unloading_core.rs
+M	module/src/unloading_core/alloc_tracker.rs
+M	module/src/unloading_core/exports_impl.rs
+M	module/src/unloading_core/helpers.rs
+R089	shared/Cargo.toml	relib_shared/Cargo.toml
+R060	shared/src/exports.rs	relib_shared/src/exports.rs
+A	relib_shared/src/exports_no_unloading.rs
+A	relib_shared/src/imports.rs
+R074	shared/src/lib.rs	relib_shared/src/lib.rs
+M	rustfmt.toml
+M	scripts/pr_changes.sh
+D	shared/src/imports.rs
+
+=== Diff Content in PR #35 ===
+diff --git a/Cargo.lock b/Cargo.lock
+index a512c2b..de6e304 100755
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -50,6 +50,12 @@ dependencies = [
+  "core_extensions",
+ ]
+ 
++[[package]]
++name = "allocator-api2"
++version = "0.2.21"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
++
+ [[package]]
+ name = "as_derive_utils"
+ version = "0.11.0"
+@@ -132,6 +138,18 @@ version = "0.8.21"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
+ 
++[[package]]
++name = "equivalent"
++version = "1.0.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
++
++[[package]]
++name = "foldhash"
++version = "0.2.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
++
+ [[package]]
+ name = "generational-arena"
+ version = "0.2.9"
+@@ -141,6 +159,17 @@ dependencies = [
+  "cfg-if",
+ ]
+ 
++[[package]]
++name = "hashbrown"
++version = "0.16.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "5419bdc4f6a9207fbeba6d11b604d481addf78ecd10c11ad51e76c2f6482748d"
++dependencies = [
++ "allocator-api2",
++ "equivalent",
++ "foldhash",
++]
++
+ [[package]]
+ name = "itoa"
+ version = "1.0.14"
+@@ -295,7 +324,16 @@ dependencies = [
+ 
+ [[package]]
+ name = "relib"
+-version = "0.7.1"
++version = "0.7.0"
++
++[[package]]
++name = "relib_derive"
++version = "0.7.0"
++dependencies = [
++ "proc-macro2",
++ "quote",
++ "syn 1.0.109",
++]
+ 
+ [[package]]
+ name = "relib_export"
+@@ -318,12 +356,15 @@ dependencies = [
+ name = "relib_host"
+ version = "0.7.0"
+ dependencies = [
++ "allocator-api2",
++ "hashbrown",
+  "libc",
+  "libloading 0.8.6",
+  "minhook",
+  "relib_interface",
+  "relib_internal_crate_compilation_info",
+  "relib_internal_shared",
++ "relib_shared",
+  "thiserror",
+  "thread-id",
+  "windows-targets 0.53.0",
+@@ -347,6 +388,10 @@ version = "0.7.0"
+ [[package]]
+ name = "relib_internal_shared"
+ version = "0.7.0"
++dependencies = [
++ "relib_derive",
++ "relib_shared",
++]
+ 
+ [[package]]
+ name = "relib_module"
+@@ -357,9 +402,14 @@ dependencies = [
+  "relib_interface",
+  "relib_internal_crate_compilation_info",
+  "relib_internal_shared",
++ "relib_shared",
+  "thread-id",
+ ]
+ 
++[[package]]
++name = "relib_shared"
++version = "0.7.0"
++
+ [[package]]
+ name = "repr_offset"
+ version = "0.2.2"
+diff --git a/Cargo.toml b/Cargo.toml
+index a22caed..bb77e86 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -4,7 +4,7 @@ members = [
+   "interface",
+   "host",
+   "module",
+-  "shared",
++  "relib_shared",
+   "crate_compilation_info",
+   "testing/shared",
+   "testing/host",
+diff --git a/TODO.md b/TODO.md
+new file mode 100644
+index 0000000..ee829b1
+--- /dev/null
++++ b/TODO.md
+@@ -0,0 +1,5 @@
++remove safety requirement about abi-stable types:
++- https://users.rust-lang.org/t/prefer-dynamic-yes-in-hot-reload-or-plugin-system/115364/2
++- @workingjubilee [answer](https://discord.com/channels/273534239310479360/592856094527848449/1433864349491134504) in rust lang community discord
++  ![alt text](docs/image.png)
++- https://doc.rust-lang.org/beta/unstable-book/compiler-flags/codegen-backend.html
+diff --git a/crate_compilation_info/src/build.rs b/crate_compilation_info/src/build.rs
+index ce62841..0d3b963 100755
+--- a/crate_compilation_info/src/build.rs
++++ b/crate_compilation_info/src/build.rs
+@@ -14,14 +14,8 @@ pub fn provide() {
+ 
+   let workspace_version = env!("CARGO_PKG_VERSION");
+ 
+-  // relib_host has only "unloading" feature
+-  let unloading_feature = env::var("CARGO_FEATURE_UNLOADING");
+-  // relib_module has "unloading" and "unloading_core"
+   let unloading_core_feature = env::var("CARGO_FEATURE_UNLOADING_CORE");
+-  let unloading_enabled = match (unloading_feature, unloading_core_feature) {
+-    (Ok(_), _) | (_, Ok(_)) => "1",
+-    (Err(_), Err(_)) => "0",
+-  };
++  let unloading_enabled = unloading_core_feature.is_ok();
+ 
+   const ENV_KEY: &str = "__RELIB__CRATE_COMPILATION_INFO__";
+   println!(
+diff --git a/docs/image.png b/docs/image.png
+new file mode 100644
+index 0000000..4a9f35a
+Binary files /dev/null and b/docs/image.png differ
+diff --git a/examples/README.md b/examples/README.md
+index 347fa50..5d5489a 100644
+--- a/examples/README.md
++++ b/examples/README.md
+@@ -70,6 +70,7 @@ This example shows how you can make your own export macro for main function whic
+ - Try to change main function of module, add arguments or change return type.
+ - Try to build the module using `cargo build --workspace` in export_main_macro directory
+ 
++<!-- TODO: update this example, module's global allocator should use host global alloctor -->
+ ## [Custom global allocator](./custom_global_alloc)
+ 
+ How to run:<br>
+diff --git a/examples/hot_reload/main_contract/Cargo.toml b/examples/hot_reload/main_contract/Cargo.toml
+index 2c207ae..9ef5387 100644
+--- a/examples/hot_reload/main_contract/Cargo.toml
++++ b/examples/hot_reload/main_contract/Cargo.toml
+@@ -3,6 +3,6 @@ name = "main_contract"
+ version.workspace = true
+ edition.workspace = true
+ 
+-[dependencies.relib_internal_shared]
++[dependencies.relib_shared]
+ version = "0"
+-path = "../../../shared"
++path = "../../relib_shared"
+diff --git a/examples/hot_reload/main_contract/src/lib.rs b/examples/hot_reload/main_contract/src/lib.rs
+index 5ac14bf..4eca756 100644
+--- a/examples/hot_reload/main_contract/src/lib.rs
++++ b/examples/hot_reload/main_contract/src/lib.rs
+@@ -7,7 +7,7 @@ pub const SHARED_IMPORTS: &str = include_str!("shared_imports.rs");
+ pub const EXPORTS: &str = include_str!("exports.rs");
+ 
+ // perhaps hot reload will be implemented directly in relib in the future
+-pub use relib_internal_shared::StableLayout;
++pub use relib_shared::StableLayout;
+ 
+ pub type Alloc = unsafe extern "C" fn(layout: StableLayout) -> *mut u8;
+ pub type Dealloc = unsafe extern "C" fn(ptr: *mut u8, layout: StableLayout);
+diff --git a/exportify/Cargo.toml b/exportify/Cargo.toml
+index 7098edd..3330bbd 100644
+--- a/exportify/Cargo.toml
++++ b/exportify/Cargo.toml
+@@ -9,7 +9,7 @@ rust-version.workspace = true
+ description = "relib is a framework for reloadable dynamic libraries"
+ 
+ [dependencies]
+-relib_internal_shared = { version = "=0.7.0", path = "../shared" }
++relib_shared = { version = "=0.7.0", path = "../relib_shared" }
+ proc-macro2.workspace = true
+ quote.workspace = true
+ syn.workspace = true
+diff --git a/exportify/src/lib.rs b/exportify/src/lib.rs
+index 591d0cc..411f7f9 100755
+--- a/exportify/src/lib.rs
++++ b/exportify/src/lib.rs
+@@ -1,11 +1,12 @@
+ use {
+   proc_macro2::TokenStream as TokenStream2,
+   quote::{format_ident, quote},
+-  relib_internal_shared::{fn_inputs_without_types, output_to_return_type},
++  relib_shared::{fn_inputs_without_types, output_to_return_type},
+   syn::ItemFn,
+ };
+ 
+-/// Takes function code and transforms it into exported `extern "C"` function with panic handling.
++// TODO: update this documentation:
++/// Takes function code and transforms it into exported function with panic handling.
+ /// See `relib_export` for proc-macro.
+ ///
+ /// # Example
+@@ -17,7 +18,7 @@ use {
+ ///
+ /// // output:
+ /// #[unsafe(export_name = "...")]
+-/// extern "C" fn foo(
++/// fn foo(
+ ///   ____return_value____: *mut std::mem::MaybeUninit<i32>,
+ /// ) -> bool {
+ ///   fn ____wrapper____() -> i32 {
+@@ -53,22 +54,19 @@ pub fn exportify(input: TokenStream2) -> TokenStream2 {
+   let return_type = output_to_return_type!(output);
+   let inputs_without_types = fn_inputs_without_types!(inputs);
+ 
+-  let ret_needs_box = relib_internal_shared::type_needs_box(&return_type.to_string());
++  let ret_needs_box = type_needs_box(&return_type.to_string());
+ 
+   let (return_type, return_value, post_export) = if ret_needs_box {
+     (
+       quote! { *mut #return_type },
+       quote! {
+-        unsafe {
+-          use std::boxed::Box;
+-
+-          let ptr = Box::into_raw(Box::new(return_value));
+-          ptr
+-        }
++        use std::boxed::Box;
++        Box::into_raw(Box::new(return_value))
+       },
+       quote! {
+         #[unsafe(no_mangle)]
+-        pub #unsafety extern "C" fn #post_mangled_name_ident(
++        #[allow(clippy::extra_unused_lifetimes)]
++        pub #unsafety fn #post_mangled_name_ident(
+           return_value_ptr: *mut #return_type
+         ) {
+           use std::boxed::Box;
+@@ -107,10 +105,10 @@ pub fn exportify(input: TokenStream2) -> TokenStream2 {
+             *____success____ = true;
+           }
+ 
+-          #[allow(unused_braces)]
++          #[allow(unused_braces, clippy::unit_arg)]
+           std::mem::MaybeUninit::new({ #return_value })
+         }
+-        // ignoring content since it's handled in our panic hook
++        // ignoring content since it's handled in default panic hook of std
+         Err(_) => {
+           unsafe {
+             *____success____ = false;
+diff --git a/host/Cargo.toml b/host/Cargo.toml
+index 0b9b86b..6e91259 100644
+--- a/host/Cargo.toml
++++ b/host/Cargo.toml
+@@ -9,8 +9,15 @@ rust-version.workspace = true
+ description = "relib is a framework for reloadable dynamic libraries"
+ 
+ [features]
+-unloading = ["relib_interface/unloading", "dep:thread-id"]
++unloading = ["unloading_core", "global_alloc"]
+ super_special_reinit_of_dbghelp = []
++global_alloc = []
++unloading_core = [
++  "relib_interface/unloading",
++  "dep:thread-id",
++  "dep:allocator-api2",
++  "dep:hashbrown",
++]
+ 
+ [lints.clippy]
+ unwrap_used = "forbid"
+@@ -25,6 +32,16 @@ rustdoc-args = ["--generate-link-to-definition", "--cfg", "relib_docs"]
+ libloading.workspace = true
+ thiserror = "2.0.3"
+ 
++# ------- these two are needed together:
++[dependencies.allocator-api2]
++version = "=0.2.21"
++optional = true
++
++[dependencies.hashbrown]
++version = "=0.16.0"
++optional = true
++# --------------------------------------
++
+ [dependencies.thread-id]
+ optional = true
+ workspace = true
+@@ -36,9 +53,9 @@ libc.workspace = true
+ windows-targets = "0.53.0"
+ minhook = "0.6.0"
+ 
+-[dependencies.relib_internal_shared]
++[dependencies.relib_shared]
+ version = "=0.7.0"
+-path = "../shared"
++path = "../relib_shared"
+ 
+ [dependencies.relib_interface]
+ version = "=0.7.0"
+@@ -57,9 +74,9 @@ version = "=0.7.0"
+ path = "../interface"
+ features = ["internal", "build"]
+ 
+-[build-dependencies.relib_internal_shared]
++[build-dependencies.relib_shared]
+ version = "=0.7.0"
+-path = "../shared"
++path = "../relib_shared"
+ 
+ [build-dependencies.relib_internal_crate_compilation_info]
+ version = "=0.7.0"
+diff --git a/host/build.rs b/host/build.rs
+index 4494343..14123da 100755
+--- a/host/build.rs
++++ b/host/build.rs
+@@ -1,9 +1,15 @@
+ fn main() {
+   relib_interface::host::generate_internal(
+-    relib_internal_shared::EXPORTS,
+-    "relib_internal_shared::exports::___Internal___Exports___",
+-    relib_internal_shared::IMPORTS,
+-    "relib_internal_shared::imports::___Internal___Imports___",
++    relib_shared::EXPORTS,
++    "relib_shared::exports::___Internal___Exports___",
++    relib_shared::IMPORTS,
++    "relib_shared::imports::___Internal___Imports___",
++  );
++
++  relib_interface::host::generate_internal_exports_with_prefix(
++    "internal_generated_module_no_unloading",
++    relib_shared::EXPORTS_NO_UNLOADING,
++    "relib_shared::exports_no_unloading::___Exports___NoUnloading___",
+   );
+ 
+   relib_internal_crate_compilation_info::provide();
+diff --git a/host/src/exports_types.rs b/host/src/exports_types.rs
+index 53777ff..420f0fb 100755
+--- a/host/src/exports_types.rs
++++ b/host/src/exports_types.rs
+@@ -1,12 +1,12 @@
+-use libloading::Library;
++use {libloading::Library, relib_shared::ModuleId};
+ 
+ pub trait ModuleExportsForHost {
+-  fn new(library: &Library) -> Self;
++  fn new(library: &Library, module_id: ModuleId) -> Self;
+ }
+ 
+ /// For cases when module doesn't export anything
+ impl ModuleExportsForHost for () {
+-  fn new(_library: &Library) {}
++  fn new(_library: &Library, _module_id: ModuleId) {}
+ }
+ 
+ pub trait InitImports {
+diff --git a/host/src/helpers.rs b/host/src/helpers.rs
+index db16733..89439a0 100755
+--- a/host/src/helpers.rs
++++ b/host/src/helpers.rs
+@@ -1,8 +1,8 @@
+ use {
+   libloading::{Library, Symbol},
+-  relib_internal_shared::ModuleId,
++  relib_shared::ModuleId,
+   std::{
+-    mem::{MaybeUninit, needs_drop},
++    mem::MaybeUninit,
+     path::Path,
+     sync::{
+       Mutex,
+@@ -63,63 +63,28 @@ pub unsafe fn call_module_pub_export<R>(
+   library: &Library,
+   name: &str,
+ ) -> Result<Option<R>, libloading::Error>
+-where
+-  R: Clone,
++// where
++//   R: Clone,
+ {
+   // !!! keep in sync with relib_interface crate !!!
+ 
+   let mangled_name = format!("__relib__{name}");
+-  let mangled_post_fn_name = format!("__post{mangled_name}");
+ 
+-  type PostFn<R> = extern "C" fn(*mut R);
+-  let post_fn = unsafe { get_library_export::<PostFn<R>>(library, &mangled_post_fn_name) };
++  let fn_ = unsafe { get_library_export(library, &mangled_name) }?;
++  let fn_: Symbol<fn(*mut bool) -> MaybeUninit<R>> = fn_;
+ 
+-  warn_if_type_needs_drop_without_post::<R>(name, post_fn.is_ok());
++  let mut ____success____ = MaybeUninit::<bool>::uninit();
+ 
+-  // if library has post function for this export return value
+-  // may not be Copy and needs dropping
+-  let return_value = if let Ok(post_fn) = post_fn {
+-    let fn_ = unsafe { get_library_export(library, &mangled_name) }?;
+-    let fn_: Symbol<extern "C" fn(*mut bool) -> MaybeUninit<*mut R>> = fn_;
++  let return_value = fn_(____success____.as_mut_ptr());
+ 
+-    let mut ____success____ = MaybeUninit::<bool>::uninit();
+-
+-    let return_ptr = fn_(____success____.as_mut_ptr());
+-
+-    // SAFETY: this bool is guaranteed to be initialized by the module
+-    if !unsafe { ____success____.assume_init() } {
+-      return Ok(None);
+-    }
+-
+-    // SAFETY: function returned true so we are allowed to read the pointer
+-    let (return_ptr, return_value) = unsafe {
+-      let return_ptr = return_ptr.assume_init();
+-      let return_value: R = Clone::clone(&*return_ptr);
+-      (return_ptr, return_value)
+-    };
+-
+-    post_fn(return_ptr);
+-
+-    return_value
++  // SAFETY: this bool is guaranteed to be initialized by the module
++  let success = unsafe { ____success____.assume_init() };
++  if !success {
++    return Ok(None);
+   }
+-  // else return value is simple Copy type
+-  else {
+-    let fn_ = unsafe { get_library_export(library, &mangled_name) }?;
+-    let fn_: Symbol<extern "C" fn(*mut bool) -> MaybeUninit<R>> = fn_;
+-
+-    let mut ____success____ = MaybeUninit::<bool>::uninit();
+ 
+-    let return_value = fn_(____success____.as_mut_ptr());
+-
+-    // SAFETY: this bool is guaranteed to be initialized by the module
+-    let success = unsafe { ____success____.assume_init() };
+-    if !success {
+-      return Ok(None);
+-    }
+-
+-    // SAFETY: function returned true so we are allowed to read the pointer
+-    unsafe { return_value.assume_init() }
+-  };
++  // SAFETY: function returned true so we are allowed to read the pointer
++  let return_value = unsafe { return_value.assume_init() };
+ 
+   Ok(Some(return_value))
+ }
+@@ -167,18 +132,6 @@ pub use linux_impl::is_library_loaded;
+ #[cfg(target_os = "windows")]
+ pub use windows_impl::is_library_loaded;
+ 
+-fn warn_if_type_needs_drop_without_post<R>(export_name: &str, export_has_post_fn: bool) {
+-  let return_type_needs_drop = needs_drop::<R>();
+-
+-  if return_type_needs_drop && !export_has_post_fn {
+-    eprintln!(
+-      "[relib] warning: \"{export_name}\" export return type (usually exported using `relib_module::export`) \
+-      may not match passed generic R type \
+-      (std::mem::needs_drop::<R>() returned true but exported function does not have post fn exported for this export)"
+-    );
+-  }
+-}
+-
+ pub fn path_to_str(path: &Path) -> &str {
+   path.to_str().expect("library path must be UTF-8 string")
+ }
+diff --git a/host/src/leak_library.rs b/host/src/leak_library.rs
+index 4ce9cee..526bb08 100755
+--- a/host/src/leak_library.rs
++++ b/host/src/leak_library.rs
+@@ -12,7 +12,7 @@ impl LeakLibrary {
+     self.0.as_ref().unwrap_or_else(|| unreachable!())
+   }
+ 
+-  #[cfg(feature = "unloading")]
++  #[cfg(feature = "unloading_core")]
+   pub fn take(&mut self) -> Library {
+     self.0.take().unwrap_or_else(|| unreachable!())
+   }
+diff --git a/host/src/lib.rs b/host/src/lib.rs
+index 57643ff..e544be4 100755
+--- a/host/src/lib.rs
++++ b/host/src/lib.rs
+@@ -1,16 +1,18 @@
+ use {
+   libloading::Symbol,
+-  relib_internal_shared::Str,
++  relib_shared::{StableLayout, Str},
+   std::{ffi::OsStr, path::Path},
+ };
+ 
+ mod errors;
+ pub use errors::LoadError;
++#[cfg(feature = "unloading_core")]
++mod unloading_core;
++#[cfg(feature = "unloading_core")]
++pub use unloading_core::{UnloadError, global_alloc::AllocLayoutTracker};
+ 
+-#[cfg(feature = "unloading")]
+-mod unloading;
+-#[cfg(feature = "unloading")]
+-pub use unloading::*;
++#[cfg(not(feature = "unloading_core"))]
++mod no_unloading;
+ 
+ mod module;
+ pub use module::Module;
+@@ -25,6 +27,35 @@ pub use exports_types::{InitImports, ModuleExportsForHost};
+ #[cfg(target_os = "windows")]
+ mod windows;
+ 
++#[doc(hidden)]
++pub mod __internal {
++  #[cfg(feature = "unloading_core")]
++  use {
++    crate::unloading_core::{global_alloc::layout_of, module_allocs::transfer_alloc_to_module},
++    relib_shared::ModuleId,
++  };
++
++  pub struct TransferToModule;
++
++  fn transfer(ptr: *mut u8, module_id: ModuleId) {
++    #[cfg(feature = "unloading_core")]
++    {
++      let layout = layout_of(ptr);
++      transfer_alloc_to_module(ptr, layout, module_id);
++    }
++
++    #[cfg(not(feature = "unloading_core"))]
++    {
++      let _ = ptr;
++      let _ = module_id;
++    }
++  }
++
++  pub use relib_shared::*;
++}
++
++pub use relib_shared::*;
++
+ /// Loads a module (dynamic library) by specified path.
+ ///
+ /// # Safety
+@@ -76,7 +107,7 @@ pub unsafe fn load_module<E: ModuleExportsForHost>(
+     load_module_with_options(
+       path,
+       init_imports,
+-      #[cfg(feature = "unloading")]
++      #[cfg(feature = "unloading_core")]
+       true,
+     )
+   }
+@@ -91,7 +122,7 @@ pub unsafe fn load_module_with_options<E: ModuleExportsForHost>(
+   init_imports: impl InitImports,
+ 
+   // needs to be passed at runtime because host can load different modules with enabled and disabled alloc tracker
+-  #[cfg(feature = "unloading")] enable_alloc_tracker: bool,
++  #[cfg(feature = "unloading_core")] enable_alloc_tracker: bool,
+ ) -> Result<Module<E>, crate::LoadError> {
+   // prevent parallel loading of the same dynamic library
+   // to guarantee that LoadError::ModuleAlreadyLoaded is returned
+@@ -103,8 +134,8 @@ pub unsafe fn load_module_with_options<E: ModuleExportsForHost>(
+   {
+     windows::dbghelp::try_init_from_load_module();
+     unsafe {
+-      #[cfg(feature = "unloading")]
+-      unloading::windows_thread_spawn_hook::init();
++      #[cfg(feature = "unloading_core")]
++      unloading_core::windows_thread_spawn_hook::init();
+       windows::enable_hooks();
+     }
+   }
+@@ -141,31 +172,48 @@ pub unsafe fn load_module_with_options<E: ModuleExportsForHost>(
+ 
+   let module_id = next_module_id();
+ 
+-  #[cfg(feature = "unloading")]
++  #[cfg(feature = "unloading_core")]
+   let internal_exports = {
+-    unloading::init_internal_imports(&library);
+-    unloading::module_allocs::add_module(module_id);
++    unloading_core::init_internal_imports(&library);
++    let internal_exports = unloading_core::InternalModuleExports::new(&library, module_id);
+ 
+-    let internal_exports = unloading::InternalModuleExports::new(&library);
++    unloading_core::module_allocs::add_module(
++      module_id,
++      internal_exports.remove_allocation_ptr_from_alloc_tracker_cache,
++    );
+     unsafe {
+-      internal_exports.init(thread_id::get(), module_id, enable_alloc_tracker);
++      internal_exports.init(
++        thread_id::get(),
++        module_id,
++        enable_alloc_tracker,
++        global_alloc,
++        global_dealloc,
++      );
+     }
+     internal_exports
+   };
+ 
+-  let pub_exports = E::new(&library);
++  #[cfg(not(feature = "unloading_core"))]
++  {
++    let exports = no_unloading::InternalModuleExportsNoUnloading::new(&library, module_id);
++    unsafe {
++      exports.init(global_alloc, global_dealloc);
++    }
++  }
++
++  let pub_exports = E::new(&library, module_id);
+   init_imports.init(&library);
+ 
+   let module = Module::new(
+     module_id,
+     library,
+     pub_exports,
+-    #[cfg(feature = "unloading")]
++    #[cfg(feature = "unloading_core")]
+     (internal_exports, path.to_owned(), enable_alloc_tracker),
+   );
+ 
+-  #[cfg(all(target_os = "windows", feature = "unloading"))]
+-  unloading::windows_thread_spawn_hook::add_module(module.library_handle);
++  #[cfg(all(target_os = "windows", feature = "unloading_core"))]
++  unloading_core::windows_thread_spawn_hook::add_module(module.library_handle);
+ 
+   Ok(module)
+ }
+@@ -186,8 +234,8 @@ pub unsafe fn init() {
+   {
+     windows::dbghelp::try_init_standalone();
+     unsafe {
+-      #[cfg(feature = "unloading")]
+-      unloading::windows_thread_spawn_hook::init();
++      #[cfg(feature = "unloading_core")]
++      unloading_core::windows_thread_spawn_hook::init();
+       windows::enable_hooks();
+     }
+   }
+@@ -211,9 +259,9 @@ pub unsafe fn forcibly_reinit_dbghelp() {
+ 
+ // TODO: fix it
+ #[doc(hidden)]
+-#[cfg(all(target_os = "windows", feature = "unloading"))]
++#[cfg(all(target_os = "windows", feature = "unloading_core"))]
+ pub unsafe fn __suppress_unused_warning_for_linux_only_exports(
+-  exports: unloading::InternalModuleExports,
++  exports: unloading_core::InternalModuleExports,
+ ) {
+   unsafe {
+     exports.spawned_threads_count();
+@@ -222,9 +270,25 @@ pub unsafe fn __suppress_unused_warning_for_linux_only_exports(
+ 
+ #[doc(hidden)]
+ #[expect(unreachable_code)]
+-#[cfg(all(target_os = "linux", feature = "unloading"))]
++#[cfg(all(target_os = "linux", feature = "unloading_core"))]
+ pub unsafe fn __suppress_unused_warning_for_windows_only_exports(
+-  exports: unloading::InternalModuleExports,
++  exports: unloading_core::InternalModuleExports,
+ ) {
+   unsafe { exports.set_dealloc_callback(todo!()) }
+ }
++
++unsafe fn global_alloc(layout: StableLayout) -> *mut u8 {
++  unsafe { std::alloc::alloc(layout.into()) }
++}
++
++unsafe fn global_dealloc(ptr: *mut u8, layout: StableLayout) {
++  unsafe { std::alloc::dealloc(ptr, layout.into()) }
++}
++
++#[cfg(all(feature = "global_alloc", not(feature = "unloading_core")))]
++compile_error!(
++  "\"global_alloc\" feature cannot be enabled without \"unloading_core\" feature:\n\
++  you can either: \
++  enable \"unloading\" feature or \
++  disable \"global_alloc\" and enable \"unloading_core\""
++);
+diff --git a/host/src/module.rs b/host/src/module.rs
+index a8601fe..cd21772 100755
+--- a/host/src/module.rs
++++ b/host/src/module.rs
+@@ -1,19 +1,17 @@
+-#[cfg(feature = "unloading")]
++#[cfg(feature = "unloading_core")]
++use crate::unloading_core::InternalModuleExports;
++#[cfg(feature = "unloading_core")]
+ use std::{marker::PhantomData, path::PathBuf};
+-
+ use {
+   crate::{
+     exports_types::ModuleExportsForHost, helpers::call_module_pub_export, leak_library::LeakLibrary,
+   },
+   libloading::Library,
+-  relib_internal_shared::ModuleId,
++  relib_shared::ModuleId,
+   std::fmt::Debug,
+ };
+ 
+-#[cfg(feature = "unloading")]
+-use crate::unloading::InternalModuleExports;
+-
+-#[cfg(all(target_os = "windows", feature = "unloading"))]
++#[cfg(all(target_os = "windows", feature = "unloading_core"))]
+ pub(crate) type WindowsLibraryHandle = isize;
+ 
+ #[must_use = "module will be leaked if dropped, \
+@@ -22,23 +20,23 @@ pub struct Module<E: ModuleExportsForHost> {
+   pub(crate) id: ModuleId,
+   pub(crate) library: LeakLibrary,
+ 
+-  #[cfg(all(target_os = "windows", feature = "unloading"))]
++  #[cfg(all(target_os = "windows", feature = "unloading_core"))]
+   pub(crate) library_handle: WindowsLibraryHandle,
+ 
+-  #[cfg(feature = "unloading")]
++  #[cfg(feature = "unloading_core")]
+   pub(crate) library_path: PathBuf,
+ 
+-  #[cfg(feature = "unloading")]
++  #[cfg(feature = "unloading_core")]
+   pub(crate) internal_exports: InternalModuleExports,
+ 
+   pub_exports: E,
+ 
+-  #[cfg(feature = "unloading")]
++  #[cfg(feature = "unloading_core")]
+   /// Module must be loaded and unloaded from the same thread
+   /// for thread locals destructors to work correctly.
+   _not_thread_safe: PhantomData<*const ()>,
+ 
+-  #[cfg(feature = "unloading")]
++  #[cfg(feature = "unloading_core")]
+   pub(crate) alloc_tracker_enabled: bool,
+ }
+ 
+@@ -48,31 +46,32 @@ impl<E: ModuleExportsForHost> Module<E> {
+     library: Library,
+     pub_exports: E,
+ 
+-    #[cfg(feature = "unloading")] (internal_exports, library_path, alloc_tracker_enabled): (
++    #[cfg(feature = "unloading_core")] (internal_exports, library_path, alloc_tracker_enabled): (
+       InternalModuleExports,
+       PathBuf,
+       bool,
+     ),
+   ) -> Self {
+-    #[cfg(all(target_os = "windows", feature = "unloading"))]
+-    let (library, library_handle) = { crate::unloading::helpers::windows::library_handle(library) };
++    #[cfg(all(target_os = "windows", feature = "unloading_core"))]
++    let (library, library_handle) =
++      { crate::unloading_core::helpers::windows::library_handle(library) };
+ 
+     Self {
+       id,
+       library: LeakLibrary::new(library),
+       pub_exports,
+ 
+-      #[cfg(feature = "unloading")]
++      #[cfg(feature = "unloading_core")]
+       _not_thread_safe: PhantomData,
+ 
+-      #[cfg(feature = "unloading")]
++      #[cfg(feature = "unloading_core")]
+       library_path,
+-      #[cfg(feature = "unloading")]
++      #[cfg(feature = "unloading_core")]
+       internal_exports,
+-      #[cfg(feature = "unloading")]
++      #[cfg(feature = "unloading_core")]
+       alloc_tracker_enabled,
+ 
+-      #[cfg(all(target_os = "windows", feature = "unloading"))]
++      #[cfg(all(target_os = "windows", feature = "unloading_core"))]
+       library_handle,
+     }
+   }
+@@ -125,12 +124,11 @@ impl<E: ModuleExportsForHost> Module<E> {
+ 
+ impl<E: ModuleExportsForHost> Debug for Module<E> {
+   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+-    let id = self.id;
+-    write!(f, "Module {{ id: {id} }}")
++    write!(f, "Module {{ id: {} }}", self.id)
+   }
+ }
+ 
+-#[cfg(not(feature = "unloading"))]
++#[cfg(not(feature = "unloading_core"))]
+ fn _test_for_send_sync() {
+   let _: &(dyn Sync + Send) = &module();
+ 
+diff --git a/host/src/no_unloading.rs b/host/src/no_unloading.rs
+new file mode 100644
+index 0000000..b5a95e5
+--- /dev/null
++++ b/host/src/no_unloading.rs
+@@ -0,0 +1,2 @@
++relib_interface::include_exports!(gen_exports, "internal_generated_module_no_unloading");
++pub(crate) use gen_exports::ModuleExports as InternalModuleExportsNoUnloading;
+diff --git a/host/src/unloading/imports_impl.rs b/host/src/unloading/imports_impl.rs
+deleted file mode 100755
+index 5d884d0..0000000
+--- a/host/src/unloading/imports_impl.rs
++++ /dev/null
+@@ -1,25 +0,0 @@
+-use {
+-  super::{gen_imports::ModuleImportsImpl, helpers, module_allocs},
+-  relib_internal_shared::{
+-    ModuleId, SliceAllocatorOp, StableLayout, Str, imports::___Internal___Imports___ as Imports,
+-  },
+-};
+-
+-impl Imports for ModuleImportsImpl {
+-  fn on_alloc(module: ModuleId, ptr: *mut u8, layout: StableLayout) {
+-    module_allocs::on_alloc(module, ptr, layout);
+-  }
+-
+-  fn on_cached_allocs(module: ModuleId, ops: SliceAllocatorOp) {
+-    module_allocs::on_cached_allocs(module, ops);
+-  }
+-
+-  fn unrecoverable(module: ModuleId, message: Str) -> ! {
+-    let message = unsafe { message.into_str() };
+-    helpers::unrecoverable_with_prefix(message, &format!("module id: {module}"));
+-  }
+-
+-  fn is_ptr_allocated(module: ModuleId, ptr: *mut u8) -> bool {
+-    module_allocs::is_ptr_allocated(module, ptr)
+-  }
+-}
+diff --git a/host/src/unloading.rs b/host/src/unloading_core.rs
+similarity index 90%
+rename from host/src/unloading.rs
+rename to host/src/unloading_core.rs
+index 3a70546..364870a 100644
+--- a/host/src/unloading.rs
++++ b/host/src/unloading_core.rs
+@@ -9,6 +9,9 @@ mod windows_dealloc;
+ #[cfg(target_os = "windows")]
+ pub(crate) mod windows_thread_spawn_hook;
+ 
++#[cfg(feature = "global_alloc")]
++pub mod global_alloc;
++
+ relib_interface::include_exports!(gen_exports, "internal_generated_module");
+ relib_interface::include_imports!(gen_imports, "internal_generated_module");
+ pub(crate) use {
+diff --git a/host/src/unloading/errors.rs b/host/src/unloading_core/errors.rs
+similarity index 95%
+rename from host/src/unloading/errors.rs
+rename to host/src/unloading_core/errors.rs
+index 3393718..e0dfcd2 100644
+--- a/host/src/unloading/errors.rs
++++ b/host/src/unloading_core/errors.rs
+@@ -1,6 +1,6 @@
+ use thiserror::Error;
+ 
+-#[cfg(feature = "unloading")]
++#[cfg(feature = "unloading_core")]
+ #[derive(Error, Debug)]
+ pub enum UnloadError {
+   #[error(
+diff --git a/host/src/unloading_core/global_alloc.rs b/host/src/unloading_core/global_alloc.rs
+new file mode 100644
+index 0000000..9d482fe
+--- /dev/null
++++ b/host/src/unloading_core/global_alloc.rs
+@@ -0,0 +1,74 @@
++use {
++  crate::unloading_core::helpers::unrecoverable,
++  hashbrown::{DefaultHashBuilder, HashMap},
++  relib_shared::AllocatorPtr,
++  std::{
++    alloc::{GlobalAlloc, Layout, System},
++    sync::{LazyLock, Mutex},
++  },
++};
++
++#[global_allocator]
++static ALLOC: AllocLayoutTracker<System> = AllocLayoutTracker { allocator: System };
++
++pub struct AllocLayoutTracker<G>
++where
++  G: GlobalAlloc,
++{
++  allocator: G,
++}
++
++unsafe impl<G> GlobalAlloc for AllocLayoutTracker<G>
++where
++  G: GlobalAlloc,
++{
++  unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
++    // SAFETY: TODO:
++    let ptr = unsafe { self.allocator.alloc(layout) };
++
++    ALLOC_LAYOUTS
++      .lock()
++      .unwrap_or_else(|_| {
++        unrecoverable("global alloc layouts lock failed");
++      })
++      .insert(AllocatorPtr(ptr), layout);
++
++    ptr
++  }
++
++  unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
++    let removed_layout = ALLOC_LAYOUTS
++      .lock()
++      .unwrap_or_else(|_| {
++        unrecoverable("global dealloc layouts lock failed");
++      })
++      .remove(&AllocatorPtr(ptr));
++
++    // TODO: also add this check to module dealloc_validation
++    // TODO: add test for it
++    if removed_layout != Some(layout) {
++      unrecoverable("global dealloc was called with invalid ptr + layout combination");
++    }
++
++    // SAFETY: TODO:
++    unsafe {
++      self.allocator.dealloc(ptr, layout);
++    }
++  }
++}
++
++// TODO: make it possible to replace allocator for this hashmap for relib users
++static ALLOC_LAYOUTS: LazyLock<Mutex<HashMap<AllocatorPtr, Layout, DefaultHashBuilder, System>>> =
++  LazyLock::new(Default::default);
++
++pub fn layout_of(ptr: *mut u8) -> Layout {
++  *ALLOC_LAYOUTS
++    .lock()
++    .unwrap_or_else(|_| {
++      unrecoverable("global alloc layout store: lock failed");
++    })
++    .get(&AllocatorPtr(ptr))
++    .unwrap_or_else(|| {
++      unrecoverable("global alloc layout store: invalid ptr");
++    })
++}
+diff --git a/host/src/unloading/helpers.rs b/host/src/unloading_core/helpers.rs
+similarity index 100%
+rename from host/src/unloading/helpers.rs
+rename to host/src/unloading_core/helpers.rs
+diff --git a/host/src/unloading_core/imports_impl.rs b/host/src/unloading_core/imports_impl.rs
+new file mode 100755
+index 0000000..1b0c325
+--- /dev/null
++++ b/host/src/unloading_core/imports_impl.rs
+@@ -0,0 +1,29 @@
++use {
++  super::{gen_imports::ModuleImportsImpl, helpers, module_allocs},
++  relib_shared::{
++    ModuleId, SliceAllocatorOp, StableLayout, Str, imports::___Internal___Imports___ as Imports,
++  },
++};
++
++impl Imports for ModuleImportsImpl {
++  fn on_alloc(ptr: *mut u8, layout: StableLayout) {
++    module_allocs::on_alloc(unsafe { crate::unloading_core::MODULE_ID }, ptr, layout);
++  }
++
++  fn on_cached_allocs(ops: SliceAllocatorOp) {
++    module_allocs::on_cached_allocs(unsafe { crate::unloading_core::MODULE_ID }, ops);
++  }
++
++  fn unrecoverable(message: Str) -> ! {
++    let message = unsafe { message.into_str() };
++    helpers::unrecoverable_with_prefix(message, &format!("module id: {}", unsafe { crate::unloading_core::MODULE_ID }));
++  }
++
++  fn is_ptr_allocated(ptr: *mut u8) -> bool {
++    module_allocs::is_ptr_allocated(unsafe { crate::unloading_core::MODULE_ID }, ptr)
++  }
++
++  fn transfer_alloc_to_host(ptr: *mut u8) -> bool {
++    module_allocs::transfer_alloc_to_host(unsafe { crate::unloading_core::MODULE_ID }, ptr)
++  }
++}
+diff --git a/host/src/unloading/module.rs b/host/src/unloading_core/module.rs
+similarity index 97%
+rename from host/src/unloading/module.rs
+rename to host/src/unloading_core/module.rs
+index 58b63de..7bc922c 100644
+--- a/host/src/unloading/module.rs
++++ b/host/src/unloading_core/module.rs
+@@ -71,7 +71,7 @@ impl<E: ModuleExportsForHost> Module<E> {
+ 
+     #[cfg(target_os = "windows")]
+     {
+-      use crate::{unloading::windows_dealloc, windows::dbghelp};
++      use crate::{unloading_core::windows_dealloc, windows::dbghelp};
+ 
+       let handle = self.library_handle;
+       let library = self.library.take();
+diff --git a/host/src/unloading/module_allocs.rs b/host/src/unloading_core/module_allocs.rs
+similarity index 57%
+rename from host/src/unloading/module_allocs.rs
+rename to host/src/unloading_core/module_allocs.rs
+index 12c71c3..fca1ebf 100755
+--- a/host/src/unloading/module_allocs.rs
++++ b/host/src/unloading_core/module_allocs.rs
+@@ -1,15 +1,21 @@
+ use {
+   super::{InternalModuleExports, helpers::unrecoverable},
+-  relib_internal_shared::{
+-    Allocation, AllocatorOp, AllocatorPtr, ModuleId, SliceAllocatorOp, StableLayout,
+-  },
++  relib_shared::{Allocation, AllocatorOp, AllocatorPtr, ModuleId, SliceAllocatorOp, StableLayout},
+   std::{
++    alloc::Layout,
+     collections::HashMap,
+     sync::{LazyLock, Mutex, MutexGuard},
+   },
+ };
+ 
+-type Allocs = HashMap<ModuleId, HashMap<AllocatorPtr, Allocation>>;
++type RemovePtrFromCache = fn(ptr: *mut u8);
++
++struct ModuleAllocs {
++  map: HashMap<AllocatorPtr, Allocation>,
++  remove_ptr_from_cache: RemovePtrFromCache,
++}
++
++type Allocs = HashMap<ModuleId, ModuleAllocs>;
+ 
+ static ALLOCS: LazyLock<Mutex<Allocs>> = LazyLock::new(Default::default);
+ 
+@@ -21,9 +27,15 @@ fn lock_allocs() -> MutexGuard<'static, Allocs> {
+   allocs
+ }
+ 
+-pub fn add_module(module_id: ModuleId) {
++pub fn add_module(module_id: ModuleId, remove_ptr_from_cache: RemovePtrFromCache) {
+   let mut allocs = lock_allocs();
+-  allocs.insert(module_id, Default::default());
++  allocs.insert(
++    module_id,
++    ModuleAllocs {
++      map: Default::default(),
++      remove_ptr_from_cache,
++    },
++  );
+ }
+ 
+ pub fn remove_module(
+@@ -43,7 +55,7 @@ pub fn remove_module(
+ 
+   // this check relies on two allocations in alloc tracker of the module,
+   // which needed to cache allocation ops
+-  if alloc_tracker_enabled && allocs.is_empty() {
++  if alloc_tracker_enabled && allocs.map.is_empty() {
+     eprintln!(
+       "[relib] warning: seems like this module doesn't have a registered global alloc tracker\n\
+       module path: {}\n\
+@@ -55,9 +67,16 @@ pub fn remove_module(
+     );
+   }
+ 
+-  let allocs: Box<[Allocation]> = allocs.into_values().collect();
++  let allocs: Box<[Allocation]> = allocs.map.into_values().collect();
+   let allocs: &[Allocation] = &allocs;
+ 
++  // TEST
++  println!(
++    "calling dealloc for:\n\
++    {:?}",
++    allocs.iter().map(|v| v).collect::<Vec<_>>()
++  );
++
+   unsafe {
+     internal_exports.exit(allocs.into());
+   }
+@@ -70,6 +89,7 @@ pub fn on_cached_allocs(module_id: ModuleId, ops: SliceAllocatorOp) {
+   let allocs = allocs
+     .get_mut(&module_id)
+     .unwrap_or_else(|| unrecoverable("on_cached_allocs unreachable"));
++  let allocs = &mut allocs.map;
+ 
+   for op in ops {
+     match op {
+@@ -90,6 +110,7 @@ pub fn on_alloc(module_id: ModuleId, ptr: *mut u8, layout: StableLayout) {
+   let allocs = allocs
+     .get_mut(&module_id)
+     .unwrap_or_else(|| unrecoverable("on_alloc unreachable"));
++  let allocs = &mut allocs.map;
+ 
+   let ptr = AllocatorPtr(ptr);
+   allocs.insert(ptr, Allocation(ptr, layout));
+@@ -100,6 +121,35 @@ pub fn is_ptr_allocated(module_id: ModuleId, ptr: *mut u8) -> bool {
+   let allocs = allocs
+     .get(&module_id)
+     .unwrap_or_else(|| unrecoverable("is_ptr_allocated unreachable"));
++  let allocs = &allocs.map;
+ 
+   allocs.contains_key(&AllocatorPtr(ptr))
+ }
++
++pub fn transfer_alloc_to_host(module_id: ModuleId, ptr: *mut u8) -> bool {
++  let mut allocs = lock_allocs();
++  let allocs = allocs
++    .get_mut(&module_id)
++    .unwrap_or_else(|| unrecoverable("transfer_alloc_to_host unreachable"));
++  let allocs = &mut allocs.map;
++
++  let ptr = AllocatorPtr(ptr);
++  allocs.remove(&ptr).is_some()
++}
++
++pub fn transfer_alloc_to_module(ptr: *mut u8, layout: Layout, module_id: ModuleId) {
++  {
++    let mut allocs = lock_allocs();
++    let allocs = allocs
++      .get_mut(&module_id)
++      .unwrap_or_else(|| unrecoverable("transfer_alloc_to_host unreachable"));
++
++    (allocs.remove_ptr_from_cache)(ptr);
++
++    let ptr = AllocatorPtr(ptr);
++
++    // TODO: get rid of StableLayout if we can just use std types as they are
++    // "guaranteed" to be ABI-stable between two crates compiled with the same rustc version + flags
++    allocs.map.insert(ptr, Allocation(ptr, layout.into()));
++  }
++}
+diff --git a/host/src/unloading/windows_dealloc.rs b/host/src/unloading_core/windows_dealloc.rs
+similarity index 97%
+rename from host/src/unloading/windows_dealloc.rs
+rename to host/src/unloading_core/windows_dealloc.rs
+index c6b688e..d6e8a34 100644
+--- a/host/src/unloading/windows_dealloc.rs
++++ b/host/src/unloading_core/windows_dealloc.rs
+@@ -1,5 +1,5 @@
+ use {
+-  crate::{Module, ModuleExportsForHost, module_allocs, unloading::helpers::unrecoverable},
++  crate::{Module, ModuleExportsForHost, module_allocs, unloading_core::helpers::unrecoverable},
+   std::{cell::RefCell, ffi::c_void},
+ };
+ 
+diff --git a/host/src/unloading/windows_thread_spawn_hook.rs b/host/src/unloading_core/windows_thread_spawn_hook.rs
+similarity index 100%
+rename from host/src/unloading/windows_thread_spawn_hook.rs
+rename to host/src/unloading_core/windows_thread_spawn_hook.rs
+diff --git a/host/src/windows.rs b/host/src/windows.rs
+index 8246a09..5b0c2be 100644
+--- a/host/src/windows.rs
++++ b/host/src/windows.rs
+@@ -33,9 +33,9 @@ pub mod imports {
+   windows_targets::link!("kernel32.dll" "system" fn GetCurrentProcess() -> HANDLE);
+   windows_targets::link!("kernel32.dll" "system" fn GetLastError() -> DWORD);
+ 
+-  #[cfg(feature = "unloading")]
++  #[cfg(feature = "unloading_core")]
+   windows_targets::link!("kernel32.dll" "system" fn CreateThread(lpthreadattributes : *const c_void, dwstacksize : usize, lpstartaddress : unsafe extern "system" fn(main: *mut c_void) -> u32, lpparameter : *mut c_void, dwcreationflags : u32, lpthreadid : *mut u32) -> HANDLE);
+-  #[cfg(feature = "unloading")]
++  #[cfg(feature = "unloading_core")]
+   pub type CreateThread = unsafe extern "system" fn(
+     lpthreadattributes: *const c_void,
+     dwstacksize: usize,
+diff --git a/host/src/windows/dbghelp.rs b/host/src/windows/dbghelp.rs
+index aebacd2..7db876e 100644
+--- a/host/src/windows/dbghelp.rs
++++ b/host/src/windows/dbghelp.rs
+@@ -32,7 +32,7 @@ fn lock_instance() -> MutexGuard<'static, Option<Dbghelp>> {
+   })
+ }
+ 
+-#[cfg(feature = "unloading")]
++#[cfg(feature = "unloading_core")]
+ type SymUnloadModule64 = unsafe extern "system" fn(process: HANDLE, base: u64) -> BOOL;
+ type SymInitializeW =
+   unsafe extern "system" fn(hprocess: HANDLE, usersearchpath: PCWSTR, finvadeprocess: BOOL) -> BOOL;
+@@ -50,7 +50,7 @@ struct Dbghelp {
+ 
+   refresh_module_list: SymRefreshModuleList,
+   set_search_path: SymSetSearchPathW,
+-  #[cfg(feature = "unloading")]
++  #[cfg(feature = "unloading_core")]
+   unload_module: SymUnloadModule64,
+ }
+ 
+@@ -225,7 +225,7 @@ unsafe fn init() -> Dbghelp {
+   let mut instance = Dbghelp {
+     refresh_module_list: unsafe { get_lib!(SymRefreshModuleList) },
+     set_search_path,
+-    #[cfg(feature = "unloading")]
++    #[cfg(feature = "unloading_core")]
+     unload_module: unsafe { get_lib!(SymUnloadModule64) },
+ 
+     _lib: lib,
+@@ -253,7 +253,7 @@ pub fn add_module(path: &str) {
+   refresh_modules_and_search_path(instance);
+ }
+ 
+-#[cfg(feature = "unloading")]
++#[cfg(feature = "unloading_core")]
+ pub fn remove_module(handle: isize, path: &str) {
+   let mut instance = lock_instance();
+   let instance = instance
+diff --git a/interface/Cargo.toml b/interface/Cargo.toml
+index a85377e..2be5597 100644
+--- a/interface/Cargo.toml
++++ b/interface/Cargo.toml
+@@ -12,7 +12,7 @@ description = "relib is a framework for reloadable dynamic libraries"
+ default = ["public"]
+ 
+ build = [
+-  "dep:relib_internal_shared",
++  "dep:relib_shared",
+   "dep:prettyplease",
+   "dep:proc-macro2",
+   "dep:quote",
+@@ -28,14 +28,13 @@ rustdoc-args = ["--generate-link-to-definition"]
+ 
+ [dependencies]
+ 
+-[dependencies.relib_internal_shared]
+-optional = true
+-version = "=0.7.0"
+-path = "../shared"
++[dependencies.relib_shared]
++relib_shared = { version = "=0.7.0", path = "../relib_shared" }
+ 
+ [dependencies.prettyplease]
+ optional = true
+ version = "0.2.25"
++features = ["verbatim"]
+ 
+ [dependencies.proc-macro2]
+ optional = true
+diff --git a/interface/src/host.rs b/interface/src/host.rs
+index 9a073dc..47fe42b 100755
+--- a/interface/src/host.rs
++++ b/interface/src/host.rs
+@@ -1,11 +1,12 @@
+ use {
+   crate::shared::{
+-    SAFETY_DOC, TraitFn, extract_trait_name_from_path, for_each_trait_item, out_dir_file_name,
+-    parse_trait_file, pass_out_dir_file_name_to_crate_code, type_needs_box, write_code_to_file,
++    SAFETY_DOC, TRANSFER_IMPORTS_TO_MODULE, TRANSFER_IMPORTS_TO_MODULE_INTERNAL, TraitFn,
++    extract_trait_name_from_path, for_each_trait_item, out_dir_file_name, parse_trait_file,
++    pass_out_dir_file_name_to_crate_code, type_needs_box, write_code_to_file,
+   },
+   proc_macro2::TokenStream as TokenStream2,
+   quote::quote,
+-  relib_internal_shared::output_to_return_type,
++  relib_shared::output_to_return_type,
+ };
+ 
+ #[cfg(feature = "internal")]
+@@ -29,6 +30,15 @@ pub fn generate_internal(
+   );
+ }
+ 
++#[cfg(feature = "internal")]
++pub fn generate_internal_exports_with_prefix(
++  prefix: &str,
++  exports_file_content: &'static str,
++  exports_trait_path: &str,
++) {
++  generate_exports_(exports_file_content, exports_trait_path, false, prefix);
++}
++
+ /// Will generate `generated_module_exports.rs` and `generated_module_imports.rs`
+ /// in the OUT_DIR which you can include using
+ /// `relib_interface::include_exports!();` and `relib_interface::include_exports!();`
+@@ -172,13 +182,22 @@ fn generate_exports_(
+       #[allow(clippy::needless_lifetimes)]
+     };
+ 
++    let transfer_inputs_pub = quote! {
++      {
++      }
++    };
++    let transfer_inputs_internal = quote! {
++      {
++      }
++    };
++
+     // !!! keep in sync with main and before_unload calls in relib_host crate !!!
+     let (decl, init, impl_) = if pub_exports {
+       let needs_box = type_needs_box(&pub_return_type);
+       let (post_decl, post_init, return_type, read_return_value) = if needs_box {
+         (
+           quote! {
+-            #post_ident: #lifetimes_for extern "C" fn( *mut #pub_return_type ),
++            #post_ident: #lifetimes_for fn( *mut #pub_return_type ),
+           },
+           quote! {
+             #post_ident: unsafe {
+@@ -208,7 +227,7 @@ fn generate_exports_(
+ 
+       (
+         quote! {
+-          #ident: #lifetimes_for extern "C" fn(
++          #ident: #lifetimes_for fn(
+             ____success____: *mut bool,
+             #inputs
+           ) -> std::mem::MaybeUninit<#return_type>,
+@@ -241,15 +260,13 @@ fn generate_exports_(
+           ) -> Option<#pub_return_type>
+           #lifetimes_where_module
+           {
+-            /// All parameters must be Copy, see relib caveats in the readme for more info.
+-            fn ____assert_type_is_copy____(_: impl Copy) {}
+-            #( ____assert_type_is_copy____( #inputs_without_types ); )*
++            #transfer_inputs_pub
+ 
+             let mut ____success____ = std::mem::MaybeUninit::<bool>::uninit();
+ 
+             let return_value = (self.#ident)(
+               ____success____.as_mut_ptr(),
+-              #( #inputs_without_types )*
++              #( #inputs_without_types, )*
+             );
+ 
+             // SAFETY: this bool is guaranteed to be initialized by the module
+@@ -266,7 +283,7 @@ fn generate_exports_(
+     } else {
+       (
+         quote! {
+-          #ident: #lifetimes_for extern "C" fn( #inputs ) #output,
++          pub(crate) #ident: #lifetimes_for fn( #inputs ) #output,
+         },
+         import_init,
+         quote! {
+@@ -275,8 +292,10 @@ fn generate_exports_(
+           pub unsafe fn #ident #lifetimes_module ( &self, #inputs ) -> #pub_return_type
+           #lifetimes_where_module
+           {
++            #transfer_inputs_internal
++
+             #[allow(clippy::let_unit_value)]
+-            let return_value = (self.#ident)( #( #inputs_without_types )* );
++            let return_value = (self.#ident)( #( #inputs_without_types, )* );
+             return_value
+           }
+         },
+@@ -299,26 +318,30 @@ fn generate_exports_(
+     quote! {
+       #module_use_items
+ 
+-      use #types_import_crate::exports_types::ModuleExportsForHost;
++      use #types_import_crate::{
++        exports_types::ModuleExportsForHost,
++        // renaming it to avoid name collision with user code
++        ModuleId as RelibModuleId,
++      };
+ 
+       #[allow(non_snake_case)]
+       pub struct ModuleExports {
++        #[allow(unused)]
++        ____module_id____: RelibModuleId,
++
+         #( #export_decls )*
+       }
+ 
+       impl ModuleExports {
+-        pub fn new(library: &libloading::Library) -> Self {
+-          Self {
+-            #( #export_inits )*
+-          }
+-        }
+-
+         #( #export_impls )*
+       }
+ 
+       impl ModuleExportsForHost for ModuleExports {
+-        fn new(library: &libloading::Library) -> Self {
+-          Self::new(library)
++        fn new(library: &libloading::Library, ____module_id____: RelibModuleId) -> Self {
++          Self {
++            ____module_id____,
++            #( #export_inits )*
++          }
+         }
+       }
+     },
+@@ -371,11 +394,18 @@ fn generate_imports_(
+       r#"Failed to get "{post_mangled_name}" symbol of static function pointer from module"#
+     );
+ 
++    let transfer_imports_pub = quote! {};
++    let transfer_imports_internal = quote! {};
++
++    let transfer_return_value_pub = quote! {};
++    let transfer_return_value_internal = quote! {};
++    let transfer_return_value_module_id = quote! {};
++
+     // !!! keep in sync with main and before_unload calls in relib_host crate !!!
+     let impl_code = if pub_imports {
+-      let return_type = output_to_return_type!(output);
+       let needs_box = type_needs_box(&return_type);
+-      let (return_type, return_value, post_init) = if needs_box {
++      // TODO: remove _return_value?
++      let (return_type, _return_value, post_init) = if needs_box {
+         (
+           quote! {
+             *mut #return_type
+@@ -385,13 +415,13 @@ fn generate_imports_(
+             Box::into_raw(Box::new(return_value))
+           },
+           quote! {
+-            let post_ptr: *mut #lifetimes_for extern "C" fn(return_value_ptr: *mut #return_type)
++            let post_ptr: *mut #lifetimes_for fn(return_value_ptr: *mut #return_type)
+               = *library.get(concat!(#post_mangled_name, "\0").as_bytes()).expect(#post_panic_message);
+ 
+             *post_ptr = post_impl;
+ 
+             #[allow(clippy::extra_unused_lifetimes)]
+-            extern "C" fn post_impl #lifetimes_full (return_value_ptr: *mut #return_type) {
++            fn post_impl #lifetimes_full (return_value_ptr: *mut #return_type) {
+               use std::boxed::Box;
+               unsafe {
+                 drop(Box::from_raw(return_value_ptr));
+@@ -405,25 +435,23 @@ fn generate_imports_(
+ 
+       quote! {
+         unsafe {
+-          let ptr: *mut #lifetimes_for extern "C" fn(
++          let ptr: *mut #lifetimes_for fn(
+             ____success____: *mut bool,
++            #transfer_return_value_module_id,
+             #inputs
+           ) -> std::mem::MaybeUninit<#return_type>
+             = *library.get(concat!(#mangled_name, "\0").as_bytes()).expect(#panic_message);
+ 
+           *ptr = impl_;
+ 
+-          extern "C" fn impl_ #lifetimes_full (
++          fn impl_ #lifetimes_full (
+             ____success____: *mut bool,
++            #transfer_return_value_module_id,
+             #inputs
+           ) -> std::mem::MaybeUninit<#return_type> // will be initialized if function won't panic
+           {
+-            /// All parameters must be Copy, see relib caveats in the readme for more info.
+-            fn ____assert_type_is_copy____(_: impl Copy) {}
+-            #( ____assert_type_is_copy____( #inputs_without_types ); )*
+-
+             let result = std::panic::catch_unwind(move || {
+-              <ModuleImportsImpl as Imports>::#ident( #( #inputs_without_types )* )
++              <ModuleImportsImpl as Imports>::#ident( #( #inputs_without_types, )* )
+             });
+ 
+             match result {
+@@ -433,7 +461,7 @@ fn generate_imports_(
+                 }
+ 
+                 #[allow(unused_braces, clippy::unit_arg)]
+-                std::mem::MaybeUninit::new({ #return_value })
++                std::mem::MaybeUninit::new({ #transfer_return_value_pub })
+               }
+               // ignoring content since it's handled in default panic hook of std
+               Err(_) => {
+@@ -452,13 +480,21 @@ fn generate_imports_(
+     } else {
+       quote! {
+         unsafe {
+-          let ptr: *mut #lifetimes_for extern "C" fn( #inputs ) #output
++          let ptr: *mut #lifetimes_for fn(
++            #transfer_return_value_module_id,
++            #inputs
++          ) #output
+             = *library.get(concat!(#mangled_name, "\0").as_bytes()).expect(#panic_message);
+ 
+           *ptr = impl_;
+ 
+-          extern "C" fn impl_ #lifetimes_full ( #inputs ) #output {
+-            <ModuleImportsImpl as Imports>::#ident( #( #inputs_without_types )* )
++          fn impl_ #lifetimes_full (
++            #transfer_return_value_module_id,
++            #inputs
++          ) #output {
++            #[allow(unused_variables)] // for never type
++            let return_value = <ModuleImportsImpl as Imports>::#ident( #( #inputs_without_types, )* );
++            #transfer_return_value_internal
+           }
+         }
+       }
+diff --git a/interface/src/lib.rs b/interface/src/lib.rs
+index 8414e8d..2322eb6 100755
+--- a/interface/src/lib.rs
++++ b/interface/src/lib.rs
+@@ -24,6 +24,21 @@ macro_rules! include_exports {
+   };
+ }
+ 
++// TODO: use it in examples
++/// Shortcut for:
++/// ```
++/// relib_interface::include_exports!();
++/// relib_interface::include_imports!();
++/// ```
++#[cfg(feature = "include")]
++#[macro_export]
++macro_rules! include_all {
++  () => {
++    relib_interface::include_exports!();
++    relib_interface::include_imports!();
++  };
++}
++
+ #[cfg(feature = "include")]
+ #[macro_export]
+ macro_rules! include_imports {
+diff --git a/interface/src/module.rs b/interface/src/module.rs
+index 5290208..4eb92ca 100755
+--- a/interface/src/module.rs
++++ b/interface/src/module.rs
+@@ -1,11 +1,12 @@
+ use {
+   crate::shared::{
+-    SAFETY_DOC, TraitFn, extract_trait_name_from_path, for_each_trait_item, out_dir_file_name,
+-    parse_trait_file, pass_out_dir_file_name_to_crate_code, type_needs_box, write_code_to_file,
++    SAFETY_DOC, TRANSFER_IMPORTS_TO_HOST, TRANSFER_IMPORTS_TO_HOST_INTERNAL, TraitFn,
++    extract_trait_name_from_path, for_each_trait_item, out_dir_file_name, parse_trait_file,
++    pass_out_dir_file_name_to_crate_code, type_needs_box, write_code_to_file,
+   },
+   proc_macro2::TokenStream as TokenStream2,
+   quote::quote,
+-  relib_internal_shared::output_to_return_type,
++  relib_shared::output_to_return_type,
+   syn::FnArg,
+ };
+ 
+@@ -30,6 +31,15 @@ pub fn generate_internal(
+   );
+ }
+ 
++#[cfg(feature = "internal")]
++pub fn generate_internal_exports_with_prefix(
++  prefix: &str,
++  exports_file_content: &'static str,
++  exports_trait_path: &str,
++) {
++  generate_exports_(exports_file_content, exports_trait_path, false, prefix);
++}
++
+ /// in the OUT_DIR which you can include using
+ /// `relib_interface::include_exports!();` and `relib_interface::include_exports!();`
+ /// in your `lib.rs` or `main.rs`
+@@ -154,6 +164,8 @@ fn generate_exports_(
+       lifetimes_module: _,
+     } = for_each_trait_item(trait_name, &item);
+ 
++    let transfer_imports = quote! {};
++
+     // !!! keep in sync with main and before_unload calls in relib_host crate !!!
+     let code = if pub_exports {
+       let return_type = output_to_return_type!(output);
+@@ -170,7 +182,7 @@ fn generate_exports_(
+           quote! {
+             #[unsafe(no_mangle)]
+             #[allow(clippy::extra_unused_lifetimes)]
+-            pub extern "C" fn #post_mangled_ident #lifetimes_full (
++            pub fn #post_mangled_ident #lifetimes_full (
+               return_value_ptr: *mut #return_type
+             ) {
+               use std::boxed::Box;
+@@ -181,18 +193,25 @@ fn generate_exports_(
+           },
+         )
+       } else {
+-        (return_type, quote! { return_value }, quote! {})
++        (
++          return_type,
++          quote! {
++            return_value
++          },
++          quote! {},
++        )
+       };
+ 
+       quote! {
+         #[unsafe(no_mangle)]
+-        pub extern "C" fn #mangled_ident #lifetimes_full (
++        #[allow(non_snake_case)]
++        pub fn #mangled_ident #lifetimes_full (
+           ____success____: *mut bool,
+           #inputs
+         ) -> std::mem::MaybeUninit<#return_type> // will be initialized if function won't panic
+         {
+           let result = std::panic::catch_unwind(move || {
+-            <ModuleExportsImpl as Exports>::#ident( #( #inputs_without_types )* )
++            <ModuleExportsImpl as Exports>::#ident( #( #inputs_without_types, )* )
+           });
+ 
+           match result {
+@@ -204,8 +223,7 @@ fn generate_exports_(
+               #[allow(unused_braces, clippy::unit_arg)]
+               std::mem::MaybeUninit::new({ #return_value })
+             }
+-            // ignoring content since it's handled in our panic hook or
+-            // in default panic hook of std when unloading is disabled
++            // ignoring content since it's printed by std
+             Err(_) => {
+               unsafe {
+                 *____success____ = false;
+@@ -221,8 +239,8 @@ fn generate_exports_(
+     } else {
+       quote! {
+         #[unsafe(export_name = #mangled_name)]
+-        pub extern "C" fn #ident #lifetimes_full ( #inputs ) #output {
+-          <ModuleExportsImpl as Exports>::#ident( #( #inputs_without_types )* )
++        pub fn #ident #lifetimes_full ( #inputs ) #output {
++          <ModuleExportsImpl as Exports>::#ident( #( #inputs_without_types, )* )
+         }
+       }
+     };
+@@ -303,6 +321,10 @@ fn generate_imports_(
+       #[allow(unused_variables, clippy::let_unit_value, clippy::diverging_sub_expression)]
+     };
+ 
++    let transfer_inputs_pub = quote! {};
++    let transfer_inputs_internal = quote! {};
++    let transfer_return_value_module_id = quote! {};
++
+     // !!! keep in sync with main and before_unload calls in relib_host crate !!!
+     let function_body = if pub_imports {
+       let return_type = output_to_return_type!(output);
+@@ -314,10 +336,10 @@ fn generate_imports_(
+           quote! {
+             #[allow(non_upper_case_globals)]
+             #[unsafe(no_mangle)]
+-            static mut #post_mangled_ident: #lifetimes_for extern "C" fn(return_value_ptr: *mut #return_type) = ____post_placeholder____;
++            static mut #post_mangled_ident: #lifetimes_for fn(return_value_ptr: *mut #return_type) = ____post_placeholder____;
+ 
+             #[allow(clippy::extra_unused_lifetimes)]
+-            extern "C" fn ____post_placeholder____ #lifetimes_full (_: *mut #return_type) {
++            fn ____post_placeholder____ #lifetimes_full (_: *mut #return_type) {
+               unreachable!();
+             }
+           },
+@@ -350,13 +372,15 @@ fn generate_imports_(
+       };
+ 
+       quote! {
+-        #function_static_decl: #lifetimes_for extern "C" fn(
++        #function_static_decl: #lifetimes_for fn(
+           ____success____: *mut bool,
++          #transfer_return_value_module_id,
+           #inputs
+         ) -> std::mem::MaybeUninit<#return_type> = ____placeholder____;
+ 
+-        extern "C" fn ____placeholder____ #lifetimes_full (
+-          _: *mut bool,
++        fn ____placeholder____ #lifetimes_full (
++          ____success____: *mut bool,
++          #transfer_return_value_module_id,
+           #placeholder_inputs
+         ) -> std::mem::MaybeUninit<#return_type> {
+           unreachable!();
+@@ -366,9 +390,15 @@ fn generate_imports_(
+ 
+         let mut ____success____ = std::mem::MaybeUninit::<bool>::uninit();
+ 
++        #transfer_inputs_pub
++
+         #suppress_lints_for_return_value
+         let return_value = unsafe {
+-          #mangled_ident( ____success____.as_mut_ptr(), #( #inputs_without_types )* )
++          #mangled_ident(
++            ____success____.as_mut_ptr(),
++            relib_module::__internal::module_id(),
++            #( #inputs_without_types, )*
++          )
+         };
+ 
+         // SAFETY: this bool is guaranteed to be initialized by the host
+@@ -383,14 +413,25 @@ fn generate_imports_(
+       }
+     } else {
+       quote! {
+-        #function_static_decl: #lifetimes_for extern "C" fn( #inputs ) #output = placeholder;
++        #function_static_decl: #lifetimes_for fn(
++          #transfer_return_value_module_id,
++          #inputs
++        ) #output = placeholder;
+ 
+-        extern "C" fn placeholder #lifetimes_full ( #placeholder_inputs ) #output {
++        fn placeholder #lifetimes_full (
++          #transfer_return_value_module_id,
++          #placeholder_inputs
++        ) #output {
+           unreachable!();
+         }
+ 
++        #transfer_inputs_internal
++
+         unsafe {
+-          #mangled_ident( #( #inputs_without_types )* )
++          #mangled_ident(
++            crate::__internal::module_id(),
++            #( #inputs_without_types, )*
++          )
+         }
+       }
+     };
+diff --git a/interface/src/shared.rs b/interface/src/shared.rs
+index 5a01174..796821f 100755
+--- a/interface/src/shared.rs
++++ b/interface/src/shared.rs
+@@ -1,8 +1,8 @@
+ use {
+   proc_macro2::TokenStream as TokenStream2,
+   quote::{ToTokens, format_ident, quote},
+-  relib_internal_shared::fn_inputs_without_types,
+-  std::{fs, path::Path},
++  relib_shared::fn_inputs_without_types,
++  std::{fs, path::Path, sync::LazyLock},
+   syn::{
+     FnArg, GenericParam, Ident, Item, ItemTrait, ReturnType, Token, TraitItem, UseTree,
+     punctuated::Punctuated,
+@@ -242,14 +242,13 @@ fn patch_use_tree_if_needed(use_tree: &UseTree, crate_name: &Ident) -> TokenStre
+   }
+ }
+ 
+-pub const SAFETY_DOC: &str = "# Safety\n\
+-  Behavior is undefined if any of the following conditions are violated:\n\
+-  1. Types of arguments and return value must be ABI-stable.\n\
+-  2. Host and module crates must be compiled with same shared crate code (which contains exports and imports traits).\n\
+-  3. Returned value must not be a reference-counting pointer or &'static T (see [caveats](https://docs.rs/relib/latest/relib/#moving-non-copy-types-between-host-and-module)).";
++pub const SAFETY_DOC: &str = "# Safety
++  Behavior is undefined if any of the following conditions are violated:
++  1. Types of arguments and return value must be ABI-stable.
++  2. Host and module crates must be compiled with same shared crate code (which contains exports and imports traits).";
+ 
+ pub fn type_needs_box(type_: &TokenStream2) -> bool {
+-  relib_internal_shared::type_needs_box(&type_.to_string())
++  relib_shared::type_needs_box(&type_.to_string())
+ }
+ 
+ pub fn pass_out_dir_file_name_to_crate_code(prefix: &str, name: &str) {
+diff --git a/module/Cargo.toml b/module/Cargo.toml
+index a9c0d08..37dabbb 100644
+--- a/module/Cargo.toml
++++ b/module/Cargo.toml
+@@ -9,10 +9,12 @@ rust-version.workspace = true
+ description = "relib is a framework for reloadable dynamic libraries"
+ 
+ [features]
++default = ["host_global_alloc"]
+ unloading = ["unloading_core", "global_alloc_tracker"]
+ unloading_core = ["relib_interface/unloading", "dep:thread-id"]
+ global_alloc_tracker = []
+ dealloc_validation = []
++host_global_alloc = []
+ 
+ [lints.clippy]
+ # unrecoverable must be used instead
+@@ -39,9 +41,9 @@ path = "../export"
+ [target.'cfg(target_os = "linux")'.dependencies]
+ libc.workspace = true
+ 
+-[dependencies.relib_internal_shared]
++[dependencies.relib_shared]
+ version = "=0.7.0"
+-path = "../shared"
++path = "../relib_shared"
+ 
+ [dependencies.relib_interface]
+ version = "=0.7.0"
+@@ -60,9 +62,9 @@ version = "=0.7.0"
+ path = "../interface"
+ features = ["internal", "build"]
+ 
+-[build-dependencies.relib_internal_shared]
++[build-dependencies.relib_shared]
+ version = "=0.7.0"
+-path = "../shared"
++path = "../relib_shared"
+ 
+ [build-dependencies.relib_internal_crate_compilation_info]
+ version = "=0.7.0"
+diff --git a/module/build.rs b/module/build.rs
+index 8b327bd..5522c7d 100755
+--- a/module/build.rs
++++ b/module/build.rs
+@@ -1,9 +1,16 @@
+ fn main() {
+   relib_interface::module::generate_internal(
+-    relib_internal_shared::EXPORTS,
+-    "relib_internal_shared::exports::___Internal___Exports___",
+-    relib_internal_shared::IMPORTS,
+-    "relib_internal_shared::imports::___Internal___Imports___",
++    relib_shared::EXPORTS,
++    "relib_shared::exports::___Internal___Exports___",
++    relib_shared::IMPORTS,
++    "relib_shared::imports::___Internal___Imports___",
+   );
++
++  relib_interface::module::generate_internal_exports_with_prefix(
++    "internal_generated_module_no_unloading",
++    relib_shared::EXPORTS_NO_UNLOADING,
++    "relib_shared::exports_no_unloading::___Exports___NoUnloading___",
++  );
++
+   relib_internal_crate_compilation_info::provide();
+ }
+diff --git a/module/src/compilation_info.rs b/module/src/compilation_info.rs
+index b0aac42..5fa8388 100755
+--- a/module/src/compilation_info.rs
++++ b/module/src/compilation_info.rs
+@@ -1,4 +1,4 @@
+-use relib_internal_shared::Str;
++use relib_shared::Str;
+ 
+ #[unsafe(export_name = "__RELIB__CRATE_COMPILATION_INFO__")]
+ static INFO: Str = Str::const_from(relib_internal_crate_compilation_info::get!());
+diff --git a/module/src/host_alloc_proxy.rs b/module/src/host_alloc_proxy.rs
+new file mode 100644
+index 0000000..448776b
+--- /dev/null
++++ b/module/src/host_alloc_proxy.rs
+@@ -0,0 +1,32 @@
++use {
++  relib_shared::{Alloc, Dealloc},
++  std::{
++    alloc::{GlobalAlloc, Layout},
++    sync::OnceLock,
++  },
++};
++
++/// [`GlobalAlloc`] that uses global allocator of the host.
++pub struct HostAllocProxy;
++
++unsafe impl GlobalAlloc for HostAllocProxy {
++  unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
++    let alloc = HOST_ALLOC_PROXY.alloc.get().unwrap();
++    unsafe { alloc(layout.into()) }
++  }
++
++  unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
++    let dealloc = HOST_ALLOC_PROXY.dealloc.get().unwrap();
++    unsafe { dealloc(ptr, layout.into()) }
++  }
++}
++
++pub(crate) struct AllocProxy {
++  pub alloc: OnceLock<Alloc>,
++  pub dealloc: OnceLock<Dealloc>,
++}
++
++pub(crate) static HOST_ALLOC_PROXY: AllocProxy = AllocProxy {
++  alloc: OnceLock::new(),
++  dealloc: OnceLock::new(),
++};
+diff --git a/module/src/lib.rs b/module/src/lib.rs
+index a70c5e1..20089a2 100755
+--- a/module/src/lib.rs
++++ b/module/src/lib.rs
+@@ -1,11 +1,9 @@
+ mod compilation_info;
+ 
+-pub use relib_export::export;
+-
+ #[cfg(feature = "unloading_core")]
+ mod unloading_core;
+ #[cfg(feature = "unloading_core")]
+-pub use unloading_core::*;
++pub use unloading_core::AllocTracker;
+ 
+ #[cfg(all(feature = "global_alloc_tracker", not(feature = "unloading_core")))]
+ compile_error!(
+@@ -19,3 +17,27 @@ compile_error!(
+ #[doc(hidden)]
+ #[cfg(all(feature = "unloading_core", not(feature = "dealloc_validation")))]
+ pub use unloading_core::_suppress_warn;
++
++#[cfg(not(feature = "unloading_core"))]
++mod no_unloading;
++
++mod host_alloc_proxy;
++pub use {host_alloc_proxy::HostAllocProxy, relib_export::export};
++
++#[doc(hidden)]
++pub mod __internal {
++  #[cfg(feature = "unloading_core")]
++  pub fn module_id() -> relib_shared::ModuleId {
++    unsafe { crate::unloading_core::MODULE_ID }
++  }
++
++  pub struct TransferToHost;
++
++  fn transfer(ptr: *mut u8) {
++    #[cfg(feature = "unloading_core")]
++    crate::unloading_core::alloc_tracker::transfer_alloc_to_host(ptr);
++
++    #[cfg(not(feature = "unloading_core"))]
++    let _ = ptr;
++  }
++}
+diff --git a/module/src/no_unloading.rs b/module/src/no_unloading.rs
+new file mode 100644
+index 0000000..69074bd
+--- /dev/null
++++ b/module/src/no_unloading.rs
+@@ -0,0 +1,25 @@
++use {
++  crate::{HostAllocProxy, host_alloc_proxy::HOST_ALLOC_PROXY},
++  relib_shared::{
++    Alloc, Dealloc, exports_no_unloading::___Exports___NoUnloading___ as Exports,
++  },
++};
++
++// TODO: add test for it
++/// Modules must use global allocator of the host to safely move allocations between them.
++///
++/// **Safety requirement** if you want to set your own `#[global_allocator]`:
++/// it must use global allocator of the host (you can use [`HostAllocProxy`] for it).
++#[cfg(feature = "host_global_alloc")]
++#[global_allocator]
++static ALLOC: HostAllocProxy = HostAllocProxy;
++
++relib_interface::include_exports!(gen_exports, "internal_generated_module_no_unloading");
++use gen_exports::ModuleExportsImpl;
++
++impl Exports for ModuleExportsImpl {
++  fn init(alloc: Alloc, dealloc: Dealloc) {
++    HOST_ALLOC_PROXY.alloc.set(alloc).unwrap();
++    HOST_ALLOC_PROXY.dealloc.set(dealloc).unwrap();
++  }
++}
+diff --git a/module/src/unloading_core.rs b/module/src/unloading_core.rs
+index 264eb8a..5fb47e2 100644
+--- a/module/src/unloading_core.rs
++++ b/module/src/unloading_core.rs
+@@ -1,5 +1,5 @@
+ use {
+-  relib_internal_shared::ModuleId,
++  relib_shared::ModuleId,
+   std::sync::atomic::{AtomicBool, Ordering},
+ };
+ 
+@@ -20,10 +20,10 @@ mod pthread_key_hooks;
+ mod helpers;
+ mod exports_impl;
+ 
+-mod alloc_tracker;
+-pub use alloc_tracker::AllocTracker;
++pub mod alloc_tracker;
+ #[cfg(all(feature = "unloading_core", not(feature = "dealloc_validation")))]
+ pub use alloc_tracker::_suppress_warn;
++pub use alloc_tracker::AllocTracker;
+ 
+ #[cfg(target_os = "windows")]
+ mod windows_dll_main;
+@@ -32,14 +32,19 @@ mod windows_dealloc;
+ 
+ /// Middleware for tracking all allocations to deallocate leaks
+ /// (for example `std::mem:forget`, static items) on module unload.
++///
++/// // TODO: do we really need it if we can use allocator-api2 crate?
+ /// It sends all allocations and deallocations to host because to
+ /// store allocations we need to allocate unknown amount of memory.
++///
++/// **Safety requirement** if you want to set your own `#[global_allocator]`:
++/// it must use global allocator of the host (you can use [`HostAllocProxy`] for it).
+ #[cfg(feature = "global_alloc_tracker")]
+-mod __alloc_tracker {
+-  use {super::AllocTracker, std::alloc::System};
++mod __global_alloc {
++  use crate::{host_alloc_proxy::HostAllocProxy, unloading_core::AllocTracker};
+ 
+   #[global_allocator]
+-  static ALLOC_TRACKER: AllocTracker<System> = AllocTracker::new(System);
++  static ALLOC_TRACKER: AllocTracker<HostAllocProxy> = AllocTracker::new(HostAllocProxy);
+ }
+ 
+ static ALLOCATOR_LOCK: AtomicBool = AtomicBool::new(false);
+@@ -48,7 +53,7 @@ fn allocator_lock() -> bool {
+ }
+ 
+ // SAFETY: will be initialized on one thread once and then never change
+-static mut MODULE_ID: ModuleId = 0;
++pub static mut MODULE_ID: ModuleId = 0;
+ 
+ // The id of the thread in which this module was loaded and in which it must be unloaded
+ //
+diff --git a/module/src/unloading_core/alloc_tracker.rs b/module/src/unloading_core/alloc_tracker.rs
+index 5a6543c..d995d76 100755
+--- a/module/src/unloading_core/alloc_tracker.rs
++++ b/module/src/unloading_core/alloc_tracker.rs
+@@ -3,7 +3,7 @@ use {
+     MODULE_ID, gen_imports,
+     helpers::{assert_allocator_is_still_accessible, unrecoverable},
+   },
+-  relib_internal_shared::{Allocation, AllocatorOp, AllocatorPtr, StableLayout},
++  relib_shared::{Allocation, AllocatorOp, AllocatorPtr, StableLayout},
+   std::{
+     alloc::{GlobalAlloc, Layout},
+     collections::HashMap,
+@@ -36,7 +36,7 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for AllocTracker<A> {
+     if ALLOC_INIT.load(Ordering::SeqCst) {
+       // TODO: SAFETY
+       unsafe {
+-        gen_imports::on_alloc(MODULE_ID, ptr, layout.into());
++        gen_imports::on_alloc(ptr, layout.into());
+       }
+     } else {
+       save_alloc_in_cache(ptr, layout.into());
+@@ -144,8 +144,8 @@ pub fn send_cached_allocs(cache: Option<&mut AllocsCache>) {
+   transport.extend(cache.drain().map(|(_, allocation)| allocation));
+ 
+   unsafe {
+-    let slice: &[AllocatorOp] = &transport;
+-    gen_imports::on_cached_allocs(MODULE_ID, slice.into());
++    let transport: &[AllocatorOp] = &transport;
++    gen_imports::on_cached_allocs(transport.into());
+   }
+ 
+   transport.clear();
+@@ -163,6 +163,14 @@ pub unsafe fn dealloc(allocs: &[Allocation]) {
+   UNLOAD_DEALLOCATION.swap(false, Ordering::SeqCst);
+ }
+ 
++pub fn remove_ptr_from_cache(ptr: *mut u8) {
++  let removed = {
++    let mut cache = lock_allocs_cache();
++    cache.remove(&AllocatorPtr(ptr)).is_some()
++  };
++  dbg!(removed);
++}
++
+ #[cfg(feature = "dealloc_validation")]
+ /// is this pointer allocated by this allocator and is still alive?
+ fn is_ptr_valid(ptr: *mut u8) -> bool {
+@@ -171,13 +179,29 @@ fn is_ptr_valid(ptr: *mut u8) -> bool {
+     cache.contains_key(&AllocatorPtr(ptr))
+   };
+ 
+-  cache_contains_ptr || unsafe { gen_imports::is_ptr_allocated(MODULE_ID, ptr) }
++  cache_contains_ptr || unsafe { gen_imports::is_ptr_allocated(ptr) }
+ }
+ 
+ #[cfg(not(feature = "dealloc_validation"))]
+ #[expect(unreachable_code)]
+ pub fn _suppress_warn() {
+   unsafe {
+-    gen_imports::is_ptr_allocated(unreachable!(), unreachable!());
++    gen_imports::is_ptr_allocated(unreachable!());
+   }
+ }
++
++pub fn transfer_alloc_to_host(ptr: *mut u8) {
++  let mut cache = lock_allocs_cache();
++
++  let transferred = cache.remove(&AllocatorPtr(ptr)).is_some();
++  if transferred {
++    return;
++  }
++
++  let transferred = unsafe { gen_imports::transfer_alloc_to_host(ptr) };
++  if transferred {
++    return;
++  }
++
++  unrecoverable("failed to transfer allocation to host");
++}
+diff --git a/module/src/unloading_core/exports_impl.rs b/module/src/unloading_core/exports_impl.rs
+index 66827f5..d2ac4d7 100755
+--- a/module/src/unloading_core/exports_impl.rs
++++ b/module/src/unloading_core/exports_impl.rs
+@@ -2,23 +2,33 @@ use {
+   super::{
+     ALLOCATOR_LOCK, HOST_OWNER_THREAD, MODULE_ID, alloc_tracker, gen_exports::ModuleExportsImpl,
+   },
+-  relib_internal_shared::{ModuleId, exports::___Internal___Exports___ as Exports},
++  crate::host_alloc_proxy::HOST_ALLOC_PROXY,
++  relib_shared::{ModuleId, Alloc, Dealloc, exports::___Internal___Exports___ as Exports},
+   std::{ffi::c_void, sync::atomic::Ordering},
+ };
+ 
+ impl Exports for ModuleExportsImpl {
+-  fn init(host_owner_thread: usize, module: ModuleId, enable_alloc_tracker: bool) {
++  fn init(
++    host_owner_thread: usize,
++    module: ModuleId,
++    enable_alloc_tracker: bool,
++    alloc: Alloc,
++    dealloc: Dealloc,
++  ) {
+     unsafe {
+       HOST_OWNER_THREAD = host_owner_thread;
+       MODULE_ID = module;
+ 
++      HOST_ALLOC_PROXY.alloc.set(alloc).unwrap();
++      HOST_ALLOC_PROXY.dealloc.set(dealloc).unwrap();
++
+       if enable_alloc_tracker {
+         alloc_tracker::init();
+       }
+     }
+   }
+ 
+-  fn exit(allocs: relib_internal_shared::SliceAllocation) {
++  fn exit(allocs: relib_shared::SliceAllocation) {
+     unsafe {
+       let allocs = allocs.into_slice();
+       alloc_tracker::dealloc(allocs);
+@@ -33,6 +43,10 @@ impl Exports for ModuleExportsImpl {
+     ALLOCATOR_LOCK.store(true, Ordering::SeqCst);
+   }
+ 
++  fn remove_allocation_ptr_from_alloc_tracker_cache(ptr: *mut u8) {
++    alloc_tracker::remove_ptr_from_cache(ptr);
++  }
++
+   fn run_thread_local_dtors() {
+     #[cfg(target_os = "linux")]
+     {
+diff --git a/module/src/unloading_core/helpers.rs b/module/src/unloading_core/helpers.rs
+index 547113e..37650ee 100755
+--- a/module/src/unloading_core/helpers.rs
++++ b/module/src/unloading_core/helpers.rs
+@@ -4,7 +4,7 @@ use {
+ };
+ 
+ pub fn unrecoverable(message: &str) -> ! {
+-  unsafe { gen_imports::unrecoverable(MODULE_ID, message.into()) }
++  unsafe { gen_imports::unrecoverable(message.into()) }
+ }
+ 
+ pub fn assert_allocator_is_still_accessible() {
+diff --git a/shared/Cargo.toml b/relib_shared/Cargo.toml
+similarity index 89%
+rename from shared/Cargo.toml
+rename to relib_shared/Cargo.toml
+index e9e7013..b9bfefe 100644
+--- a/shared/Cargo.toml
++++ b/relib_shared/Cargo.toml
+@@ -1,5 +1,5 @@
+ [package]
+-name = "relib_internal_shared"
++name = "relib_shared"
+ version.workspace = true
+ edition.workspace = true
+ license.workspace = true
+diff --git a/shared/src/exports.rs b/relib_shared/src/exports.rs
+old mode 100755
+new mode 100644
+similarity index 60%
+rename from shared/src/exports.rs
+rename to relib_shared/src/exports.rs
+index 74e9dc7..da1a6b7
+--- a/shared/src/exports.rs
++++ b/relib_shared/src/exports.rs
+@@ -1,14 +1,21 @@
+ use {
+-  crate::{ModuleId, SliceAllocation},
++  crate::{Alloc, Dealloc, SliceAllocation},
+   std::ffi::c_void,
+ };
+ 
+ #[expect(non_camel_case_types)]
+ pub trait ___Internal___Exports___ {
+-  fn init(host_owner_thread: usize, module: ModuleId, enable_alloc_tracker: bool);
++  fn init(
++    host_owner_thread: usize,
++    module: ModuleId,
++    enable_alloc_tracker: bool,
++    alloc: Alloc,
++    dealloc: Dealloc,
++  );
+   fn exit(allocs: SliceAllocation);
+   fn take_cached_allocs_before_exit();
+   fn lock_module_allocator();
++  fn remove_allocation_ptr_from_alloc_tracker_cache(ptr: *mut u8);
+ 
+   // linux-only
+   fn spawned_threads_count() -> u64;
+diff --git a/relib_shared/src/exports_no_unloading.rs b/relib_shared/src/exports_no_unloading.rs
+new file mode 100644
+index 0000000..600f478
+--- /dev/null
++++ b/relib_shared/src/exports_no_unloading.rs
+@@ -0,0 +1,6 @@
++use crate::{Alloc, Dealloc};
++
++#[expect(non_camel_case_types)]
++pub trait ___Exports___NoUnloading___ {
++  fn init(alloc: Alloc, dealloc: Dealloc);
++}
+diff --git a/relib_shared/src/imports.rs b/relib_shared/src/imports.rs
+new file mode 100644
+index 0000000..90b2459
+--- /dev/null
++++ b/relib_shared/src/imports.rs
+@@ -0,0 +1,12 @@
++use {
++  crate::{SliceAllocatorOp, StableLayout, Str},
++};
++
++#[expect(non_camel_case_types)]
++pub trait ___Internal___Imports___ {
++  fn on_alloc(ptr: *mut u8, layout: StableLayout);
++  fn on_cached_allocs(ops: SliceAllocatorOp);
++  fn unrecoverable(message: Str) -> !;
++  fn is_ptr_allocated(ptr: *mut u8) -> bool;
++  fn transfer_alloc_to_host(ptr: *mut u8) -> bool;
++}
+diff --git a/shared/src/lib.rs b/relib_shared/src/lib.rs
+old mode 100755
+new mode 100644
+similarity index 74%
+rename from shared/src/lib.rs
+rename to relib_shared/src/lib.rs
+index 75441ef..52d63fe
+--- a/shared/src/lib.rs
++++ b/relib_shared/src/lib.rs
+@@ -1,182 +1,202 @@
+-use std::{
+-  alloc::Layout,
+-  fmt::{Debug, Formatter, Result as FmtResult},
+-};
+-
+-pub mod exports;
+-pub mod imports;
+-
+-pub const EXPORTS: &str = include_str!("exports.rs");
+-pub const IMPORTS: &str = include_str!("imports.rs");
+-
+-#[repr(C)]
+-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+-pub struct AllocatorPtr(pub *mut u8);
+-
+-// SAFETY: `*mut u8` won't be touched anywhere except in the dynamic library in the main thread for deallocation
+-unsafe impl Send for AllocatorPtr {}
+-unsafe impl Sync for AllocatorPtr {}
+-
+-#[repr(C)]
+-#[derive(Clone, PartialEq)]
+-pub struct Allocation(pub AllocatorPtr, pub StableLayout);
+-
+-impl Debug for Allocation {
+-  fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+-    let Self(AllocatorPtr(ptr), StableLayout { size, .. }) = self;
+-    write!(f, "({ptr:?}, {size:?})")
+-  }
+-}
+-
+-#[repr(C)]
+-#[derive(Clone, Copy, PartialEq, Debug)]
+-pub struct StableLayout {
+-  size: usize,
+-  align: usize,
+-}
+-
+-impl From<Layout> for StableLayout {
+-  fn from(layout: Layout) -> Self {
+-    Self {
+-      size: layout.size(),
+-      align: layout.align(),
+-    }
+-  }
+-}
+-
+-impl From<StableLayout> for Layout {
+-  fn from(value: StableLayout) -> Self {
+-    // SAFETY: StableLayout can only be created from valid Layout (see From<Layout> impl)
+-    unsafe { Layout::from_size_align_unchecked(value.size, value.align) }
+-  }
+-}
+-
+-impl From<&StableLayout> for Layout {
+-  fn from(value: &StableLayout) -> Self {
+-    Layout::from(*value)
+-  }
+-}
+-
+-#[repr(C)]
+-#[derive(Clone, PartialEq, Debug)]
+-pub enum AllocatorOp {
+-  Alloc(Allocation),
+-  Dealloc(Allocation),
+-}
+-
+-pub type SliceAllocatorOp = RawSlice<AllocatorOp>;
+-pub type SliceAllocation = RawSlice<Allocation>;
+-
+-/// ABI-stable `&[T]`
+-#[repr(C)]
+-pub struct RawSlice<T> {
+-  pub ptr: *const T,
+-  pub len: usize,
+-}
+-
+-impl<T> RawSlice<T> {
+-  /// # Safety
+-  /// See `Safety` of [`std::slice::from_raw_parts`]
+-  pub unsafe fn into_slice<'a>(self) -> &'a [T] {
+-    unsafe { std::slice::from_raw_parts(self.ptr, self.len) }
+-  }
+-
+-  /// # Safety
+-  /// See `Safety` of [`std::slice::from_raw_parts`]
+-  pub unsafe fn to_vec(&self) -> Vec<T>
+-  where
+-    T: Clone,
+-  {
+-    unsafe { std::slice::from_raw_parts(self.ptr, self.len).to_vec() }
+-  }
+-}
+-
+-impl<T> From<&[T]> for RawSlice<T> {
+-  fn from(value: &[T]) -> Self {
+-    RawSlice {
+-      ptr: value.as_ptr(),
+-      len: value.len(),
+-    }
+-  }
+-}
+-
+-/// ABI-stable `&str`
+-#[repr(C)]
+-pub struct Str(RawSlice<u8>);
+-
+-impl Str {
+-  /// # Safety
+-  /// See `Safety` of [`std::slice::from_raw_parts`]
+-  pub unsafe fn into_str<'a>(self) -> &'a str {
+-    let bytes = unsafe { self.0.into_slice() };
+-    std::str::from_utf8(bytes).expect("Failed to get valid UTF-8 string slice back")
+-  }
+-
+-  /// # Safety
+-  /// See `Safety` of [`std::slice::from_raw_parts`]
+-  pub unsafe fn to_string(&self) -> String {
+-    let bytes = unsafe { self.0.to_vec() };
+-    String::from_utf8(bytes).expect("Failed to convert to valid UTF-8 string")
+-  }
+-
+-  /// `From<&str>` for const contexts
+-  pub const fn const_from(value: &str) -> Self {
+-    let bytes = value.as_bytes();
+-    Self(RawSlice {
+-      ptr: bytes.as_ptr(),
+-      len: bytes.len(),
+-    })
+-  }
+-}
+-
+-impl From<&str> for Str {
+-  fn from(value: &str) -> Self {
+-    Self(value.as_bytes().into())
+-  }
+-}
+-
+-// SAFETY: `&str` is Send and Sync
+-unsafe impl Send for Str {}
+-unsafe impl Sync for Str {}
+-
+-pub type ModuleId = u64;
+-
+-#[macro_export]
+-macro_rules! output_to_return_type {
+-  ($output:ident) => {
+-    match &$output {
+-      syn::ReturnType::Default => {
+-        quote! { () }
+-      }
+-      syn::ReturnType::Type(_, ty) => quote::ToTokens::to_token_stream(ty),
+-    }
+-  };
+-}
+-
+-#[macro_export]
+-macro_rules! fn_inputs_without_types {
+-  ($inputs:expr) => {
+-    $inputs
+-      .iter()
+-      .map(|arg| {
+-        let syn::FnArg::Typed(arg) = arg else {
+-          unreachable!();
+-        };
+-
+-        let ts = quote::ToTokens::to_token_stream(&arg.pat);
+-        quote! { #ts, }
+-      })
+-      .collect::<Vec<_>>()
+-  };
+-}
+-
+-pub fn type_needs_box(type_: &str) -> bool {
+-  let stable_copy_type = [
+-    "()", "bool", "u8", "i8", "u16", "i16", "u32", "i32", "u64", "i64", "usize", "isize", "f32",
+-    "f64", "char", "u128", "i128",
+-  ]
+-  .contains(&type_)
+-    || type_.starts_with(['*', '&']); // a pointer or a reference
+-
+-  !stable_copy_type
+-}
++use {
++  std::{
++    alloc::Layout,
++    fmt::{Debug, Formatter, Result as FmtResult},
++  },
++};
++
++pub mod exports;
++pub mod imports;
++pub mod exports_no_unloading;
++
++pub type ModuleId = u64;
++
++pub const EXPORTS: &str = include_str!("exports.rs");
++pub const IMPORTS: &str = include_str!("imports.rs");
++pub const EXPORTS_NO_UNLOADING: &str = include_str!("exports_no_unloading.rs");
++
++#[repr(C)]
++#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
++// TODO: remove this type?
++pub struct AllocatorPtr(pub *mut u8);
++
++// SAFETY: this is never dereferenced, only used as an address, so it should be thread-safe.
++unsafe impl Send for AllocatorPtr {}
++unsafe impl Sync for AllocatorPtr {}
++
++#[repr(C)]
++#[derive(Clone, PartialEq)]
++// TODO: remove this type?
++pub struct Allocation(pub AllocatorPtr, pub StableLayout);
++
++impl Debug for Allocation {
++  fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
++    let Self(AllocatorPtr(ptr), StableLayout { size, align }) = self;
++    write!(f, "({ptr:?}, size: {size:?} align: {align:?})")
++  }
++}
++
++#[repr(C)]
++#[derive(
++  Clone,
++  Copy,
++  PartialEq,
++  Debug,
++  // TODO: remove this type?
++)]
++pub struct StableLayout {
++  size: usize,
++  align: usize,
++}
++
++impl From<Layout> for StableLayout {
++  fn from(layout: Layout) -> Self {
++    Self {
++      size: layout.size(),
++      align: layout.align(),
++    }
++  }
++}
++
++impl From<StableLayout> for Layout {
++  fn from(value: StableLayout) -> Self {
++    // SAFETY: StableLayout can only be created from valid Layout (see From<Layout> impl)
++    unsafe { Layout::from_size_align_unchecked(value.size, value.align) }
++  }
++}
++
++impl From<&StableLayout> for Layout {
++  fn from(value: &StableLayout) -> Self {
++    Layout::from(*value)
++  }
++}
++
++#[repr(C)]
++#[derive(Clone, PartialEq, Debug)]
++// TODO: remove this type?
++pub enum AllocatorOp {
++  Alloc(Allocation),
++  Dealloc(Allocation),
++}
++
++pub type SliceAllocatorOp = RawSlice<AllocatorOp>;
++pub type SliceAllocation = RawSlice<Allocation>;
++
++/// ABI-stable `&[T]`
++#[repr(C)]
++// TODO: remove this type?
++pub struct RawSlice<T> {
++  pub ptr: *const T,
++  pub len: usize,
++}
++
++impl<T> RawSlice<T> {
++  /// # Safety
++  /// See `Safety` of [`std::slice::from_raw_parts`]
++  pub unsafe fn into_slice<'a>(self) -> &'a [T] {
++    unsafe { std::slice::from_raw_parts(self.ptr, self.len) }
++  }
++
++  /// # Safety
++  /// See `Safety` of [`std::slice::from_raw_parts`]
++  pub unsafe fn to_vec(&self) -> Vec<T>
++  where
++    T: Clone,
++  {
++    unsafe { std::slice::from_raw_parts(self.ptr, self.len).to_vec() }
++  }
++}
++
++impl<T> From<&[T]> for RawSlice<T> {
++  fn from(value: &[T]) -> Self {
++    RawSlice {
++      ptr: value.as_ptr(),
++      len: value.len(),
++    }
++  }
++}
++
++/// ABI-stable `&str`
++#[repr(C)]
++// TODO: remove this type?
++pub struct Str(RawSlice<u8>);
++
++impl Str {
++  /// # Safety
++  /// See `Safety` of [`std::slice::from_raw_parts`]
++  pub unsafe fn into_str<'a>(self) -> &'a str {
++    let bytes = unsafe { self.0.into_slice() };
++    std::str::from_utf8(bytes).expect("Failed to get valid UTF-8 string slice back")
++  }
++
++  /// # Safety
++  /// See `Safety` of [`std::slice::from_raw_parts`]
++  pub unsafe fn to_string(&self) -> String {
++    let bytes = unsafe { self.0.to_vec() };
++    String::from_utf8(bytes).expect("Failed to convert to valid UTF-8 string")
++  }
++
++  /// `From<&str>` for const contexts
++  pub const fn const_from(value: &str) -> Self {
++    let bytes = value.as_bytes();
++    Self(RawSlice {
++      ptr: bytes.as_ptr(),
++      len: bytes.len(),
++    })
++  }
++}
++
++impl From<&str> for Str {
++  fn from(value: &str) -> Self {
++    Self(value.as_bytes().into())
++  }
++}
++
++// SAFETY: `&str` is Send and Sync
++unsafe impl Send for Str {}
++unsafe impl Sync for Str {}
++
++#[macro_export]
++macro_rules! output_to_return_type {
++  ($output:ident) => {
++    match &$output {
++      syn::ReturnType::Default => {
++        quote! { () }
++      }
++      syn::ReturnType::Type(_, ty) => quote::ToTokens::to_token_stream(ty),
++    }
++  };
++}
++
++#[macro_export]
++macro_rules! fn_inputs_without_types {
++  ($inputs:expr) => {
++    $inputs
++      .iter()
++      .map(|arg| {
++        let syn::FnArg::Typed(arg) = arg else {
++          unreachable!();
++        };
++
++        quote::ToTokens::to_token_stream(&arg.pat)
++      })
++      .collect::<Vec<_>>()
++  };
++}
++
++// TODO: remove it?
++pub fn type_needs_box(_type_: &str) -> bool {
++  false
++
++  // let stable_copy_type = [
++  //   "()", "bool", "u8", "i8", "u16", "i16", "u32", "i32", "u64", "i64", "usize", "isize", "f32",
++  //   "f64", "char", "u128", "i128",
++  // ]
++  // .contains(&type_)
++  //   || type_.starts_with(['*', '&']); // a pointer or a reference
++
++  // !stable_copy_type
++}
++
++pub type Alloc = unsafe fn(layout: StableLayout) -> *mut u8;
++pub type Dealloc = unsafe fn(ptr: *mut u8, layout: StableLayout);
+diff --git a/rustfmt.toml b/rustfmt.toml
+index 3643681..49b3e9f 100755
+--- a/rustfmt.toml
++++ b/rustfmt.toml
+@@ -1,7 +1,4 @@
+ tab_spaces = 2
+ reorder_modules = false
+-reorder_imports = false
+ imports_granularity = "One"
+-
+-# doesn't work with imports_granularity = "One"
+-# group_imports = "StdExternalCrate"
++group_imports = "One"
+diff --git a/scripts/pr_changes.sh b/scripts/pr_changes.sh
+index bf407ee..ffb4894 100755
+--- a/scripts/pr_changes.sh
++++ b/scripts/pr_changes.sh
+@@ -3,6 +3,12 @@
+ # A script to extract commit messages, changed files, and diff content
+ # from a GitHub/GitLab Pull Request, with options for controlling output.
+ 
++
++#
++# EXAMPLE:
++# ./scripts/pr_changes.sh -d -n 34 &> out.txt
++#
++
+ # --- Configuration ---
+ DEFAULT_REMOTE="origin"
+ DEFAULT_TARGET_BRANCH="main"
+diff --git a/shared/src/imports.rs b/shared/src/imports.rs
+deleted file mode 100755
+index 83c3a4f..0000000
+--- a/shared/src/imports.rs
++++ /dev/null
+@@ -1,9 +0,0 @@
+-use crate::{ModuleId, SliceAllocatorOp, StableLayout, Str};
+-
+-#[expect(non_camel_case_types)]
+-pub trait ___Internal___Imports___ {
+-  fn on_alloc(module: ModuleId, ptr: *mut u8, layout: StableLayout);
+-  fn on_cached_allocs(module: ModuleId, ops: SliceAllocatorOp);
+-  fn unrecoverable(module: ModuleId, message: Str) -> !;
+-  fn is_ptr_allocated(module: ModuleId, ptr: *mut u8) -> bool;
+-}
+
+--- Analysis complete. ---
