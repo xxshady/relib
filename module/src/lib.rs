@@ -27,7 +27,7 @@ pub use {host_alloc_proxy::HostAllocProxy, relib_export::export};
 #[doc(hidden)]
 pub mod __internal {
   #[cfg(feature = "unloading_core")]
-  pub fn module_id() -> relib_shared::ModuleId {
+  pub fn module_id() -> relib_internal_shared::ModuleId {
     unsafe { crate::unloading_core::MODULE_ID }
   }
 

@@ -1,6 +1,6 @@
 use {
   super::{gen_imports::ModuleImportsImpl, helpers, module_allocs},
-  relib_shared::{
+  relib_internal_shared::{
     ModuleId, SliceAllocatorOp, StableLayout, Str, imports::___Internal___Imports___ as Imports,
   },
 };

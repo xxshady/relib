@@ -1,6 +1,6 @@
 use {
   crate::{HostAllocProxy, host_alloc_proxy::HOST_ALLOC_PROXY},
-  relib_shared::{
+  relib_internal_shared::{
     Alloc, Dealloc, exports_no_unloading::___Exports___NoUnloading___ as Exports,
   },
 };

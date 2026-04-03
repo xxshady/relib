@@ -1,6 +1,6 @@
 use {
   libloading::{Library, Symbol},
-  relib_shared::ModuleId,
+  relib_internal_shared::ModuleId,
   std::{
     mem::MaybeUninit,
     path::Path,

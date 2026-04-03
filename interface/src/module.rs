@@ -6,7 +6,7 @@ use {
   },
   proc_macro2::TokenStream as TokenStream2,
   quote::quote,
-  relib_shared::output_to_return_type,
+  relib_internal_shared::output_to_return_type,
   syn::FnArg,
 };
 

@@ -1,4 +1,4 @@
-use {libloading::Library, relib_shared::ModuleId};
+use {libloading::Library, relib_internal_shared::ModuleId};
 
 pub trait ModuleExportsForHost {
   fn new(library: &Library, module_id: ModuleId) -> Self;

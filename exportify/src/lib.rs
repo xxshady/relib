@@ -1,7 +1,7 @@
 use {
   proc_macro2::TokenStream as TokenStream2,
   quote::{format_ident, quote},
-  relib_shared::{fn_inputs_without_types, output_to_return_type},
+  relib_internal_shared::{fn_inputs_without_types, output_to_return_type},
   syn::ItemFn,
 };
 

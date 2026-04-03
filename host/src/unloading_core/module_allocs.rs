@@ -1,6 +1,6 @@
 use {
   super::{InternalModuleExports, helpers::unrecoverable},
-  relib_shared::{Allocation, AllocatorOp, AllocatorPtr, ModuleId, SliceAllocatorOp, StableLayout},
+  relib_internal_shared::{Allocation, AllocatorOp, AllocatorPtr, ModuleId, SliceAllocatorOp, StableLayout},
   std::{
     alloc::Layout,
     collections::HashMap,

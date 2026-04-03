@@ -3,7 +3,7 @@ use {
     MODULE_ID, gen_imports,
     helpers::{assert_allocator_is_still_accessible, unrecoverable},
   },
-  relib_shared::{Allocation, AllocatorOp, AllocatorPtr, StableLayout},
+  relib_internal_shared::{Allocation, AllocatorOp, AllocatorPtr, StableLayout},
   std::{
     alloc::{GlobalAlloc, Layout},
     collections::HashMap,

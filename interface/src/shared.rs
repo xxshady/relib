@@ -1,7 +1,7 @@
 use {
   proc_macro2::TokenStream as TokenStream2,
   quote::{ToTokens, format_ident, quote},
-  relib_shared::fn_inputs_without_types,
+  relib_internal_shared::fn_inputs_without_types,
   std::{fs, path::Path, sync::LazyLock},
   syn::{
     FnArg, GenericParam, Ident, Item, ItemTrait, ReturnType, Token, TraitItem, UseTree,
@@ -248,7 +248,7 @@ pub const SAFETY_DOC: &str = "# Safety
   2. Host and module crates must be compiled with same shared crate code (which contains exports and imports traits).";
 
 pub fn type_needs_box(type_: &TokenStream2) -> bool {
-  relib_shared::type_needs_box(&type_.to_string())
+  relib_internal_shared::type_needs_box(&type_.to_string())
 }
 
 pub fn pass_out_dir_file_name_to_crate_code(prefix: &str, name: &str) {

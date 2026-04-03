@@ -1,5 +1,5 @@
 use {
-  relib_shared::ModuleId,
+  relib_internal_shared::ModuleId,
   std::sync::atomic::{AtomicBool, Ordering},
 };
 

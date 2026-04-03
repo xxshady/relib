@@ -7,7 +7,7 @@ use {
     exports_types::ModuleExportsForHost, helpers::call_module_pub_export, leak_library::LeakLibrary,
   },
   libloading::Library,
-  relib_shared::ModuleId,
+  relib_internal_shared::ModuleId,
   std::fmt::Debug,
 };
 
