@@ -3,6 +3,12 @@
 # A script to extract commit messages, changed files, and diff content
 # from a GitHub/GitLab Pull Request, with options for controlling output.
 
+
+#
+# EXAMPLE:
+# ./scripts/pr_changes.sh -d -n 34 &> out.txt
+#
+
 # --- Configuration ---
 DEFAULT_REMOTE="origin"
 DEFAULT_TARGET_BRANCH="main"
