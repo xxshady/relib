@@ -5,4 +5,4 @@ edition.workspace = true
 
 [dependencies.relib_internal_shared]
 version = "0"
-path = "../../shared"
+path = "../../../shared"
