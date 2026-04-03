@@ -1,6 +1,6 @@
 use {
   libloading::Symbol,
-  relib_internal_shared::{StableLayout, Str},
+  relib_shared::{StableLayout, Str},
   std::{ffi::OsStr, path::Path},
 };
 
@@ -30,28 +30,28 @@ mod windows;
 #[doc(hidden)]
 pub mod __internal {
   #[cfg(feature = "unloading_core")]
-  use crate::unloading_core::{global_alloc::layout_of, module_allocs::transfer_alloc_to_module};
-  use relib_shared::{ModuleId, TransferTarget};
+  use {
+    crate::unloading_core::{global_alloc::layout_of, module_allocs::transfer_alloc_to_module},
+    relib_shared::ModuleId,
+  };
 
   pub struct TransferToModule;
 
-  unsafe impl TransferTarget for TransferToModule {
-    type ExtraContext = ModuleId;
+  fn transfer(ptr: *mut u8, module_id: ModuleId) {
+    #[cfg(feature = "unloading_core")]
+    {
+      let layout = layout_of(ptr);
+      transfer_alloc_to_module(ptr, layout, module_id);
+    }
 
-    fn transfer(ptr: *mut u8, module_id: ModuleId) {
-      #[cfg(feature = "unloading_core")]
-      {
-        // TEST
-        dbg!(ptr);
-
-        let layout = layout_of(ptr);
-        transfer_alloc_to_module(ptr, layout, module_id);
-      }
-
-      #[cfg(not(feature = "unloading_core"))]
-      let _ = (ptr, module_id);
+    #[cfg(not(feature = "unloading_core"))]
+    {
+      let _ = ptr;
+      let _ = module_id;
     }
   }
+
+  pub use relib_shared::*;
 }
 
 pub use relib_shared::*;

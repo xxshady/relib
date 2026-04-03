@@ -26,8 +26,6 @@ pub use {host_alloc_proxy::HostAllocProxy, relib_export::export};
 
 #[doc(hidden)]
 pub mod __internal {
-  use relib_shared::TransferTarget;
-
   #[cfg(feature = "unloading_core")]
   pub fn module_id() -> relib_shared::ModuleId {
     unsafe { crate::unloading_core::MODULE_ID }
@@ -35,15 +33,11 @@ pub mod __internal {
 
   pub struct TransferToHost;
 
-  unsafe impl TransferTarget for TransferToHost {
-    type ExtraContext = ();
+  fn transfer(ptr: *mut u8) {
+    #[cfg(feature = "unloading_core")]
+    crate::unloading_core::alloc_tracker::transfer_alloc_to_host(ptr);
 
-    fn transfer(ptr: *mut u8, _: ()) {
-      #[cfg(feature = "unloading_core")]
-      crate::unloading_core::alloc_tracker::transfer_alloc_to_host(ptr);
-
-      #[cfg(not(feature = "unloading_core"))]
-      let _ = ptr;
-    }
+    #[cfg(not(feature = "unloading_core"))]
+    let _ = ptr;
   }
 }

@@ -1,5 +1,5 @@
 use {
-  relib_internal_shared::{Alloc, Dealloc},
+  relib_shared::{Alloc, Dealloc},
   std::{
     alloc::{GlobalAlloc, Layout},
     sync::OnceLock,

@@ -1,6 +1,5 @@
 use {
   crate::{Alloc, Dealloc, SliceAllocation},
-  relib_shared::ModuleId,
   std::ffi::c_void,
 };
 

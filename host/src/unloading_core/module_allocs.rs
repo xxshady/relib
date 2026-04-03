@@ -1,7 +1,6 @@
 use {
   super::{InternalModuleExports, helpers::unrecoverable},
-  relib_internal_shared::{Allocation, AllocatorOp, AllocatorPtr, SliceAllocatorOp, StableLayout},
-  relib_shared::ModuleId,
+  relib_shared::{Allocation, AllocatorOp, AllocatorPtr, ModuleId, SliceAllocatorOp, StableLayout},
   std::{
     alloc::Layout,
     collections::HashMap,
@@ -138,7 +137,7 @@ pub fn transfer_alloc_to_host(module_id: ModuleId, ptr: *mut u8) -> bool {
   allocs.remove(&ptr).is_some()
 }
 
-pub fn transfer_alloc_to_module(ptr: *mut u8, layout: Layout, module_id: relib_shared::ModuleId) {
+pub fn transfer_alloc_to_module(ptr: *mut u8, layout: Layout, module_id: ModuleId) {
   {
     let mut allocs = lock_allocs();
     let allocs = allocs

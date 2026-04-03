@@ -41,9 +41,9 @@ path = "../export"
 [target.'cfg(target_os = "linux")'.dependencies]
 libc.workspace = true
 
-[dependencies.relib_internal_shared]
+[dependencies.relib_shared]
 version = "=0.7.0"
-path = "../internal_shared"
+path = "../relib_shared"
 
 [dependencies.relib_interface]
 version = "=0.7.0"
@@ -55,10 +55,6 @@ version = "=0.7.0"
 path = "../crate_compilation_info"
 features = ["normal"]
 
-[dependencies.relib_shared]
-version = "=0.7.0"
-path = "../relib_shared"
-
 [build-dependencies]
 
 [build-dependencies.relib_interface]
@@ -66,9 +62,9 @@ version = "=0.7.0"
 path = "../interface"
 features = ["internal", "build"]
 
-[build-dependencies.relib_internal_shared]
+[build-dependencies.relib_shared]
 version = "=0.7.0"
-path = "../internal_shared"
+path = "../relib_shared"
 
 [build-dependencies.relib_internal_crate_compilation_info]
 version = "=0.7.0"

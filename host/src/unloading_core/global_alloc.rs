@@ -1,7 +1,7 @@
 use {
   crate::unloading_core::helpers::unrecoverable,
   hashbrown::{DefaultHashBuilder, HashMap},
-  relib_internal_shared::AllocatorPtr,
+  relib_shared::AllocatorPtr,
   std::{
     alloc::{GlobalAlloc, Layout, System},
     sync::{LazyLock, Mutex},

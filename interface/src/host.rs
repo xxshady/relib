@@ -6,7 +6,7 @@ use {
   },
   proc_macro2::TokenStream as TokenStream2,
   quote::quote,
-  relib_internal_shared::output_to_return_type,
+  relib_shared::output_to_return_type,
 };
 
 #[cfg(feature = "internal")]
@@ -182,29 +182,12 @@ fn generate_exports_(
       #[allow(clippy::needless_lifetimes)]
     };
 
-    let transfer_imports_pub = TRANSFER_IMPORTS_TO_MODULE.clone();
-    let transfer_imports_internal = TRANSFER_IMPORTS_TO_MODULE_INTERNAL.clone();
-
-    let transfer_inputs = quote! {
-      #(
-        unsafe {
-          Transfer::<TransferToModule>::transfer(
-            &#inputs_without_types,
-            self.____module_id____,
-          );
-        };
-      )*
-    };
     let transfer_inputs_pub = quote! {
       {
-        #transfer_imports_pub
-        #transfer_inputs
       }
     };
     let transfer_inputs_internal = quote! {
       {
-        #transfer_imports_internal
-        #transfer_inputs
       }
     };
 
@@ -411,46 +394,12 @@ fn generate_imports_(
       r#"Failed to get "{post_mangled_name}" symbol of static function pointer from module"#
     );
 
-    let transfer_imports_pub = TRANSFER_IMPORTS_TO_MODULE.clone();
-    let transfer_imports_internal = TRANSFER_IMPORTS_TO_MODULE_INTERNAL.clone();
+    let transfer_imports_pub = quote! {};
+    let transfer_imports_internal = quote! {};
 
-    let transfer_return_value = quote! {
-      {
-        unsafe {
-          Transfer::<TransferToModule>::transfer(
-            &return_value,
-            ____transfer_module_id_____,
-          );
-        };
-        return_value
-      }
-    };
-
-    let return_type = output_to_return_type!(output);
-
-    let (transfer_return_value_pub, transfer_return_value_internal) =
-      if return_type.to_string() != "!" {
-        (
-          quote! {
-            {
-              #transfer_imports_pub
-              #transfer_return_value
-            }
-          },
-          quote! {
-            {
-              #transfer_imports_internal
-              #transfer_return_value
-            }
-          },
-        )
-      } else {
-        (quote! {}, quote! {})
-      };
-
-    let transfer_return_value_module_id = quote! {
-      ____transfer_module_id_____: relib_shared::ModuleId
-    };
+    let transfer_return_value_pub = quote! {};
+    let transfer_return_value_internal = quote! {};
+    let transfer_return_value_module_id = quote! {};
 
     // !!! keep in sync with main and before_unload calls in relib_host crate !!!
     let impl_code = if pub_imports {

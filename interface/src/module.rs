@@ -6,7 +6,7 @@ use {
   },
   proc_macro2::TokenStream as TokenStream2,
   quote::quote,
-  relib_internal_shared::output_to_return_type,
+  relib_shared::output_to_return_type,
   syn::FnArg,
 };
 
@@ -164,7 +164,7 @@ fn generate_exports_(
       lifetimes_module: _,
     } = for_each_trait_item(trait_name, &item);
 
-    let transfer_imports = TRANSFER_IMPORTS_TO_HOST.clone();
+    let transfer_imports = quote! {};
 
     // !!! keep in sync with main and before_unload calls in relib_host crate !!!
     let code = if pub_exports {
@@ -196,8 +196,6 @@ fn generate_exports_(
         (
           return_type,
           quote! {
-            #transfer_imports
-            unsafe { Transfer::<TransferToHost>::transfer(&return_value, ()) }
             return_value
           },
           quote! {},
@@ -323,35 +321,9 @@ fn generate_imports_(
       #[allow(unused_variables, clippy::let_unit_value, clippy::diverging_sub_expression)]
     };
 
-    let transfer_imports_pub = TRANSFER_IMPORTS_TO_HOST.clone();
-    let transfer_imports_internal = TRANSFER_IMPORTS_TO_HOST_INTERNAL.clone();
-
-    let transfer_inputs = quote! {
-      #(
-        unsafe {
-          Transfer::<TransferToHost>::transfer(
-            &#inputs_without_types,
-            ()
-          );
-        };
-      )*
-    };
-    let transfer_inputs_pub = quote! {
-      {
-        #transfer_imports_pub
-        #transfer_inputs
-      }
-    };
-    let transfer_inputs_internal = quote! {
-      {
-        #transfer_imports_internal
-        #transfer_inputs
-      }
-    };
-
-    let transfer_return_value_module_id = quote! {
-      ____transfer_module_id_____: relib_shared::ModuleId
-    };
+    let transfer_inputs_pub = quote! {};
+    let transfer_inputs_internal = quote! {};
+    let transfer_return_value_module_id = quote! {};
 
     // !!! keep in sync with main and before_unload calls in relib_host crate !!!
     let function_body = if pub_imports {

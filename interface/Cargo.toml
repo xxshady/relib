@@ -12,7 +12,7 @@ description = "relib is a framework for reloadable dynamic libraries"
 default = ["public"]
 
 build = [
-  "dep:relib_internal_shared",
+  "dep:relib_shared",
   "dep:prettyplease",
   "dep:proc-macro2",
   "dep:quote",
@@ -28,10 +28,8 @@ rustdoc-args = ["--generate-link-to-definition"]
 
 [dependencies]
 
-[dependencies.relib_internal_shared]
-optional = true
-version = "=0.7.0"
-path = "../internal_shared"
+[dependencies.relib_shared]
+relib_shared = { version = "=0.7.0", path = "../relib_shared" }
 
 [dependencies.prettyplease]
 optional = true

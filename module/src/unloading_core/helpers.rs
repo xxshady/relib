@@ -4,7 +4,7 @@ use {
 };
 
 pub fn unrecoverable(message: &str) -> ! {
-  unsafe { gen_imports::unrecoverable(MODULE_ID, message.into()) }
+  unsafe { gen_imports::unrecoverable(message.into()) }
 }
 
 pub fn assert_allocator_is_still_accessible() {

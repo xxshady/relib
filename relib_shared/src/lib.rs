@@ -1,291 +1,202 @@
-use std::{
-  collections::{BTreeMap, BTreeSet, HashMap, HashSet, LinkedList, VecDeque},
-  fmt::Debug,
+use {
+  std::{
+    alloc::Layout,
+    fmt::{Debug, Formatter, Result as FmtResult},
+  },
 };
+
+pub mod exports;
+pub mod imports;
+pub mod exports_no_unloading;
 
 pub type ModuleId = u64;
 
-// TODO: improve this description:
-/// A trait for moving allocations to the host (executable) from the module (cdylib).
-/// This is necessary since module has global alloc tracker allocations,
-/// when module is unloaded all leaks are deallocated manually so we need to manually
-/// remove moved allocations from the global alloc tracker.
-#[diagnostic::on_unimplemented(
-  message = "`{Self}` cannot be moved between the host and modules",
-  note = "see relib docs: TODO: link"
+pub const EXPORTS: &str = include_str!("exports.rs");
+pub const IMPORTS: &str = include_str!("imports.rs");
+pub const EXPORTS_NO_UNLOADING: &str = include_str!("exports_no_unloading.rs");
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+// TODO: remove this type?
+pub struct AllocatorPtr(pub *mut u8);
+
+// SAFETY: this is never dereferenced, only used as an address, so it should be thread-safe.
+unsafe impl Send for AllocatorPtr {}
+unsafe impl Sync for AllocatorPtr {}
+
+#[repr(C)]
+#[derive(Clone, PartialEq)]
+// TODO: remove this type?
+pub struct Allocation(pub AllocatorPtr, pub StableLayout);
+
+impl Debug for Allocation {
+  fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+    let Self(AllocatorPtr(ptr), StableLayout { size, align }) = self;
+    write!(f, "({ptr:?}, size: {size:?} align: {align:?})")
+  }
+}
+
+#[repr(C)]
+#[derive(
+  Clone,
+  Copy,
+  PartialEq,
+  Debug,
+  // TODO: remove this type?
 )]
-pub unsafe trait Transfer<F>
-where
-  // TODO: turn it into associated type?
-  F: TransferTarget,
-{
+pub struct StableLayout {
+  size: usize,
+  align: usize,
+}
+
+impl From<Layout> for StableLayout {
+  fn from(layout: Layout) -> Self {
+    Self {
+      size: layout.size(),
+      align: layout.align(),
+    }
+  }
+}
+
+impl From<StableLayout> for Layout {
+  fn from(value: StableLayout) -> Self {
+    // SAFETY: StableLayout can only be created from valid Layout (see From<Layout> impl)
+    unsafe { Layout::from_size_align_unchecked(value.size, value.align) }
+  }
+}
+
+impl From<&StableLayout> for Layout {
+  fn from(value: &StableLayout) -> Self {
+    Layout::from(*value)
+  }
+}
+
+#[repr(C)]
+#[derive(Clone, PartialEq, Debug)]
+// TODO: remove this type?
+pub enum AllocatorOp {
+  Alloc(Allocation),
+  Dealloc(Allocation),
+}
+
+pub type SliceAllocatorOp = RawSlice<AllocatorOp>;
+pub type SliceAllocation = RawSlice<Allocation>;
+
+/// ABI-stable `&[T]`
+#[repr(C)]
+// TODO: remove this type?
+pub struct RawSlice<T> {
+  pub ptr: *const T,
+  pub len: usize,
+}
+
+impl<T> RawSlice<T> {
   /// # Safety
-  /// After calling this on a container it's your responsibility to immediately move
-  /// it to the host or module.
-  unsafe fn transfer(&self, ctx: F::ExtraContext);
+  /// See `Safety` of [`std::slice::from_raw_parts`]
+  pub unsafe fn into_slice<'a>(self) -> &'a [T] {
+    unsafe { std::slice::from_raw_parts(self.ptr, self.len) }
+  }
+
+  /// # Safety
+  /// See `Safety` of [`std::slice::from_raw_parts`]
+  pub unsafe fn to_vec(&self) -> Vec<T>
+  where
+    T: Clone,
+  {
+    unsafe { std::slice::from_raw_parts(self.ptr, self.len).to_vec() }
+  }
 }
 
-pub unsafe trait TransferTarget {
-  type ExtraContext: Debug + Copy;
-  fn transfer(ptr: *mut u8, ctx: Self::ExtraContext);
+impl<T> From<&[T]> for RawSlice<T> {
+  fn from(value: &[T]) -> Self {
+    RawSlice {
+      ptr: value.as_ptr(),
+      len: value.len(),
+    }
+  }
 }
 
-macro_rules! impl_for_copy {
-  (
-    $(
-      $ty:ty $(, generics: $($generics:ident),+)?
-    )+
-  ) => {
-    $(
-      unsafe impl<
-        F: TransferTarget
-        $(, $($generics),+ )?
-      >
-      Transfer<F> for $ty
-      where
-        F: TransferTarget,
-      {
-        unsafe fn transfer(&self, _ctx: F::ExtraContext) {
-          // this type is copy so there is no allocation to transfer
-        }
+/// ABI-stable `&str`
+#[repr(C)]
+// TODO: remove this type?
+pub struct Str(RawSlice<u8>);
+
+impl Str {
+  /// # Safety
+  /// See `Safety` of [`std::slice::from_raw_parts`]
+  pub unsafe fn into_str<'a>(self) -> &'a str {
+    let bytes = unsafe { self.0.into_slice() };
+    std::str::from_utf8(bytes).expect("Failed to get valid UTF-8 string slice back")
+  }
+
+  /// # Safety
+  /// See `Safety` of [`std::slice::from_raw_parts`]
+  pub unsafe fn to_string(&self) -> String {
+    let bytes = unsafe { self.0.to_vec() };
+    String::from_utf8(bytes).expect("Failed to convert to valid UTF-8 string")
+  }
+
+  /// `From<&str>` for const contexts
+  pub const fn const_from(value: &str) -> Self {
+    let bytes = value.as_bytes();
+    Self(RawSlice {
+      ptr: bytes.as_ptr(),
+      len: bytes.len(),
+    })
+  }
+}
+
+impl From<&str> for Str {
+  fn from(value: &str) -> Self {
+    Self(value.as_bytes().into())
+  }
+}
+
+// SAFETY: `&str` is Send and Sync
+unsafe impl Send for Str {}
+unsafe impl Sync for Str {}
+
+#[macro_export]
+macro_rules! output_to_return_type {
+  ($output:ident) => {
+    match &$output {
+      syn::ReturnType::Default => {
+        quote! { () }
       }
-    )+
+      syn::ReturnType::Type(_, ty) => quote::ToTokens::to_token_stream(ty),
+    }
   };
 }
 
-impl_for_copy!(
-  () u8 i8 u16 i16 u32 i32 u64 i64 u128 i128 usize isize
-  f32 f64 bool char
+#[macro_export]
+macro_rules! fn_inputs_without_types {
+  ($inputs:expr) => {
+    $inputs
+      .iter()
+      .map(|arg| {
+        let syn::FnArg::Typed(arg) = arg else {
+          unreachable!();
+        };
 
-  &str // TODO: is it safe? &'static str?
-
-  *mut T, generics: T
-  *const T, generics: T
-
-  // TODO: more impls
-  fn(T1) -> T2, generics: T1, T2
-  fn(T1, T2) -> T3, generics: T1, T2, T3
-  unsafe fn(T1) -> T2, generics: T1, T2
-  unsafe fn(T1, T2) -> T3, generics: T1, T2, T3
-);
-
-unsafe impl<T, F> Transfer<F> for Vec<T>
-where
-  T: Transfer<F>,
-  F: TransferTarget,
-{
-  unsafe fn transfer(&self, ctx: F::ExtraContext) {
-    let ptr = self.as_ptr();
-    // TEST
-    println!("[transfer] Vec {ptr:?} ctx: {ctx:?}");
-
-    F::transfer(ptr as *mut u8, ctx);
-
-    for el in self {
-      unsafe {
-        Transfer::<F>::transfer(el, ctx);
-      }
-    }
-  }
-}
-
-unsafe impl<T, F> Transfer<F> for Box<T>
-where
-  T: Transfer<F>,
-  F: TransferTarget,
-{
-  unsafe fn transfer(&self, ctx: F::ExtraContext) {
-    let ptr = &**self as *const T;
-    println!("[transfer] Box {ptr:?} ctx: {ctx:?}");
-
-    F::transfer(ptr as *mut u8, ctx);
-
-    // The inner value also needs to be transferred if it contains allocations
-    unsafe {
-      Transfer::<F>::transfer(&**self, ctx);
-    }
-  }
-}
-
-unsafe impl<F: TransferTarget> Transfer<F> for String {
-  unsafe fn transfer(&self, ctx: F::ExtraContext) {
-    let ptr = self.as_ptr();
-    println!("[transfer] String {ptr:?} ctx: {ctx:?}");
-
-    F::transfer(ptr as *mut u8, ctx);
-  }
-}
-
-unsafe impl<T, F> Transfer<F> for Option<T>
-where
-  T: Transfer<F>,
-  F: TransferTarget,
-{
-  unsafe fn transfer(&self, ctx: F::ExtraContext) {
-    if let Some(inner) = self {
-      unsafe { Transfer::<F>::transfer(inner, ctx) };
-    }
-  }
-}
-
-unsafe impl<T, E, F> Transfer<F> for Result<T, E>
-where
-  T: Transfer<F>,
-  E: Transfer<F>,
-  F: TransferTarget,
-{
-  unsafe fn transfer(&self, ctx: F::ExtraContext) {
-    unsafe {
-      match self {
-        Ok(inner) => Transfer::<F>::transfer(inner, ctx),
-        Err(inner) => Transfer::<F>::transfer(inner, ctx),
-      }
-    }
-  }
-}
-
-unsafe impl<K, V, F> Transfer<F> for HashMap<K, V>
-where
-  K: Transfer<F>,
-  V: Transfer<F>,
-  F: TransferTarget,
-{
-  unsafe fn transfer(&self, ctx: F::ExtraContext) {
-    for (k, v) in self {
-      unsafe {
-        Transfer::<F>::transfer(k, ctx);
-        Transfer::<F>::transfer(v, ctx);
-      }
-    }
-  }
-}
-
-unsafe impl<K, V, F> Transfer<F> for BTreeMap<K, V>
-where
-  K: Transfer<F>,
-  V: Transfer<F>,
-  F: TransferTarget,
-{
-  unsafe fn transfer(&self, ctx: F::ExtraContext) {
-    for (k, v) in self {
-      unsafe {
-        Transfer::<F>::transfer(k, ctx);
-        Transfer::<F>::transfer(v, ctx);
-      }
-    }
-  }
-}
-
-unsafe impl<T, F> Transfer<F> for HashSet<T>
-where
-  T: Transfer<F>,
-  F: TransferTarget,
-{
-  unsafe fn transfer(&self, ctx: F::ExtraContext) {
-    for el in self {
-      unsafe {
-        Transfer::<F>::transfer(el, ctx);
-      }
-    }
-  }
-}
-
-unsafe impl<T, F> Transfer<F> for BTreeSet<T>
-where
-  T: Transfer<F>,
-  F: TransferTarget,
-{
-  unsafe fn transfer(&self, ctx: F::ExtraContext) {
-    for el in self {
-      unsafe {
-        Transfer::<F>::transfer(el, ctx);
-      }
-    }
-  }
-}
-
-unsafe impl<T, F> Transfer<F> for LinkedList<T>
-where
-  T: Transfer<F>,
-  F: TransferTarget,
-{
-  unsafe fn transfer(&self, ctx: F::ExtraContext) {
-    for el in self {
-      unsafe {
-        Transfer::<F>::transfer(el, ctx);
-      }
-    }
-  }
-}
-
-unsafe impl<T, F> Transfer<F> for VecDeque<T>
-where
-  T: Transfer<F>,
-  F: TransferTarget,
-{
-  unsafe fn transfer(&self, ctx: F::ExtraContext) {
-    for el in self {
-      unsafe {
-        Transfer::<F>::transfer(el, ctx);
-      }
-    }
-  }
-}
-
-unsafe impl<T, F, const N: usize> Transfer<F> for [T; N]
-where
-  T: Transfer<F>,
-  F: TransferTarget,
-{
-  unsafe fn transfer(&self, ctx: F::ExtraContext) {
-    for el in self {
-      unsafe {
-        Transfer::<F>::transfer(el, ctx);
-      }
-    }
-  }
-}
-
-macro_rules! impl_for_tuples {
-  (
-    $(
-      ( $( $T:ident ),+ );
-    )+
-  ) => {
-    $(
-      unsafe impl<F, $( $T, )+> Transfer<F> for ( $( $T, )+ )
-      where
-        F: TransferTarget,
-        $( $T: Transfer<F>, )+
-      {
-        unsafe fn transfer(&self, ctx: F::ExtraContext) {
-          #[allow(non_snake_case)]
-          let ( $( $T, )+ ) = self;
-
-          unsafe {
-            $( Transfer::<F>::transfer($T, ctx); )+
-          }
-        }
-      }
-    )+
+        quote::ToTokens::to_token_stream(&arg.pat)
+      })
+      .collect::<Vec<_>>()
   };
 }
 
-impl_for_tuples!(
-  (T1);
-  (T1, T2);
-  (T1, T2, T3);
-  (T1, T2, T3, T4);
-  (T1, T2, T3, T4, T5);
-  (T1, T2, T3, T4, T5, T6);
-  (T1, T2, T3, T4, T5, T6, T7);
-  (T1, T2, T3, T4, T5, T6, T7, T8);
-  (T1, T2, T3, T4, T5, T6, T7, T8, T9);
-  (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10);
-  (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11);
-  (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12);
-  (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13);
-  (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14);
-  (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15);
-  (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16);
-);
+// TODO: remove it?
+pub fn type_needs_box(_type_: &str) -> bool {
+  false
+
+  // let stable_copy_type = [
+  //   "()", "bool", "u8", "i8", "u16", "i16", "u32", "i32", "u64", "i64", "usize", "isize", "f32",
+  //   "f64", "char", "u128", "i128",
+  // ]
+  // .contains(&type_)
+  //   || type_.starts_with(['*', '&']); // a pointer or a reference
+
+  // !stable_copy_type
+}
+
+pub type Alloc = unsafe fn(layout: StableLayout) -> *mut u8;
+pub type Dealloc = unsafe fn(ptr: *mut u8, layout: StableLayout);

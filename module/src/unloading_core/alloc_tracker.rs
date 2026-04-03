@@ -3,7 +3,7 @@ use {
     MODULE_ID, gen_imports,
     helpers::{assert_allocator_is_still_accessible, unrecoverable},
   },
-  relib_internal_shared::{Allocation, AllocatorOp, AllocatorPtr, StableLayout},
+  relib_shared::{Allocation, AllocatorOp, AllocatorPtr, StableLayout},
   std::{
     alloc::{GlobalAlloc, Layout},
     collections::HashMap,
@@ -36,7 +36,7 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for AllocTracker<A> {
     if ALLOC_INIT.load(Ordering::SeqCst) {
       // TODO: SAFETY
       unsafe {
-        gen_imports::on_alloc(MODULE_ID, ptr, layout.into());
+        gen_imports::on_alloc(ptr, layout.into());
       }
     } else {
       save_alloc_in_cache(ptr, layout.into());
@@ -144,8 +144,8 @@ pub fn send_cached_allocs(cache: Option<&mut AllocsCache>) {
   transport.extend(cache.drain().map(|(_, allocation)| allocation));
 
   unsafe {
-    let slice: &[AllocatorOp] = &transport;
-    gen_imports::on_cached_allocs(MODULE_ID, slice.into());
+    let transport: &[AllocatorOp] = &transport;
+    gen_imports::on_cached_allocs(transport.into());
   }
 
   transport.clear();
@@ -179,14 +179,14 @@ fn is_ptr_valid(ptr: *mut u8) -> bool {
     cache.contains_key(&AllocatorPtr(ptr))
   };
 
-  cache_contains_ptr || unsafe { gen_imports::is_ptr_allocated(MODULE_ID, ptr) }
+  cache_contains_ptr || unsafe { gen_imports::is_ptr_allocated(ptr) }
 }
 
 #[cfg(not(feature = "dealloc_validation"))]
 #[expect(unreachable_code)]
 pub fn _suppress_warn() {
   unsafe {
-    gen_imports::is_ptr_allocated(unreachable!(), unreachable!());
+    gen_imports::is_ptr_allocated(unreachable!());
   }
 }
 
@@ -198,7 +198,7 @@ pub fn transfer_alloc_to_host(ptr: *mut u8) {
     return;
   }
 
-  let transferred = unsafe { gen_imports::transfer_alloc_to_host(MODULE_ID, ptr) };
+  let transferred = unsafe { gen_imports::transfer_alloc_to_host(ptr) };
   if transferred {
     return;
   }

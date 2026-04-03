@@ -1,7 +1,7 @@
 use {
   proc_macro2::TokenStream as TokenStream2,
   quote::{format_ident, quote},
-  relib_internal_shared::{fn_inputs_without_types, output_to_return_type},
+  relib_shared::{fn_inputs_without_types, output_to_return_type},
   syn::ItemFn,
 };
 
@@ -54,33 +54,22 @@ pub fn exportify(input: TokenStream2) -> TokenStream2 {
   let return_type = output_to_return_type!(output);
   let inputs_without_types = fn_inputs_without_types!(inputs);
 
-  // TODO: move it to internal shared?
-  let transfer_imports = quote! {
-    use {
-      ::relib_module::__internal::TransferToHost,
-      ::relib_shared::Transfer,
-    };
-  };
-
-  let ret_needs_box = relib_internal_shared::type_needs_box(&return_type.to_string());
+  let ret_needs_box = type_needs_box(&return_type.to_string());
 
   let (return_type, return_value, post_export) = if ret_needs_box {
     (
       quote! { *mut #return_type },
       quote! {
-        unsafe {
-          use ::std::boxed::Box;
-
-          let ptr = Box::into_raw(Box::new(return_value));
-          ptr
-        }
+        use std::boxed::Box;
+        Box::into_raw(Box::new(return_value))
       },
       quote! {
         #[unsafe(no_mangle)]
+        #[allow(clippy::extra_unused_lifetimes)]
         pub #unsafety fn #post_mangled_name_ident(
           return_value_ptr: *mut #return_type
         ) {
-          use ::std::boxed::Box;
+          use std::boxed::Box;
           unsafe {
             drop(Box::from_raw(return_value_ptr));
           }
@@ -91,8 +80,6 @@ pub fn exportify(input: TokenStream2) -> TokenStream2 {
     (
       return_type,
       quote! {
-        #transfer_imports
-        unsafe { Transfer::<TransferToHost>::transfer(&return_value, ()) }
         return_value
       },
       quote! {},
@@ -109,13 +96,6 @@ pub fn exportify(input: TokenStream2) -> TokenStream2 {
     {
       fn #mangled_name_ident( #inputs ) #output #block
 
-      // this is needed for a better compile error
-      {
-        #transfer_imports
-        fn ____assert_type_is_transfer____<T: Transfer<TransferToHost>>() {}
-        ____assert_type_is_transfer____::<#return_type>();
-      }
-
       let result = std::panic::catch_unwind(|| {
         #mangled_name_ident( #( #inputs_without_types )* )
       });
@@ -125,10 +105,10 @@ pub fn exportify(input: TokenStream2) -> TokenStream2 {
             *____success____ = true;
           }
 
-          #[allow(unused_braces)]
+          #[allow(unused_braces, clippy::unit_arg)]
           std::mem::MaybeUninit::new({ #return_value })
         }
-        // ignoring content since it's printed by std
+        // ignoring content since it's handled in default panic hook of std
         Err(_) => {
           unsafe {
             *____success____ = false;

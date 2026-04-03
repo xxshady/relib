@@ -7,7 +7,7 @@ use {
     exports_types::ModuleExportsForHost, helpers::call_module_pub_export, leak_library::LeakLibrary,
   },
   libloading::Library,
-  relib_shared::{ModuleId, Transfer, TransferTarget},
+  relib_shared::ModuleId,
   std::fmt::Debug,
 };
 
@@ -111,13 +111,9 @@ impl<E: ModuleExportsForHost> Module<E> {
   /// # Panics
   /// If main function is not exported from the module.
   #[must_use = "returns `None` if module panics"]
-  pub unsafe fn call_main<R, F>(&self) -> Option<R>
+  pub unsafe fn call_main<R>(&self) -> Option<R>
   where
-    // this one should actually be `R: Transfer<TransferToHost>`
-    // but TransferToHost is defined in relib_module and we can't make it
-    // dependency of host crate for obvious reasons
-    R: Transfer<F>,
-    F: TransferTarget,
+    R: Clone,
   {
     let res = unsafe { call_module_pub_export(self.library(), "main") };
     res.unwrap_or_else(|e| {
@@ -128,8 +124,7 @@ impl<E: ModuleExportsForHost> Module<E> {
 
 impl<E: ModuleExportsForHost> Debug for Module<E> {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    let id = self.id;
-    write!(f, "Module {{ id: {id} }}")
+    write!(f, "Module {{ id: {} }}", self.id)
   }
 }
 

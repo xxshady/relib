@@ -7,7 +7,7 @@ pub const SHARED_IMPORTS: &str = include_str!("shared_imports.rs");
 pub const EXPORTS: &str = include_str!("exports.rs");
 
 // perhaps hot reload will be implemented directly in relib in the future
-pub use relib_internal_shared::StableLayout;
+pub use relib_shared::StableLayout;
 
 pub type Alloc = unsafe extern "C" fn(layout: StableLayout) -> *mut u8;
 pub type Dealloc = unsafe extern "C" fn(ptr: *mut u8, layout: StableLayout);

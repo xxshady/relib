@@ -3,8 +3,7 @@ use {
     ALLOCATOR_LOCK, HOST_OWNER_THREAD, MODULE_ID, alloc_tracker, gen_exports::ModuleExportsImpl,
   },
   crate::host_alloc_proxy::HOST_ALLOC_PROXY,
-  relib_internal_shared::{Alloc, Dealloc, exports::___Internal___Exports___ as Exports},
-  relib_shared::ModuleId,
+  relib_shared::{ModuleId, Alloc, Dealloc, exports::___Internal___Exports___ as Exports},
   std::{ffi::c_void, sync::atomic::Ordering},
 };
 
@@ -29,7 +28,7 @@ impl Exports for ModuleExportsImpl {
     }
   }
 
-  fn exit(allocs: relib_internal_shared::SliceAllocation) {
+  fn exit(allocs: relib_shared::SliceAllocation) {
     unsafe {
       let allocs = allocs.into_slice();
       alloc_tracker::dealloc(allocs);

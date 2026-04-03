@@ -3,6 +3,6 @@ name = "main_contract"
 version.workspace = true
 edition.workspace = true
 
-[dependencies.relib_internal_shared]
+[dependencies.relib_shared]
 version = "0"
-path = "../../../shared"
+path = "../../relib_shared"

@@ -1,7 +1,7 @@
 use {
   proc_macro2::TokenStream as TokenStream2,
   quote::{ToTokens, format_ident, quote},
-  relib_internal_shared::fn_inputs_without_types,
+  relib_shared::fn_inputs_without_types,
   std::{fs, path::Path, sync::LazyLock},
   syn::{
     FnArg, GenericParam, Ident, Item, ItemTrait, ReturnType, Token, TraitItem, UseTree,
@@ -242,14 +242,13 @@ fn patch_use_tree_if_needed(use_tree: &UseTree, crate_name: &Ident) -> TokenStre
   }
 }
 
-pub const SAFETY_DOC: &str = "# Safety\n\
-  Behavior is undefined if any of the following conditions are violated:\n\
-  1. Types of arguments and return value must be ABI-stable.\n\
-  2. Host and module crates must be compiled with same shared crate code (which contains exports and imports traits).\n\
-  3. Returned value must not be a reference-counting pointer or &'static T (see [caveats](https://docs.rs/relib/latest/relib/#moving-non-copy-types-between-host-and-module)).";
+pub const SAFETY_DOC: &str = "# Safety
+  Behavior is undefined if any of the following conditions are violated:
+  1. Types of arguments and return value must be ABI-stable.
+  2. Host and module crates must be compiled with same shared crate code (which contains exports and imports traits).";
 
 pub fn type_needs_box(type_: &TokenStream2) -> bool {
-  relib_internal_shared::type_needs_box(&type_.to_string())
+  relib_shared::type_needs_box(&type_.to_string())
 }
 
 pub fn pass_out_dir_file_name_to_crate_code(prefix: &str, name: &str) {
@@ -265,46 +264,3 @@ pub fn pass_out_dir_file_name_to_crate_code(prefix: &str, name: &str) {
 pub fn out_dir_file_name(prefix: &str, name: &str) -> String {
   format!("{prefix}_{name}.rs")
 }
-
-// TODO: move it to internal shared?
-pub const TRANSFER_IMPORTS_TO_HOST: LazyLock<TokenStream2> = LazyLock::new(|| {
-  quote! {
-    #[allow(unused_imports)]
-    use {
-      ::relib_module::__internal::TransferToHost,
-      ::relib_shared::Transfer,
-    };
-  }
-});
-
-pub const TRANSFER_IMPORTS_TO_HOST_INTERNAL: LazyLock<TokenStream2> = LazyLock::new(|| {
-  quote! {
-    #[allow(unused_imports)]
-    use {
-      crate::__internal::TransferToHost,
-      ::relib_shared::Transfer,
-    };
-  }
-});
-
-pub const TRANSFER_IMPORTS_TO_MODULE: LazyLock<TokenStream2> = LazyLock::new(|| {
-  quote! {
-    #[allow(unused_imports)]
-    use {
-      ::relib_host::__internal::TransferToModule,
-      ::relib_shared::Transfer,
-      ::std::alloc::Layout,
-    };
-  }
-});
-
-pub const TRANSFER_IMPORTS_TO_MODULE_INTERNAL: LazyLock<TokenStream2> = LazyLock::new(|| {
-  quote! {
-    #[allow(unused_imports)]
-    use {
-      crate::__internal::TransferToModule,
-      ::relib_shared::Transfer,
-      ::std::alloc::Layout,
-    };
-  }
-});
