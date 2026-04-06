@@ -6,19 +6,19 @@
 
 ## Platforms supported
 
-Linux and Windows are fully supported, macOS is not supported (not tested), see [support matrix](https://docs.rs/relib/latest/relib/docs/index.html#feature-support-matrix).
+Linux and Windows are fully supported. macOS is currently unsupported (untested); see the [support matrix](https://docs.rs/relib/latest/relib/docs/index.html#feature-support-matrix) for details.
 
 ## Overview
 
-`relib` tries to be a safe (as much as possible) runtime of native, almost normal Rust programs. Programs that can be safely unloaded (without memory leaks and crashes) without closing the whole OS process.
+`relib` aims to provide a safe (as much as possible) runtime for native, nearly standard Rust programs. It allows programs to be unloaded without memory leaks or crashes and without terminating the entire OS process.
 
-Since it's not possible to make this completely safe: memory leaks, UB can still happen (for example, due to some unsafe call to C library), you should only use unloading for development (see [live reload](https://github.com/xxshady/relib/tree/main/examples/README.md#live-reload) and [hot reload](https://github.com/xxshady/relib/tree/main/examples/README.md#hot-reload) examples). `relib` can also be used without unloading, see ["Usage without unloading"](https://docs.rs/relib/latest/relib/docs/index.html#usage-without-unloading).
+Because total safety is impossible to guarantee - memory leaks and undefined behavior (UB) can still occur (e.g., through unsafe C library calls) - you should generally only use unloading during development (see the [live reload](https://github.com/xxshady/relib/tree/main/examples/README.md#live-reload) and [hot reload](https://github.com/xxshady/relib/tree/main/examples/README.md#hot-reload) examples). `relib` can also be used without unloading; see ["Usage without unloading"](https://docs.rs/relib/latest/relib/docs/index.html#usage-without-unloading).
 
-See [feature support matrix](https://docs.rs/relib/latest/relib/docs/index.html#feature-support-matrix) for what `relib` offers to improve unloading of dynamic libraries in Rust. And for what not, check out [caveats](#caveats).
+Check the [feature support matrix](https://docs.rs/relib/latest/relib/docs/index.html#feature-support-matrix) to see how `relib` improves the unloading of dynamic libraries in Rust, and see [caveats](#caveats) for known limitations.
 
 ## Examples
 
-See [examples](https://github.com/xxshady/relib/tree/main/examples/README.md).
+See the [examples](https://github.com/xxshady/relib/tree/main/examples/README.md) directory.
 
 ## Docs
 
@@ -28,35 +28,36 @@ See [`docs`](https://docs.rs/relib/latest/relib/docs/index.html) of `relib` crat
 
 ### Imports/exports runtime validation
 
-*Currently*, `relib` doesn't check at runtime that function signatures (arguments, return types) specified in imports and exports traits (`main` and [`before_unload`](https://docs.rs/relib/latest/relib/docs/index.html#before_unload) as well) are exactly the same for host and module. But it can be easily solved on your side, see `live_reload_extended` [example](https://github.com/xxshady/relib/tree/main/examples/README.md#live-reload-extended).
+Currently, `relib` does not perform runtime checks to ensure that function signatures (arguments and return types) specified in import and export traits (including `main` and [`before_unload`](https://docs.rs/relib/latest/relib/docs/index.html#before_unload)) match exactly between the host and the module. However, this can be handled manually; see the `live_reload_extended` [example](https://github.com/xxshady/relib/tree/main/examples/README.md#live-reload-extended).
 
 ### ABI stability
 
 > [Why would I want a stable ABI? And what even is an ABI?](https://docs.rs/stabby/latest/stabby/#why-would-i-want-a-stable-abi-and-what-even-is-an-abi)
 
-To ensure at least something about ABI `relib` **checks and requires that host and module are compiled with the same rustc and `relib` version**.
+To ensure basic ABI compatibility, **`relib` requires that both the host and the module be compiled with the same version of `rustc` and `relib`**.
 
-For ABI-stable types, you can use abi_stable or stabby crate for it, see `abi_stable` usage [example](https://github.com/xxshady/relib/tree/main/examples/README.md#usage-with-abi_stable-crate).
+For ABI-stable types, you can use the `abi_stable` or `stabby` crates. See the `abi_stable` [usage example](https://github.com/xxshady/relib/tree/main/examples/README.md#usage-with-abi_stable-crate).
 
 ### File descriptors and network sockets
 
-*Currently*, `relib` knows nothing about file descriptors or network sockets (unlike [background threads](https://docs.rs/relib/latest/relib/docs/index.html#background-threads-check)) so, for example, if your program stores them in static items and does not properly close them they will leak after unloading.
+_Currently_, `relib` does not track file descriptors or network sockets (unlike [background threads](https://docs.rs/relib/latest/relib/docs/index.html#background-threads-check)). If your program stores these in static items and doesn't close them, they will leak after unloading.
 
-**note:** relib provides [`before_unload`](https://docs.rs/relib/latest/relib/docs/index.html#before_unload) callback API when you need to cleanup something manually (similar to Rust Drop).
+**note:** `relib` provides a [`before_unload`](https://docs.rs/relib/latest/relib/docs/index.html#before_unload) callback API for manual cleanup, similar to Rust's `Drop` trait.
 
-### Dead locks
+### Deadlocks
 
-If your program (module) deadlocks unloading won't work and you will have to kill the whole process.
+If a module deadlocks, unloading will fail, and you will be forced to terminate the entire process.
 
 ### Moving non-`Copy` types between host and module
 
 #### Return values
 
-Non-`Copy` types (for example, a heap allocated string) are always implicitly cloned (and must implement `Clone` trait) on host-module boundary when returned from an export or import. Since host and module can use different global [allocators](https://doc.rust-lang.org/stable/std/alloc/index.html) and [`dealloc`](https://doc.rust-lang.org/stable/std/alloc/trait.GlobalAlloc.html#tymethod.dealloc) expects a pointer allocated exactly via this global allocator.
+Non-`Copy` types (e.g., a heap-allocated `String`) are always implicitly cloned when crossing the host-module boundary. Consequently, these types must implement the `Clone` trait. This is necessary because the host and module may use different global [allocators](https://doc.rust-lang.org/stable/std/alloc/index.html), and [`dealloc`](https://doc.rust-lang.org/stable/std/alloc/trait.GlobalAlloc.html#tymethod.dealloc) requires a pointer to be freed by the same allocator that created it.
 
-For example:
+**Example:**
+
 ```rust
-// a type that is common for host and module
+// A type common to both host and module
 #[repr(C)]
 #[derive(Debug)]
 struct MemoryChunk {
@@ -64,10 +65,10 @@ struct MemoryChunk {
   len: usize,
 }
 
-// allocates new chunk of memory using global allocator (will be called in generated bindings)
+// Allocates a new chunk using the global allocator (will be called in generated bindings)
 impl Clone for MemoryChunk { ... }
 
-// deallocates it (will be called in generated bindings)
+// Deallocates the chunk
 impl Drop for MemoryChunk { ... }
 
 // host:
@@ -78,15 +79,15 @@ impl Imports for ModuleImportsImpl {
 }
 
 // module:
-// returned value will be implicitly cloned by using Clone trait
-let chunk: MemoryChunk = unsafe { gen_imports::example() }; // gen_imports is defined by relib_interface::include_imports!()
+// The returned value is implicitly cloned using the Clone trait
+let chunk: MemoryChunk = unsafe { gen_imports::example() };
 ```
 
-**note:** it's still possible to use raw pointers to avoid cloning if you're sure of what you're doing.
+**note:** you can still use raw pointers to avoid cloning if you're sure of what you're doing.
 
 #### Returning shallow-clone types
 
-In order to safely move a type between host and module we also need to move it's data because everything will be gone after unloading. With deep-clone types like `Vec<T>` it's simple: we just clone the vector with it's data and now we can do anything with it. But in case with `&'static str` Clone trait does not clone the data. Same with `Rc<T>` and other types that are reference-counting pointers.
+To safely move a type between host and module, we must move its underlying data, as the original memory space is invalidated after module unloading. While deep-clone types like `Vec<T>` are straightforward, types like `&'static str` or `Rc<T>` do not clone the underlying data.
 
 **note:** imagine that `Vec<T>`, `&'static str`, etc. are ABI-stable for these examples.
 
@@ -94,46 +95,31 @@ In order to safely move a type between host and module we also need to move it's
 
 #### Parameters
 
-Parameters are limited to `Copy` types, moving non-`Copy` types is not possible.
+Parameters are limited to `Copy` types; moving owned non-`Copy` types as parameters is not supported.
 
-For example:
+**Example:**
+
 ```rust
-// a type that is common for host and module
-#[repr(C)]
-#[derive(Debug)]
-struct MemoryChunk {
-  ptr: *const u8,
-  len: usize,
-}
-
-// allocates new chunk of memory using global allocator
-impl Clone for MemoryChunk { ... }
-
-// deallocates it
-impl Drop for MemoryChunk { ... }
-
 // host:
 impl Imports for ModuleImportsImpl {
   fn example(chunk: &MemoryChunk) {
-    // if owned value is needed just call .to_owned() explicitly:
+    // If an owned value is needed, call .to_owned() explicitly:
     let chunk = chunk.to_owned();
   }
 }
 
 // module:
 let chunk = MemoryChunk { ... };
-unsafe { gen_imports::example(&chunk) }; // gen_imports is defined by relib_interface::include_imports!()
+unsafe { gen_imports::example(&chunk) };
 ```
 
-##### Why parameters are limited to `Copy` types?
+##### Why are parameters limited to `Copy` types?
 
-Because when you can you should pass values by reference to avoid cost of the cloning allocations.
+This encourages passing values by reference to avoid the cost of unnecessary allocations. Because the host and module may use different allocators, `relib` would have to implicitly clone non-`Copy` parameters anyway to ensure safe deallocation.
 
-It is the same reason as with return values: host and module can use different global [allocators](https://doc.rust-lang.org/stable/std/alloc/index.html) and [`dealloc`](https://doc.rust-lang.org/stable/std/alloc/trait.GlobalAlloc.html#tymethod.dealloc) expects a pointer allocated exactly via this global allocator. So if moving non-`Copy` types would be possible `relib` would still clone parameters implicitly.
+### Lifetime Elision in imports and exports
 
-### Lifetime elision in imports and exports
-
-Due to the code generation this code may not compile: (`RStr` is ABI-stable equivalent of `&str` from [abi_stable](https://docs.rs/abi_stable/latest/abi_stable/std_types/struct.RStr.html))
+Due to the way code is generated, the following may not compile (where `RStr` is an ABI-stable equivalent of `&str`):
 
 ```rust
 // shared:
@@ -150,12 +136,13 @@ impl Exports for ModuleExportsImpl {
 ```
 
 Will result in:
+
 ```txt
 error[E0621]: explicit lifetime required in the type of `str`
    --> .../generated_module_exports.rs:234:9
 ```
 
-In order to fix it you need add explicit lifetime to trait
+To fix this you need add explicit lifetime to trait:
 
 ```rust
 pub trait Exports {
@@ -179,7 +166,9 @@ pub trait Exports {
 
 ### Each module has its own standard library
 
-Each compiled module (.dll or .so) uses its own copy of standard library. Because of this, for example, [`std::thread::current().id()`](https://doc.rust-lang.org/stable/std/thread/fn.current.html) called in a module may return different id compared to the host, since each module has it's own thread id counter (in this particular case you can use [thread_id](https://docs.rs/thread-id) instead to get thread identifiers from operating system).
+Each compiled module (.dll or .so) uses its own instance of the Rust standard library. As a result, certain globals may behave unexpectedly. For example, [`std::thread::current().id()`](https://doc.rust-lang.org/stable/std/thread/fn.current.html) called inside a module might return a different ID than in the host, as each instance has its own thread ID counter. In this particular case you can use a crate like [thread_id](https://docs.rs/thread-id) to retrieve identifiers directly from the OS.
+
+<br>
 
 ## Why dynamic libraries when we already have WASM?
 

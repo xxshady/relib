@@ -5,7 +5,8 @@ use {
   syn::ItemFn,
 };
 
-/// Takes function code and transforms it into exported `extern "C"` function with panic handling.
+// TODO: update this documentation:
+/// Takes function code and transforms it into exported function with panic handling.
 /// See `relib_export` for proc-macro.
 ///
 /// # Example
@@ -17,7 +18,7 @@ use {
 ///
 /// // output:
 /// #[unsafe(export_name = "...")]
-/// extern "C" fn foo(
+/// fn foo(
 ///   ____return_value____: *mut std::mem::MaybeUninit<i32>,
 /// ) -> bool {
 ///   fn ____wrapper____() -> i32 {

@@ -24,6 +24,21 @@ macro_rules! include_exports {
   };
 }
 
+// TODO: use it in examples
+/// Shortcut for:
+/// ```
+/// relib_interface::include_exports!();
+/// relib_interface::include_imports!();
+/// ```
+#[cfg(feature = "include")]
+#[macro_export]
+macro_rules! include_all {
+  () => {
+    relib_interface::include_exports!();
+    relib_interface::include_imports!();
+  };
+}
+
 #[cfg(feature = "include")]
 #[macro_export]
 macro_rules! include_imports {
