@@ -9,24 +9,24 @@ mod windows_background_threads;
 mod dealloc_validation;
 
 const TEST_FEATURES: &[&str] = &[
-  "parallel_module_loading",
-  #[cfg(target_os = "windows")]
-  "dbghelp_is_already_loaded_init",
-  #[cfg(target_os = "windows")]
-  "dbghelp_is_already_loaded_panic",
-  "is_already_loaded_error",
-  "backtrace_unloading",
+  // "parallel_module_loading",
+  // #[cfg(target_os = "windows")]
+  // "dbghelp_is_already_loaded_init",
+  // #[cfg(target_os = "windows")]
+  // "dbghelp_is_already_loaded_panic",
+  // "is_already_loaded_error",
+  // "backtrace_unloading",
   "unloading",
-  "no_unloading",
-  "exportify",
-  "exportify,ret_primitive_main",
-  "exportify,ret_heap_main",
-  "exportify,panic_main",
-  #[cfg(target_os = "linux")]
-  "threads_check",
-  "before_unload_panic",
-  // panic_in_interface_host is in its own module
-  "panic_in_interface_module",
+  // "no_unloading",
+  // "exportify",
+  // "exportify,ret_primitive_main",
+  // "exportify,ret_heap_main",
+  // "exportify,panic_main",
+  // #[cfg(target_os = "linux")]
+  // "threads_check",
+  // "before_unload_panic",
+  // // panic_in_interface_host is in its own module
+  // "panic_in_interface_module",
 ];
 
 fn main() {

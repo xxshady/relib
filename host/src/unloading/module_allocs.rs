@@ -99,7 +99,9 @@ pub fn is_ptr_allocated(module_id: ModuleId, ptr: *mut u8) -> bool {
   let allocs = lock_allocs();
   let allocs = allocs
     .get(&module_id)
-    .unwrap_or_else(|| unrecoverable("is_ptr_allocated unreachable"));
+    // TEST
+    .unwrap_or_else(|| panic!());
+  // .unwrap_or_else(|| unrecoverable("is_ptr_allocated unreachable"));
 
   allocs.contains_key(&AllocatorPtr(ptr))
 }
