@@ -1,10 +1,3 @@
-//   // let res = std::thread::spawn(|| unsafe {
-//   //   gen_imports::b();
-//   //   // panic!();
-//   // })
-//   // .join();
-//   // let _ = dbg!(res);
-
 use crate::shared::alloc_some_bytes;
 
 #[relib_module::export]
