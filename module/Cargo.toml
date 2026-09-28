@@ -10,7 +10,7 @@ description = "relib is a framework for reloadable dynamic libraries"
 
 [features]
 unloading = ["unloading_core", "global_alloc_tracker"]
-unloading_core = ["relib_interface/unloading", "dep:thread-id"]
+unloading_core = ["relib_interface/unloading", "dep:thread-id", "dep:minhook"]
 global_alloc_tracker = []
 dealloc_validation = []
 
@@ -38,6 +38,10 @@ path = "../export"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 libc.workspace = true
+
+[target.'cfg(target_os = "windows")'.dependencies.minhook]
+optional = true
+workspace = true
 
 [dependencies.relib_internal_shared]
 version = "=0.7.0"

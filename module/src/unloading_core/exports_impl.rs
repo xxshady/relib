@@ -15,6 +15,9 @@ impl Exports for ModuleExportsImpl {
       if enable_alloc_tracker {
         alloc_tracker::init();
       }
+
+      #[cfg(target_os = "windows")]
+      super::windows_dealloc::init();
     }
   }
 

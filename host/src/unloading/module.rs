@@ -80,7 +80,9 @@ impl<E: ModuleExportsForHost> Module<E> {
 
       dbghelp::remove_module(handle, &library_path);
 
+      dbg!();
       library.close()?;
+      dbg!();
 
       assert!(
         windows_dealloc::successfully_called(),

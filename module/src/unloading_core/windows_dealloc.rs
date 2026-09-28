@@ -1,49 +1,71 @@
-// if in the future DllMain with DLL_PROCESS_DETACH will no longer be called
-// after thread-local destructors (see `#[link_section = ".CRT$XLB"]` in the standard library implementation)
-// then if standard library still uses pop() when calling destructors (see https://github.com/rust-lang/rust/blob/2f92f050e83bf3312ce4ba73c31fe843ad3cbc60/library/std/src/sys/thread_local/destructors/list.rs#L30)
-// and then we can try to define a thread-local with a Drop in which
-// we will deallocate cached allocs and that thread-local should be
-// initialized before all others (!!!)
-//
-// I know that this is horrible but I didn't find any better solution,
-// let's hope that the current behavior won't change :sadge_pray:
-
 use {
-  super::{MODULE_ID, helpers::unrecoverable, windows_dll_main::DLL_PROCESS_DETACH},
+  super::helpers::unrecoverable,
+  minhook::MinHook,
   std::{
-    ffi::c_void,
+    ffi::{c_int, c_void},
     sync::atomic::{AtomicBool, Ordering::Relaxed},
   },
 };
 
-static SUPER_SPECIAL_CALLBACK_CALLED: AtomicBool = AtomicBool::new(false);
-
 // SAFETY: will be set from main thread and be read too
 static mut DEALLOC_CALLBACK: *const c_void = std::ptr::null();
 
-pub fn on_dll_main_call(reason: u32, lpv_reserved: *mut c_void) {
-  // are we actually initialized?
-  // maybe current module was unloaded before initialization
-  // (for example, due to compilation info check fail)
-  if unsafe { MODULE_ID } == 0 {
-    return;
+// SAFETY: will be set from main thread and be read too
+static mut OBSERVER_DROP_CALLED: bool = false;
+
+static ATEXIT_HOOK_CALLED: AtomicBool = AtomicBool::new(false);
+
+pub fn init() {
+  unsafe extern "C" {
+    pub fn atexit(cb: unsafe extern "C" fn()) -> c_int;
   }
 
-  if !(reason == DLL_PROCESS_DETACH &&
-    // lpv_reserved is null if FreeLibrary has been called or the DLL load failed and non-null
-    // if the process is terminating
-    lpv_reserved.is_null())
-  {
-    return;
-  }
+  // Microsoft-specific DLL behavior of atexit: When a DLL unloads, after DllMain
+  // receives DLL_PROCESS_DETACH, the DLL's atexit callbacks run in reverse
+  // registration order, with the last callback registered running first.
 
-  if !SUPER_SPECIAL_CALLBACK_CALLED.load(Relaxed) {
-    unrecoverable("super special callback was not called before DLL_PROCESS_DETACH");
-  }
-
+  // TODO: SAFETY
   unsafe {
+    atexit(at_exit);
+  }
+
+  type AtExitFn = unsafe extern "C" fn(cb: unsafe extern "C" fn()) -> c_int;
+
+  static mut ORIG_ATEXIT: AtExitFn = atexit;
+
+  unsafe extern "C" fn atexit_hook(cb: unsafe extern "C" fn()) -> c_int {
+    ATEXIT_HOOK_CALLED.store(true, Relaxed);
+
+    // TODO: SAFETY
+    unsafe { ORIG_ATEXIT(cb) }
+  }
+
+  let orig_atexit =
+    unsafe { MinHook::create_hook(atexit as *mut c_void, atexit_hook as *mut c_void) };
+  let orig_atexit = orig_atexit.unwrap_or_else(|_| {
+    unrecoverable("failed to hook atexit");
+  });
+
+  // TODO: SAFETY
+  unsafe {
+    ORIG_ATEXIT = std::mem::transmute::<*mut c_void, AtExitFn>(orig_atexit);
+  }
+
+  init_tls_destructors_in_std();
+}
+
+extern "C" fn at_exit() {
+  unsafe {
+    if !OBSERVER_DROP_CALLED {
+      unrecoverable(
+        "std must call thread local destructors using atexit before this atexit callback when this DLL unloads",
+      );
+    }
+
     if DEALLOC_CALLBACK.is_null() {
-      unrecoverable("dealloc callback was not set before DLL_PROCESS_DETACH");
+      unrecoverable(
+        "dealloc callback must be set before library close call (ataxit callback of module)",
+      );
     }
 
     // SAFETY: see dealloc_callback definition in host windows_dealloc module
@@ -52,33 +74,36 @@ pub fn on_dll_main_call(reason: u32, lpv_reserved: *mut c_void) {
   }
 }
 
-// wtf is this? let me explain it with a wonderful quote from standard library:
-// //! # What's up with this callback?
-// //!
-// //! The callback specified receives a number of parameters from... someone!
-// //! (the kernel? the runtime? I'm not quite sure!) There are a few events that
-// //! this gets invoked for, but we're currently only interested on when a
-// //! thread or a process "detaches" (exits). The process part happens for the
-// //! last thread and the thread part happens for any normal thread.
-// //!
-//
-// we are interested in this callback because it's called when module is being unloaded
-// and standard library uses it to call thread-local destructors
-#[unsafe(link_section = ".CRT$XLB")]
-#[used]
-static SUPER_SPECIAL_CALLBACK: extern "system" fn(*mut c_void, u32, *mut c_void) =
-  callback_to_ensure_tls_destructors_are_called_before_dllmain;
+// TODO: explain
+fn init_tls_destructors_in_std() {
+  #[expect(dead_code)]
+  struct Observer(Vec<u8>);
 
-extern "system" fn callback_to_ensure_tls_destructors_are_called_before_dllmain(
-  _: *mut c_void,
-  reason: u32,
-  _: *mut c_void,
-) {
-  if reason != DLL_PROCESS_DETACH {
-    return;
+  thread_local! {
+    static OBSERVER: Observer = Observer(vec![1]);
   }
 
-  SUPER_SPECIAL_CALLBACK_CALLED.store(true, Relaxed);
+  impl Drop for Observer {
+    fn drop(&mut self) {
+      unsafe {
+        OBSERVER_DROP_CALLED = true;
+      }
+    }
+  }
+
+  if ATEXIT_HOOK_CALLED.load(Relaxed) {
+    unrecoverable("atexit hook must not be called before std tls destructor initialization");
+  }
+
+  // initialize it and std's destructors stuff:
+  // https://github.com/rust-lang/rust/blob/51c768aa5cb99ae7670e97b0e8392f926e79855e/library/std/src/sys/thread_local/guard/windows.rs#L163
+  OBSERVER.with(|_| {});
+
+  // we can't be completely sure that atexit is called by std thread local implementation
+  // but it's still better than nothing
+  if !ATEXIT_HOOK_CALLED.load(Relaxed) {
+    unrecoverable("atexit hook must be called during std tls destructor initialization");
+  }
 }
 
 pub unsafe fn set_dealloc_callback(callback: *const c_void) {
