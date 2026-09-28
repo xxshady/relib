@@ -26,7 +26,6 @@ pub fn set<E: ModuleExportsForHost>(module: Module<E>, library_path: String) {
   // !!! don't try to synchronize with other threads in this callback !!!
   // https://learn.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-best-practices#general-best-practices
   DEALLOC_CLOSURE.set(Some(Box::new(move || {
-    dbg!();
     unsafe {
       module.internal_exports.lock_module_allocator();
     }

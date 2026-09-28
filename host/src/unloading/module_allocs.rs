@@ -96,7 +96,6 @@ pub fn on_alloc(module_id: ModuleId, ptr: *mut u8, layout: StableLayout) {
 }
 
 pub fn is_ptr_allocated(module_id: ModuleId, ptr: *mut u8) -> bool {
-  dbg!();
   let allocs = lock_allocs();
   let allocs = allocs
     .get(&module_id)

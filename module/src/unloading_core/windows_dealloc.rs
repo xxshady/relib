@@ -1,3 +1,5 @@
+// TODO: explain
+
 use {
   super::helpers::unrecoverable,
   minhook::MinHook,
@@ -26,7 +28,7 @@ pub fn init() {
 
   // TODO: SAFETY
   unsafe {
-    atexit(at_exit);
+    atexit(call_dealloc_callback);
   }
 
   type AtExitFn = unsafe extern "C" fn(cb: unsafe extern "C" fn()) -> c_int;
@@ -51,10 +53,21 @@ pub fn init() {
     ORIG_ATEXIT = std::mem::transmute::<*mut c_void, AtExitFn>(orig_atexit);
   }
 
+  // TODO: SAFETY
+  unsafe {
+    MinHook::enable_all_hooks().unwrap_or_else(|_| {
+      unrecoverable("MinHook::enable_all_hooks failed");
+    });
+  }
+
   init_tls_destructors_in_std();
 }
 
-extern "C" fn at_exit() {
+extern "C" fn call_dealloc_callback() {
+  if IS_PROCESS_TERMINATING.load(Relaxed) {
+    return;
+  }
+
   unsafe {
     if !OBSERVER_DROP_CALLED {
       unrecoverable(
@@ -74,14 +87,9 @@ extern "C" fn at_exit() {
   }
 }
 
-// TODO: explain
 fn init_tls_destructors_in_std() {
   #[expect(dead_code)]
   struct Observer(Vec<u8>);
-
-  thread_local! {
-    static OBSERVER: Observer = Observer(vec![1]);
-  }
 
   impl Drop for Observer {
     fn drop(&mut self) {
@@ -91,16 +99,21 @@ fn init_tls_destructors_in_std() {
     }
   }
 
+  thread_local! {
+    static OBSERVER: Observer = Observer(vec![1]);
+  }
+
+  // we can't be completely sure that atexit will be called here exactly by
+  // thread local implementation of std but it's still better than nothing
+  // https://github.com/rust-lang/rust/blob/51c768aa5cb99ae7670e97b0e8392f926e79855e/library/std/src/sys/thread_local/guard/windows.rs#L163
+
   if ATEXIT_HOOK_CALLED.load(Relaxed) {
     unrecoverable("atexit hook must not be called before std tls destructor initialization");
   }
 
-  // initialize it and std's destructors stuff:
-  // https://github.com/rust-lang/rust/blob/51c768aa5cb99ae7670e97b0e8392f926e79855e/library/std/src/sys/thread_local/guard/windows.rs#L163
+  // initialize it:
   OBSERVER.with(|_| {});
 
-  // we can't be completely sure that atexit is called by std thread local implementation
-  // but it's still better than nothing
   if !ATEXIT_HOOK_CALLED.load(Relaxed) {
     unrecoverable("atexit hook must be called during std tls destructor initialization");
   }
@@ -110,4 +123,24 @@ pub unsafe fn set_dealloc_callback(callback: *const c_void) {
   unsafe {
     DEALLOC_CALLBACK = callback;
   }
+}
+
+use std::sync::atomic::{Ordering};
+
+// Флаг, который скажет atexit, что процесс закрывается целиком
+static IS_PROCESS_TERMINATING: AtomicBool = AtomicBool::new(false);
+
+#[unsafe(no_mangle)]
+pub unsafe extern "system" fn DllMain(
+  _hinst_dll: *mut std::ffi::c_void,
+  fdw_reason: u32,
+  lpv_reserved: *mut std::ffi::c_void,
+) -> i32 {
+  const DLL_PROCESS_DETACH: u32 = 0;
+
+  if fdw_reason == DLL_PROCESS_DETACH && !lpv_reserved.is_null() {
+    IS_PROCESS_TERMINATING.store(true, Ordering::Release);
+  }
+
+  1
 }

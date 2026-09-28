@@ -1,4 +1,4 @@
-use std::{backtrace::Backtrace, path::MAIN_SEPARATOR};
+use std::{backtrace::Backtrace, hint::black_box, path::MAIN_SEPARATOR};
 
 #[relib_module::export]
 pub fn main() {
@@ -20,7 +20,7 @@ pub fn main() {
     #[inline(never)]
     #[unsafe(no_mangle)]
     fn testing_release_backtrace____() -> Backtrace {
-      Backtrace::force_capture()
+      black_box(Backtrace::force_capture())
     }
 
     let backtrace = testing_release_backtrace____();
