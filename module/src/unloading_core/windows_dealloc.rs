@@ -46,8 +46,8 @@ pub fn on_dll_main_call(reason: u32, lpv_reserved: *mut c_void) {
       unrecoverable("dealloc callback was not set before DLL_PROCESS_DETACH");
     }
 
-    // SAFETY: see dealloc_callback in host Module unload() impl
-    let callback: extern "system" fn() = std::mem::transmute(DEALLOC_CALLBACK);
+    // SAFETY: see dealloc_callback definition in host windows_dealloc module
+    let callback: extern "C" fn() = std::mem::transmute(DEALLOC_CALLBACK);
     callback();
   }
 }
