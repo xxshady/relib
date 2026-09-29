@@ -1,9 +1,15 @@
+//! TODO:
+
 use {
   super::helpers::unrecoverable,
   minhook::MinHook,
   std::{
     ffi::{c_int, c_void},
-    sync::atomic::{AtomicBool, Ordering::Relaxed},
+    ptr::null_mut,
+    sync::atomic::{
+      AtomicBool, AtomicPtr,
+      Ordering::{Relaxed, Release},
+    },
   },
 };
 use crate::unloading_core::windows_dll_main::DLL_PROCESS_DETACH;
@@ -31,35 +37,7 @@ pub fn init() {
     atexit(call_dealloc_callback);
   }
 
-  type AtExitFn = unsafe extern "C" fn(cb: unsafe extern "C" fn()) -> c_int;
-
-  static mut ORIG_ATEXIT: AtExitFn = atexit;
-
-  unsafe extern "C" fn atexit_hook(cb: unsafe extern "C" fn()) -> c_int {
-    ATEXIT_HOOK_CALLED.store(true, Relaxed);
-
-    // TODO: SAFETY
-    unsafe { ORIG_ATEXIT(cb) }
-  }
-
-  let orig_atexit =
-    unsafe { MinHook::create_hook(atexit as *mut c_void, atexit_hook as *mut c_void) };
-  let orig_atexit = orig_atexit.unwrap_or_else(|_| {
-    unrecoverable("failed to hook atexit");
-  });
-
-  // TODO: SAFETY
-  unsafe {
-    ORIG_ATEXIT = std::mem::transmute::<*mut c_void, AtExitFn>(orig_atexit);
-  }
-
-  // TODO: SAFETY
-  unsafe {
-    MinHook::enable_all_hooks().unwrap_or_else(|_| {
-      unrecoverable("MinHook::enable_all_hooks failed");
-    });
-  }
-
+  hook_atexit(atexit);
   init_tls_destructors_in_std();
 }
 
@@ -128,5 +106,36 @@ pub unsafe fn set_dealloc_callback(callback: *const c_void) {
 pub fn dll_main(reason: u32, lpv_reserved: *mut c_void) {
   if reason == DLL_PROCESS_DETACH && !lpv_reserved.is_null() {
     IS_PROCESS_TERMINATING.store(true, Relaxed);
+  }
+}
+
+type AtExitFn = unsafe extern "C" fn(cb: unsafe extern "C" fn()) -> c_int;
+
+fn hook_atexit(atexit: AtExitFn) {
+  static ORIG_ATEXIT: AtomicPtr<c_void> = AtomicPtr::new(null_mut());
+
+  unsafe extern "C" fn atexit_hook(cb: unsafe extern "C" fn()) -> c_int {
+    ATEXIT_HOOK_CALLED.store(true, Relaxed);
+
+    let atexit = ORIG_ATEXIT.load(Relaxed);
+    unsafe {
+      let atexit: AtExitFn = std::mem::transmute(atexit);
+      atexit(cb)
+    }
+  }
+
+  let orig_atexit =
+    unsafe { MinHook::create_hook(atexit as *mut c_void, atexit_hook as *mut c_void) };
+  let orig_atexit = orig_atexit.unwrap_or_else(|_| {
+    unrecoverable("failed to hook atexit");
+  });
+
+  ORIG_ATEXIT.store(orig_atexit, Release);
+
+  // TODO: SAFETY
+  unsafe {
+    MinHook::enable_all_hooks().unwrap_or_else(|_| {
+      unrecoverable("MinHook::enable_all_hooks failed");
+    });
   }
 }

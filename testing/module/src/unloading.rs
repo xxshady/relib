@@ -16,5 +16,5 @@ pub fn main() {
 
 #[relib_module::export]
 fn before_unload() {
-  // dbg!();
+  dbg!();
 }
