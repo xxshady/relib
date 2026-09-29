@@ -1,5 +1,3 @@
-// TODO: explain
-
 use {
   super::helpers::unrecoverable,
   minhook::MinHook,
@@ -8,6 +6,7 @@ use {
     sync::atomic::{AtomicBool, Ordering::Relaxed},
   },
 };
+use crate::unloading_core::windows_dll_main::DLL_PROCESS_DETACH;
 
 // SAFETY: will be set from main thread and be read too
 static mut DEALLOC_CALLBACK: *const c_void = std::ptr::null();
@@ -16,6 +15,7 @@ static mut DEALLOC_CALLBACK: *const c_void = std::ptr::null();
 static mut OBSERVER_DROP_CALLED: bool = false;
 
 static ATEXIT_HOOK_CALLED: AtomicBool = AtomicBool::new(false);
+static IS_PROCESS_TERMINATING: AtomicBool = AtomicBool::new(false);
 
 pub fn init() {
   unsafe extern "C" {
@@ -125,22 +125,8 @@ pub unsafe fn set_dealloc_callback(callback: *const c_void) {
   }
 }
 
-use std::sync::atomic::{Ordering};
-
-// Флаг, который скажет atexit, что процесс закрывается целиком
-static IS_PROCESS_TERMINATING: AtomicBool = AtomicBool::new(false);
-
-#[unsafe(no_mangle)]
-pub unsafe extern "system" fn DllMain(
-  _hinst_dll: *mut std::ffi::c_void,
-  fdw_reason: u32,
-  lpv_reserved: *mut std::ffi::c_void,
-) -> i32 {
-  const DLL_PROCESS_DETACH: u32 = 0;
-
-  if fdw_reason == DLL_PROCESS_DETACH && !lpv_reserved.is_null() {
-    IS_PROCESS_TERMINATING.store(true, Ordering::Release);
+pub fn dll_main(reason: u32, lpv_reserved: *mut c_void) {
+  if reason == DLL_PROCESS_DETACH && !lpv_reserved.is_null() {
+    IS_PROCESS_TERMINATING.store(true, Relaxed);
   }
-
-  1
 }
