@@ -48,7 +48,9 @@ fn test_unloading_features() {
       }
 
       println!("[host] unloading module");
+      dbg!();
       unload_module(module);
+      dbg!();
     });
 
     {

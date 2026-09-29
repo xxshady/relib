@@ -9,6 +9,8 @@ pub fn main() {
   let (module, _) = load_module::<(), ()>(init_module_imports, true);
 
   let result = load_module_with_result::<(), ()>(init_module_imports, true);
+  dbg!(&result);
+
   let Err(LoadError::ModuleAlreadyLoaded) = result else {
     panic!("expected ModuleAlreadyLoaded");
   };
@@ -19,6 +21,8 @@ pub fn main() {
   let Ok(_) = result else {
     panic!("expected Ok");
   };
+
+  dbg!();
 }
 
 fn unload_module<E: ModuleExportsForHost>(module: Module<E>) {

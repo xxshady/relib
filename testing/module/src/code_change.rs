@@ -1,6 +1,6 @@
 use {
   crate::shared::alloc_some_bytes,
-  std::{backtrace::Backtrace, mem::forget, path::MAIN_SEPARATOR},
+  std::{backtrace::Backtrace, hint::black_box, mem::forget, path::MAIN_SEPARATOR},
 };
 
 #[relib_module::export]
@@ -57,7 +57,7 @@ pub fn main() {
       #[inline(never)]
       #[unsafe(no_mangle)]
       fn testing_release_backtrace_code_change2____() -> Backtrace {
-        Backtrace::force_capture()
+        black_box(Backtrace::force_capture())
       }
 
       let backtrace = testing_release_backtrace_code_change2____();

@@ -11,7 +11,7 @@ unsafe extern "system" fn DllMain(
   reason: u32,
   lpv_reserved: *mut c_void,
 ) -> BOOL {
-  windows_dealloc::on_dll_main_call(reason, lpv_reserved);
+  windows_dealloc::dll_main(reason, lpv_reserved);
 
   TRUE
 }

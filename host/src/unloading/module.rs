@@ -76,6 +76,7 @@ impl<E: ModuleExportsForHost> Module<E> {
       let handle = self.library_handle;
       let library = self.library.take();
 
+      // see windows_dealloc.rs in relib_module crate for explanations
       windows_dealloc::set(self, library_path.clone());
 
       dbghelp::remove_module(handle, &library_path);

@@ -295,7 +295,7 @@ dependencies = [
 
 [[package]]
 name = "relib"
-version = "0.7.1"
+version = "0.7.0"
 
 [[package]]
 name = "relib_export"
@@ -353,6 +353,7 @@ name = "relib_module"
 version = "0.7.0"
 dependencies = [
  "libc",
+ "minhook",
  "relib_export",
  "relib_interface",
  "relib_internal_crate_compilation_info",
