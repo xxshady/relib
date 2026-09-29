@@ -1,4 +1,45 @@
-//! TODO:
+//! See Rust tls implementation on Windows: <https://github.com/rust-lang/rust/pull/148799>
+//!
+//! This monstrosity assumes that std uses `atexit` for scheduling destructors call
+//! of all thread locals registered in a Windows DLL.
+//!
+//! And based on this assumption what we are doing here:
+//! ```txt
+//! load_module()
+//!
+//! before any tls destructor registered (no user code is run yet):
+//!
+//! register our own `atexit` callback that will block global allocator of the module
+//! and deallocate all the memory leaks
+//!
+//! hook `atexit` to ensure that it's used by std
+//!
+//! register "observer" tls to trigger initialization of std tls implementation
+//! and also register destructor that will tell when std called tls destructors
+//!
+//! module.unload()
+//!
+//! calling libloading's library.close()
+//!
+//! `atexit` begins to call registered callbacks
+//!
+//! std callback called
+//!
+//! tls destructors called
+//!
+//! "observer" tls destructor called
+//!
+//! our own `atexit` callback called allowing us to safely block the allocator
+//! and deallocate leaks
+//!
+//! done!
+//! ```
+//!
+//! note: we need to block the allocator to prevent threads spawned in the DLL
+//!  from messing up with memory during module.unload()
+//!
+//! The key part here is leak deallocation. We need to do it before library.close() finishes.
+//! But after std called tls destructors. So we are using `atexit` for that.
 
 use {
   super::helpers::unrecoverable,
@@ -132,7 +173,6 @@ fn hook_atexit(atexit: AtExitFn) {
 
   ORIG_ATEXIT.store(orig_atexit, Release);
 
-  // TODO: SAFETY
   unsafe {
     MinHook::enable_all_hooks().unwrap_or_else(|_| {
       unrecoverable("MinHook::enable_all_hooks failed");
